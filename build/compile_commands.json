@@ -1,0 +1,37 @@
+[
+{
+  "directory": "/home/fayez/Bugs/Cpp/path_sync/build",
+  "command": "/usr/local/bin/c++  -I/home/fayez/Bugs/Cpp/path_sync/include -I/home/fayez/Bugs/Cpp/path_sync/include/imgui -I/home/fayez/Bugs/Cpp/path_sync/include/imgui/backends -std=gnu++17 -o CMakeFiles/pfsync.dir/main.cpp.o -c /home/fayez/Bugs/Cpp/path_sync/main.cpp",
+  "file": "/home/fayez/Bugs/Cpp/path_sync/main.cpp"
+},
+{
+  "directory": "/home/fayez/Bugs/Cpp/path_sync/build/lib/imgui",
+  "command": "/usr/local/bin/c++ -Dimgui_EXPORTS -I/home/fayez/Bugs/Cpp/path_sync/include -I/home/fayez/Bugs/Cpp/path_sync/include/imgui -I/home/fayez/Bugs/Cpp/path_sync/include/imgui/backends -fPIC -std=gnu++17 -o CMakeFiles/imgui.dir/imgui-SFML.cpp.o -c /home/fayez/Bugs/Cpp/path_sync/lib/imgui/imgui-SFML.cpp",
+  "file": "/home/fayez/Bugs/Cpp/path_sync/lib/imgui/imgui-SFML.cpp"
+},
+{
+  "directory": "/home/fayez/Bugs/Cpp/path_sync/build/lib/imgui",
+  "command": "/usr/local/bin/c++ -Dimgui_EXPORTS -I/home/fayez/Bugs/Cpp/path_sync/include -I/home/fayez/Bugs/Cpp/path_sync/include/imgui -I/home/fayez/Bugs/Cpp/path_sync/include/imgui/backends -fPIC -std=gnu++17 -o CMakeFiles/imgui.dir/imgui.cpp.o -c /home/fayez/Bugs/Cpp/path_sync/lib/imgui/imgui.cpp",
+  "file": "/home/fayez/Bugs/Cpp/path_sync/lib/imgui/imgui.cpp"
+},
+{
+  "directory": "/home/fayez/Bugs/Cpp/path_sync/build/lib/imgui",
+  "command": "/usr/local/bin/c++ -Dimgui_EXPORTS -I/home/fayez/Bugs/Cpp/path_sync/include -I/home/fayez/Bugs/Cpp/path_sync/include/imgui -I/home/fayez/Bugs/Cpp/path_sync/include/imgui/backends -fPIC -std=gnu++17 -o CMakeFiles/imgui.dir/imgui_demo.cpp.o -c /home/fayez/Bugs/Cpp/path_sync/lib/imgui/imgui_demo.cpp",
+  "file": "/home/fayez/Bugs/Cpp/path_sync/lib/imgui/imgui_demo.cpp"
+},
+{
+  "directory": "/home/fayez/Bugs/Cpp/path_sync/build/lib/imgui",
+  "command": "/usr/local/bin/c++ -Dimgui_EXPORTS -I/home/fayez/Bugs/Cpp/path_sync/include -I/home/fayez/Bugs/Cpp/path_sync/include/imgui -I/home/fayez/Bugs/Cpp/path_sync/include/imgui/backends -fPIC -std=gnu++17 -o CMakeFiles/imgui.dir/imgui_draw.cpp.o -c /home/fayez/Bugs/Cpp/path_sync/lib/imgui/imgui_draw.cpp",
+  "file": "/home/fayez/Bugs/Cpp/path_sync/lib/imgui/imgui_draw.cpp"
+},
+{
+  "directory": "/home/fayez/Bugs/Cpp/path_sync/build/lib/imgui",
+  "command": "/usr/local/bin/c++ -Dimgui_EXPORTS -I/home/fayez/Bugs/Cpp/path_sync/include -I/home/fayez/Bugs/Cpp/path_sync/include/imgui -I/home/fayez/Bugs/Cpp/path_sync/include/imgui/backends -fPIC -std=gnu++17 -o CMakeFiles/imgui.dir/imgui_tables.cpp.o -c /home/fayez/Bugs/Cpp/path_sync/lib/imgui/imgui_tables.cpp",
+  "file": "/home/fayez/Bugs/Cpp/path_sync/lib/imgui/imgui_tables.cpp"
+},
+{
+  "directory": "/home/fayez/Bugs/Cpp/path_sync/build/lib/imgui",
+  "command": "/usr/local/bin/c++ -Dimgui_EXPORTS -I/home/fayez/Bugs/Cpp/path_sync/include -I/home/fayez/Bugs/Cpp/path_sync/include/imgui -I/home/fayez/Bugs/Cpp/path_sync/include/imgui/backends -fPIC -std=gnu++17 -o CMakeFiles/imgui.dir/imgui_widgets.cpp.o -c /home/fayez/Bugs/Cpp/path_sync/lib/imgui/imgui_widgets.cpp",
+  "file": "/home/fayez/Bugs/Cpp/path_sync/lib/imgui/imgui_widgets.cpp"
+}
+]

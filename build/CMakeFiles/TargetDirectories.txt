@@ -1,0 +1,10 @@
+/home/fayez/Bugs/Cpp/path_sync/build/CMakeFiles/pfsync.dir
+/home/fayez/Bugs/Cpp/path_sync/build/CMakeFiles/edit_cache.dir
+/home/fayez/Bugs/Cpp/path_sync/build/CMakeFiles/rebuild_cache.dir
+/home/fayez/Bugs/Cpp/path_sync/build/lib/CMakeFiles/edit_cache.dir
+/home/fayez/Bugs/Cpp/path_sync/build/lib/CMakeFiles/rebuild_cache.dir
+/home/fayez/Bugs/Cpp/path_sync/build/lib/SFML/CMakeFiles/edit_cache.dir
+/home/fayez/Bugs/Cpp/path_sync/build/lib/SFML/CMakeFiles/rebuild_cache.dir
+/home/fayez/Bugs/Cpp/path_sync/build/lib/imgui/CMakeFiles/imgui.dir
+/home/fayez/Bugs/Cpp/path_sync/build/lib/imgui/CMakeFiles/edit_cache.dir
+/home/fayez/Bugs/Cpp/path_sync/build/lib/imgui/CMakeFiles/rebuild_cache.dir
