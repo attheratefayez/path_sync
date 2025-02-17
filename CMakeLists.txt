@@ -10,7 +10,7 @@ project(pfsync
     LANGUAGES CXX
 )
 
-file(GLOB PF_SOURCE_FILES "./src/*.cpp")
+file(GLOB PF_SOURCE_FILES "./src/path_sync/*.cpp")
 
 add_subdirectory(lib)
 
@@ -33,5 +33,6 @@ target_link_libraries(${PROJECT_NAME}
     sfml-window
     sfml-system
     imgui
+    yaml-cpp
 )
 

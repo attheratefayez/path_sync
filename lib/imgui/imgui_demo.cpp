@@ -7720,6 +7720,7 @@ void ImGui::ShowAboutWindow(bool* p_open)
         ImGui::End();
         return;
     }
+
     IMGUI_DEMO_MARKER("Tools/About Dear ImGui");
     ImGui::Text("Dear ImGui %s (%d)", IMGUI_VERSION, IMGUI_VERSION_NUM);
 

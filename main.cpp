@@ -1,18 +1,43 @@
+#include <SFML/Graphics.hpp>
+#include <SFML/System.hpp>
+#include <SFML/Window.hpp>
+
 #include "imgui-SFML.h"
 #include "imgui.h"
 
-#include <SFML/Graphics/CircleShape.hpp>
-#include <SFML/Graphics/RenderWindow.hpp>
-#include <SFML/System/Clock.hpp>
-#include <SFML/Window/Event.hpp>
+#include "path_sync/logger.hpp"
+#include "path_sync/visualization_system.hpp"
+#include "path_sync/visualization_system_config.hpp"
+
+void test_loop();
+void pfsync_loop();
 
 int main()
+{
+    test_loop();
+}
+
+void pfsync_loop()
+{
+    psync::VisualizationSystemConfig system_config = psync::VisualizationSystemConfig("/home/fayez/Bugs/Cpp/path_sync/config/env_vars.yaml");
+    psync::VisualizationSystem::initialize(system_config);
+    psync::VisualizationSystem::get()->run();
+
+}
+
+void test_loop()
 {
     // this is a comment
     sf::RenderWindow window(sf::VideoMode({ 640, 480 }), "PathSync");
     window.setFramerateLimit(60);
-    ImGui::SFML::Init(window);
 
+
+    if(!ImGui::SFML::Init(window))
+    {
+        psync::Logger::get()->info("ImGui initialization failed.");
+    };
+
+    /* SFML DRAWABLES */
     sf::CircleShape shape(100.f);
     shape.setFillColor(sf::Color::Green);
 
@@ -41,4 +66,5 @@ int main()
     }
 
     ImGui::SFML::Shutdown();
+
 }

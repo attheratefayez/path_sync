@@ -1,1 +1,0 @@
-/usr/local/bin/c++ CMakeFiles/pfsync.dir/main.cpp.o -o pfsync   -L/home/fayez/Bugs/Cpp/path_sync/lib/SFML  -Wl,-rpath,/home/fayez/Bugs/Cpp/path_sync/lib/SFML:/home/fayez/Bugs/Cpp/path_sync/build/lib/imgui -lsfml-graphics -lsfml-window -lsfml-system lib/imgui/libimgui.so -lGL 

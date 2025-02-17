@@ -1,0 +1,8 @@
+window:
+  width: 1800
+  height: 900
+  title: "Path Sync"
+  framerate: 90
+
+path:
+  project_root: "/home/fayez/Bugs/Cpp/momapf/"
