@@ -24,6 +24,7 @@ struct VisualizationSystemConfig
     unsigned int HEIGHT;
     unsigned int FRAMERATE;
     std::string TITLE;
+    static int CELL_SIZE;
 
     VisualizationSystemConfig(std::filesystem::path config_file_path)
     {
@@ -35,5 +36,6 @@ struct VisualizationSystemConfig
     }
 };
 }
+
 
 #endif // !__PATH_SYNC_VISUALIZATION_SYSTEM_CONFIG_HPP__

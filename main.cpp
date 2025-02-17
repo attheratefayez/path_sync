@@ -12,9 +12,11 @@
 void test_loop();
 void pfsync_loop();
 
+int psync::VisualizationSystemConfig::CELL_SIZE = 50;
+
 int main()
 {
-    test_loop();
+    pfsync_loop();
 }
 
 void pfsync_loop()
@@ -41,6 +43,7 @@ void test_loop()
     sf::CircleShape shape(100.f);
     shape.setFillColor(sf::Color::Green);
 
+
     sf::Clock deltaClock;
     while (window.isOpen()) {
         while (const auto event = window.pollEvent()) {
@@ -55,7 +58,7 @@ void test_loop()
 
         ImGui::ShowDemoWindow();
 
-        ImGui::Begin("Hello, world!");
+        ImGui::Begin("Control Panel");
         ImGui::Button("Look at this pretty button");
         ImGui::End();
 

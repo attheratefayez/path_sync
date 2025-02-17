@@ -7,6 +7,7 @@
 #ifndef __MOMAPF_VISUALIZATION_SYSTEM_HPP__
 #define __MOMAPF_VISUALIZATION_SYSTEM_HPP__
 
+
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
@@ -46,6 +47,7 @@ public:
      */
     void handle_event();
 
+
     /**
      * @brief Handles updates in the windows. 
      * Mainly clears the SFML window and redraws everything. 
@@ -68,6 +70,7 @@ private:
     float __zoom_factor;
     int __zoom_direction; 
     sf::Clock __deltaClock;
+    sf::RectangleShape rect;
 
     VisualizationSystem(VisualizationSystemConfig& ) ;
 
