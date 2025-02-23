@@ -2,10 +2,12 @@
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
 
+#include "SFML/Window/WindowEnums.hpp"
 #include "imgui-SFML.h"
 #include "imgui.h"
 
 #include "path_sync/logger.hpp"
+#include "path_sync/cell.hpp"
 #include "path_sync/visualization_system.hpp"
 #include "path_sync/visualization_system_config.hpp"
 
@@ -16,7 +18,8 @@ int psync::VisualizationSystemConfig::CELL_SIZE = 50;
 
 int main()
 {
-    pfsync_loop();
+    /*pfsync_loop();*/
+    test_loop();
 }
 
 void pfsync_loop()
@@ -30,7 +33,7 @@ void pfsync_loop()
 void test_loop()
 {
     // this is a comment
-    sf::RenderWindow window(sf::VideoMode({ 640, 480 }), "PathSync");
+    sf::RenderWindow window(sf::VideoMode({1800, 900}), "PathSync", sf::Style::Titlebar | sf::Style::Close);
     window.setFramerateLimit(60);
 
 
@@ -40,8 +43,9 @@ void test_loop()
     };
 
     /* SFML DRAWABLES */
-    sf::CircleShape shape(100.f);
-    shape.setFillColor(sf::Color::Green);
+    /*sf::CircleShape shape(100.f);*/
+    /*shape.setFillColor(sf::Color::Green);*/
+
 
 
     sf::Clock deltaClock;
@@ -63,7 +67,9 @@ void test_loop()
         ImGui::End();
 
         window.clear();
-        window.draw(shape);
+
+        /*DRAW STUFFS*/
+        
         ImGui::SFML::Render(window);
         window.display();
     }
