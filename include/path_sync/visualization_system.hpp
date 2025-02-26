@@ -12,7 +12,9 @@
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
 
+#include "path_sync/astar_solver.hpp"
 #include "path_sync/grid.hpp"
+#include "path_sync/path_finder.hpp"
 #include "path_sync/visualization_system_config.hpp"
 
 namespace psync {
@@ -73,6 +75,8 @@ private:
     int __zoom_direction; 
     sf::Clock __deltaClock;
     psync::Grid __grid;
+    psync::PathFinder __path_finder;
+    psync::Astar_Solver __astar_solver;
 
     VisualizationSystem(VisualizationSystemConfig& ) ;
 
@@ -87,7 +91,7 @@ private:
     void __set_zoom(const sf::Event::MouseWheelScrolled* scroll_event);
 
     bool __is_mouse_inside_window();
-    sf::Vector2i __draw_with_cell_type(psync::CellType cell_type);
+    Coordinate __draw_with_cell_type(psync::CellType cell_type);
 
     ~VisualizationSystem();
 

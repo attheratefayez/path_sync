@@ -43,4 +43,50 @@ void Grid::draw(sf::RenderTarget& target, sf::RenderStates states) const
     }
 }
 
+std::vector<Coordinate> Grid::find_neighbors_b2(Coordinate candidate) const
+{
+    const int x_moves[] = {0, 1, 0, -1};
+    const int y_moves[] = {1, 0, -1, 0};
+
+    std::vector<Coordinate> neighbours;
+
+    for (int i = 0; i < 4; i++)
+    {
+        int n_col = candidate.first + y_moves[i];
+        int n_row = candidate.second + x_moves[i];
+
+        if ((n_row < 0 or n_row >= __num_of_rows))
+        {
+            /*std::cout << "Cont Row: " << n_row << ", " << n_col << " limit: " << __num_of_rows << std::endl;*/
+            continue;
+        }
+        if ((n_col < 0 or n_col >= __num_of_cols))
+        {
+            /*std::cout << "Cont Col: " << n_row << ", " << n_col << " limit: " << __num_of_cols << std::endl;*/
+            continue;
+        }
+
+        if (__cell_grid[n_row][n_col].get_cell_type() == CellType::WALL)
+            continue;
+
+        neighbours.push_back(Coordinate(n_col, n_row));
+    }
+
+    return neighbours;
+}
+
+void Grid::reset_grid()
+{
+    for(auto& row: __cell_grid)
+    {
+        for(auto& cell: row)
+        {
+            cell.set_cell_type(psync::CellType::DEFAULT);
+        }
+    }
+
+    start_points.clear();
+    end_points.clear();
+}
+
 } // namespace psync
