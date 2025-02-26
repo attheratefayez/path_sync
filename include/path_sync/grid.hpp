@@ -31,14 +31,15 @@ public:
     int get_num_of_rows() const {return __num_of_rows;}
     int get_num_of_cols() const {return __num_of_cols;}
     CellGrid& get_grid() {return __cell_grid;}
-    bool grid_changed() const {return __grid_changed;}
-    void set_grid_changed(bool state) {__grid_changed = state;}
+    std::vector<sf::Vector2i>& get_start_points() { return start_points; };
+    std::vector<sf::Vector2i>& get_end_points() { return end_points; };
 
 private:
     int __num_of_rows;
     int __num_of_cols;
     CellGrid __cell_grid;
-    mutable bool __grid_changed;
+    std::vector<sf::Vector2i> start_points;
+    std::vector<sf::Vector2i> end_points;
     /*sf::RenderWindow& __render_window_ref;*/
 };
 

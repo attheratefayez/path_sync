@@ -54,11 +54,6 @@ VisualizationSystem::VisualizationSystem(VisualizationSystemConfig& system_confi
     /* HACK: setting view messes up with drawings on RenderWindow */
     /*__main_window.setView(__main_view);*/
 
-    /* HACK: setting the test rect*/
-    /*__test_rect.setSize({100.0f, 100.0f});*/
-    /*__test_rect.setFillColor(sf::Color::Red);*/
-    /*__test_rect.setPosition({300.0f, 100.0f});*/
-
     if (!ImGui::SFML::Init(__main_window)) {
         psync::Logger::get()->error("ImGui initialization failed.");
     }
@@ -85,7 +80,8 @@ void VisualizationSystem::handle_event()
                 && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)
             ) 
             {
-                __draw_with_cell_type(psync::CellType::START);
+                sf::Vector2i start_point = __draw_with_cell_type(psync::CellType::START);
+                __grid.get_start_points().push_back(start_point);
             }
 
             /*DRAWING END POSITION*/
@@ -95,7 +91,8 @@ void VisualizationSystem::handle_event()
                 && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)
             ) 
             {
-                __draw_with_cell_type(psync::CellType::END);
+                sf::Vector2i end_point = __draw_with_cell_type(psync::CellType::END);
+                __grid.get_end_points().push_back(end_point);
             }
 
 
@@ -108,6 +105,7 @@ void VisualizationSystem::handle_event()
                 __draw_with_cell_type(psync::CellType::WALL);
             }
 
+            /*Erasing */
             else if (event->getIf<sf::Event::MouseButtonPressed>()->button == sf::Mouse::Button::Right) 
             {
                 __draw_with_cell_type(psync::CellType::DEFAULT);
@@ -115,10 +113,15 @@ void VisualizationSystem::handle_event()
         }
 
         if (event->is<sf::Event::MouseMoved>()) {
+
+            /*DRAWING WALL*/
             if (__is_mouse_inside_window() && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
                 __draw_with_cell_type(psync::CellType::WALL);
             }
+
+            /*ERASING*/
             else if (__is_mouse_inside_window() && sf::Mouse::isButtonPressed(sf::Mouse::Button::Right)) {
+                sf::Vector2i current_mouse_pos = sf::Mouse::getPosition();
                 __draw_with_cell_type(psync::CellType::DEFAULT);
             }
         }
@@ -182,7 +185,7 @@ bool VisualizationSystem::__is_mouse_inside_window()
     return true;
 }
 
-void VisualizationSystem::__draw_with_cell_type(psync::CellType cell_type)
+sf::Vector2i VisualizationSystem::__draw_with_cell_type(psync::CellType cell_type)
 {
     sf::Vector2i current_mouse_pos = sf::Mouse::getPosition(__main_window);
     sf::Vector2i grid_cell = {
@@ -190,6 +193,8 @@ void VisualizationSystem::__draw_with_cell_type(psync::CellType cell_type)
         current_mouse_pos.y / psync::VisualizationSystemConfig::CELL_SIZE
     };
     __grid.get_grid()[grid_cell.y][grid_cell.x].set_cell_type(cell_type);
+
+    return grid_cell;
 }
 
 VisualizationSystem::~VisualizationSystem()
@@ -226,6 +231,12 @@ void control_panel_imgui()
                 ImGui::SetItemDefaultFocus();
         }
         ImGui::EndCombo();
+    }
+
+    if(ImGui::Button("Find Path"))
+    {
+        ImGui::SameLine();
+        ImGui::Text("Finding Path...");
     }
 
     ImGui::End();

@@ -1,5 +1,6 @@
 #include <iostream>
 #include "path_sync/cell.hpp"
+#include "path_sync/logger.hpp"
 #include "path_sync/grid.hpp"
 #include "path_sync/visualization_system_config.hpp"
 
@@ -8,7 +9,6 @@ namespace psync {
 Grid::Grid(VisualizationSystemConfig& system_config)
     : __num_of_rows(system_config.HEIGHT / psync::VisualizationSystemConfig::CELL_SIZE)
     , __num_of_cols(system_config.WIDTH / psync::VisualizationSystemConfig::CELL_SIZE)
-    , __grid_changed(true)
 {
     std::cout << "Calculated Grid: " << __num_of_rows << ", " << __num_of_cols << std::endl;
 

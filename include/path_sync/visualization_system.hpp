@@ -74,8 +74,6 @@ private:
     sf::Clock __deltaClock;
     psync::Grid __grid;
 
-    sf::RectangleShape __test_rect;
-
     VisualizationSystem(VisualizationSystemConfig& ) ;
 
     VisualizationSystem(VisualizationSystem const&) = delete;
@@ -89,7 +87,7 @@ private:
     void __set_zoom(const sf::Event::MouseWheelScrolled* scroll_event);
 
     bool __is_mouse_inside_window();
-    void __draw_with_cell_type(psync::CellType cell_type);
+    sf::Vector2i __draw_with_cell_type(psync::CellType cell_type);
 
     ~VisualizationSystem();
 
