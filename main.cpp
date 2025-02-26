@@ -2,9 +2,6 @@
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
 
-#include "imgui-SFML.h"
-#include "imgui.h"
-
 #include "path_sync/logger.hpp"
 #include "path_sync/cell.hpp"
 #include "path_sync/grid.hpp"
@@ -38,11 +35,6 @@ void test_loop()
     window.setFramerateLimit(60);
 
 
-    if(!ImGui::SFML::Init(window))
-    {
-        psync::Logger::get()->info("ImGui initialization failed.");
-    };
-
     /* SFML DRAWABLES */
     /*sf::CircleShape shape(100.f);*/
     /*shape.setFillColor(sf::Color::Green);*/
@@ -54,20 +46,10 @@ void test_loop()
     sf::Clock deltaClock;
     while (window.isOpen()) {
         while (const auto event = window.pollEvent()) {
-            ImGui::SFML::ProcessEvent(window, *event);
-
             if (event->is<sf::Event::Closed>()) {
                 window.close();
             }
         }
-
-        ImGui::SFML::Update(window, deltaClock.restart());
-
-        ImGui::ShowDemoWindow();
-
-        ImGui::Begin("Control Panel");
-        ImGui::Button("Look at this pretty button");
-        ImGui::End();
 
         window.clear();
 
@@ -75,11 +57,9 @@ void test_loop()
         /*DRAW STUFFS*/
         window.draw(new_grid);
         
-        ImGui::SFML::Render(window);
         window.display();
     }
 
-    ImGui::SFML::Shutdown();
 
 }
 

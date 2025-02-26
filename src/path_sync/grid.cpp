@@ -43,5 +43,4 @@ void Grid::draw(sf::RenderTarget& target, sf::RenderStates states) const
     }
 }
 
-
 } // namespace psync
