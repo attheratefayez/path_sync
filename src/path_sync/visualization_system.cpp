@@ -1,3 +1,4 @@
+#include <iostream>
 #include <optional>
 
 #include <SFML/Graphics.hpp>
@@ -7,6 +8,9 @@
 #include <imgui.h>
 #include <yaml-cpp/yaml.h>
 
+#include "SFML/System/Vector2.hpp"
+#include "SFML/Window/Keyboard.hpp"
+#include "SFML/Window/Mouse.hpp"
 #include "path_sync/logger.hpp"
 #include "path_sync/visualization_system.hpp"
 
@@ -31,16 +35,18 @@ VisualizationSystem* VisualizationSystem::get()
 
 // CONSTRUCTOR
 VisualizationSystem::VisualizationSystem(VisualizationSystemConfig& system_config)
+    : __system_config(system_config)
+    , __grid(system_config)
 {
     __main_window.create(
         sf::VideoMode({ system_config.WIDTH, system_config.HEIGHT }),
         system_config.TITLE,
         sf::Style::Titlebar | sf::Style::Close);
-    __main_window.setVerticalSyncEnabled(true);
+    __main_window.setFramerateLimit(system_config.FRAMERATE);
 
     __main_view.setViewport(sf::FloatRect(
         { 0, 0 },
-        { static_cast<float>(system_config.WIDTH*2), static_cast<float>(system_config.HEIGHT*2) }));
+        { static_cast<float>(system_config.WIDTH), static_cast<float>(system_config.HEIGHT) }));
 
     __zoom_factor = 1.0;
     __zoom_direction = 1;
@@ -48,13 +54,18 @@ VisualizationSystem::VisualizationSystem(VisualizationSystemConfig& system_confi
     /* HACK: setting view messes up with drawings on RenderWindow */
     /*__main_window.setView(__main_view);*/
 
+    /* HACK: setting the test rect*/
+    /*__test_rect.setSize({100.0f, 100.0f});*/
+    /*__test_rect.setFillColor(sf::Color::Red);*/
+    /*__test_rect.setPosition({300.0f, 100.0f});*/
+
     if (!ImGui::SFML::Init(__main_window)) {
         psync::Logger::get()->error("ImGui initialization failed.");
     }
 
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-    }
+}
 
 // MEMBER FUNCTIONS
 void VisualizationSystem::handle_event()
@@ -64,6 +75,53 @@ void VisualizationSystem::handle_event()
 
         if (event->is<sf::Event::Closed>())
             __main_window.close();
+
+        if (event->is<sf::Event::MouseButtonPressed>()) 
+        { 
+            /*DRAWING START POSITION*/
+            if (
+                event->getIf<sf::Event::MouseButtonPressed>()->button == sf::Mouse::Button::Left
+                && __is_mouse_inside_window() 
+                && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)
+            ) 
+            {
+                __draw_with_cell_type(psync::CellType::START);
+            }
+
+            /*DRAWING END POSITION*/
+            else if (
+                event->getIf<sf::Event::MouseButtonPressed>()->button == sf::Mouse::Button::Left
+                && __is_mouse_inside_window() 
+                && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E)
+            ) 
+            {
+                __draw_with_cell_type(psync::CellType::END);
+            }
+
+
+            /*DRAWING WALL*/
+            else if (
+                event->getIf<sf::Event::MouseButtonPressed>()->button == sf::Mouse::Button::Left
+                && __is_mouse_inside_window()
+            ) 
+            {
+                __draw_with_cell_type(psync::CellType::WALL);
+            }
+
+            else if (event->getIf<sf::Event::MouseButtonPressed>()->button == sf::Mouse::Button::Right) 
+            {
+                __draw_with_cell_type(psync::CellType::DEFAULT);
+            }
+        }
+
+        if (event->is<sf::Event::MouseMoved>()) {
+            if (__is_mouse_inside_window() && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+                __draw_with_cell_type(psync::CellType::WALL);
+            }
+            else if (__is_mouse_inside_window() && sf::Mouse::isButtonPressed(sf::Mouse::Button::Right)) {
+                __draw_with_cell_type(psync::CellType::DEFAULT);
+            }
+        }
 
         if (event->is<sf::Event::MouseWheelScrolled>()) {
             __set_zoom(event->getIf<sf::Event::MouseWheelScrolled>());
@@ -79,14 +137,23 @@ void VisualizationSystem::update()
     control_panel_imgui();
 
     __main_window.clear();
-    __main_window.draw(rect);
-
+    /*__main_window.draw(__test_rect);*/
+    __main_window.draw(__grid);
 
     /* HACK: setting view messes up with drawings on RenderWindow */
     /*__main_window.setView(__main_view);*/
 
     ImGui::SFML::Render(__main_window);
     __main_window.display();
+}
+
+void VisualizationSystem::run()
+{
+    while (__main_window.isOpen()) {
+        handle_event();
+        update();
+    }
+    ImGui::SFML::Shutdown();
 }
 
 void VisualizationSystem::__set_zoom(const sf::Event::MouseWheelScrolled* scroll_event)
@@ -104,13 +171,25 @@ void VisualizationSystem::__set_zoom(const sf::Event::MouseWheelScrolled* scroll
     __zoom_direction = scroll_event->delta;
 }
 
-void VisualizationSystem::run()
+bool VisualizationSystem::__is_mouse_inside_window()
 {
-    while (__main_window.isOpen()) {
-        handle_event();
-        update();
-    }
-    ImGui::SFML::Shutdown();
+    sf::Vector2i current_mouse_pos = sf::Mouse::getPosition(__main_window);
+
+    if (
+        (current_mouse_pos.x < 0 || current_mouse_pos.x > __system_config.WIDTH) || (current_mouse_pos.y < 0 || current_mouse_pos.y > __system_config.HEIGHT))
+        return false;
+
+    return true;
+}
+
+void VisualizationSystem::__draw_with_cell_type(psync::CellType cell_type)
+{
+    sf::Vector2i current_mouse_pos = sf::Mouse::getPosition(__main_window);
+    sf::Vector2i grid_cell = {
+        current_mouse_pos.x / psync::VisualizationSystemConfig::CELL_SIZE,
+        current_mouse_pos.y / psync::VisualizationSystemConfig::CELL_SIZE
+    };
+    __grid.get_grid()[grid_cell.y][grid_cell.x].set_cell_type(cell_type);
 }
 
 VisualizationSystem::~VisualizationSystem()

@@ -2,24 +2,24 @@
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
 
-#include "SFML/Window/WindowEnums.hpp"
 #include "imgui-SFML.h"
 #include "imgui.h"
 
 #include "path_sync/logger.hpp"
 #include "path_sync/cell.hpp"
+#include "path_sync/grid.hpp"
 #include "path_sync/visualization_system.hpp"
 #include "path_sync/visualization_system_config.hpp"
 
 void test_loop();
 void pfsync_loop();
 
-int psync::VisualizationSystemConfig::CELL_SIZE = 50;
+int psync::VisualizationSystemConfig::CELL_SIZE = 4;
 
 int main()
 {
-    /*pfsync_loop();*/
-    test_loop();
+    pfsync_loop();
+    /*test_loop();*/
 }
 
 void pfsync_loop()
@@ -32,6 +32,7 @@ void pfsync_loop()
 
 void test_loop()
 {
+    psync::VisualizationSystemConfig system_config = psync::VisualizationSystemConfig("/home/fayez/Bugs/Cpp/path_sync/config/env_vars.yaml");
     // this is a comment
     sf::RenderWindow window(sf::VideoMode({1800, 900}), "PathSync", sf::Style::Titlebar | sf::Style::Close);
     window.setFramerateLimit(60);
@@ -46,6 +47,8 @@ void test_loop()
     /*sf::CircleShape shape(100.f);*/
     /*shape.setFillColor(sf::Color::Green);*/
 
+    /*psync::Cell new_cell(psync::CellType::DEFAULT, {100.0f, 100.0f});*/
+    psync::Grid new_grid(system_config);
 
 
     sf::Clock deltaClock;
@@ -68,7 +71,9 @@ void test_loop()
 
         window.clear();
 
+
         /*DRAW STUFFS*/
+        window.draw(new_grid);
         
         ImGui::SFML::Render(window);
         window.display();
@@ -77,3 +82,5 @@ void test_loop()
     ImGui::SFML::Shutdown();
 
 }
+
+

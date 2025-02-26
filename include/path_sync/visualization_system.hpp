@@ -12,6 +12,7 @@
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
 
+#include "path_sync/grid.hpp"
 #include "path_sync/visualization_system_config.hpp"
 
 namespace psync {
@@ -64,13 +65,16 @@ public:
     void run();
 
 private:
+    VisualizationSystemConfig __system_config;
     static VisualizationSystem* __instance;
     sf::RenderWindow __main_window;
     sf::View __main_view;
     float __zoom_factor;
     int __zoom_direction; 
     sf::Clock __deltaClock;
-    sf::RectangleShape rect;
+    psync::Grid __grid;
+
+    sf::RectangleShape __test_rect;
 
     VisualizationSystem(VisualizationSystemConfig& ) ;
 
@@ -83,6 +87,9 @@ private:
      * @param scroll_event sf::Event::MouseWheelScrolled* sfml mouse scroll event.
      */
     void __set_zoom(const sf::Event::MouseWheelScrolled* scroll_event);
+
+    bool __is_mouse_inside_window();
+    void __draw_with_cell_type(psync::CellType cell_type);
 
     ~VisualizationSystem();
 
