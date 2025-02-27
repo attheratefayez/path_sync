@@ -11,7 +11,7 @@
 void test_loop();
 void pfsync_loop();
 
-int psync::VisualizationSystemConfig::CELL_SIZE = 100;
+int psync::VisualizationSystemConfig::CELL_SIZE = 50;
 
 int main()
 {

@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
+#include <sstream>
 #include <yaml-cpp/yaml.h>
 
 #include "SFML/Window/Keyboard.hpp"
@@ -14,6 +15,7 @@
 namespace psync
 {
 
+std::stringstream ss;
 // STATIC MEMBERS
 VisualizationSystem *VisualizationSystem::__instance = nullptr;
 
@@ -46,6 +48,23 @@ VisualizationSystem::VisualizationSystem(VisualizationSystemConfig &system_confi
     /* HACK: setting view messes up with drawings on RenderWindow */
     /*__main_window.setView(__main_view);*/
 
+    /*INFO: ADDING Solvers to __solvers list*/
+    __solvers.push_back(&__astar_solver);
+    __solvers.push_back(&__bfs_solver);
+
+    /*__selected_solver_index = __solvers.size() ? __solvers.size() - 1 : 0;*/
+    __selected_solver_index = 0;
+
+    __help_stream << "\n";
+    __help_stream << "\t\tPSYNC CONTROLS\n";
+    __help_stream << "\ts    + Mouse-Left  :   Draw Start Point.\n";
+    __help_stream << "\te    + Mouse-Left  :   Draw End Point.\n";
+    __help_stream << "\tMouse-Left  + Drag :   Draw Wall.\n";
+    __help_stream << "\tMouse-Right + Drag :   Erase Wall.\n";
+    __help_stream << "\tc                  :   Change Solver.\n";
+    __help_stream << "\tSpace              :   Find Solution.\n";
+    __help_stream << "\tShift-H            :   Show This Help.\n";
+    __help_stream << "\tShift-R            :   Clear Grid.\n";
 }
 
 // MEMBER FUNCTIONS
@@ -115,40 +134,74 @@ void VisualizationSystem::handle_event()
             __set_zoom(event->getIf<sf::Event::MouseWheelScrolled>());
         }
 
-
-        if( event->is<sf::Event::KeyPressed>() )
+        if (event->is<sf::Event::KeyPressed>())
         {
-            if(event->getIf<sf::Event::KeyPressed>()->code == sf::Keyboard::Key::Space)
+            /*CHANGE SOLVERS*/
+            if (event->getIf<sf::Event::KeyPressed>()->code == sf::Keyboard::Key::C)
             {
-                std::optional<std::vector<Coordinate>> returned_path = __path_finder.find_path(__astar_solver, __grid);
-                if(returned_path != std::nullopt)
+                psync::Logger::get()->info("Changing Solver...");
+                __selected_solver_index++;
+                __selected_solver_index %= __solvers.size();
+                __selected_solver_index =
+                    (__selected_solver_index == __solvers.size()) ? --__selected_solver_index : __selected_solver_index;
+
+                ss << "Selected solver: " << __solvers[__selected_solver_index]->get_solver_name() << std::endl;
+                psync::Logger::get()->info(ss.str().c_str());
+                ss.str(std::string());
+            }
+
+            /*FIND SOLUTION*/
+            if (event->getIf<sf::Event::KeyPressed>()->code == sf::Keyboard::Key::Space)
+            {
+                psync::Logger::get()->info("FINDING SOLUTION...");
+                ss << "Solver: " << __solvers[__selected_solver_index]->get_solver_name() << std::endl;
+                psync::Logger::get()->info(ss.str().c_str());
+                ss.str(std::string());
+
+
+                std::optional<std::vector<Coordinate>> returned_path =
+                    __path_finder.find_path(*__solvers[__selected_solver_index], __grid);
+
+                if (returned_path != std::nullopt)
                 {
-                    for(auto& cell: *returned_path)
+                    for (auto &cell : *returned_path)
                     {
                         __grid.get_grid()[cell.second][cell.first].set_cell_type(psync::CellType::PATH);
                     }
 
-                    for(auto& start_point: __grid.get_start_points())
+                    for (auto &start_point : __grid.get_start_points())
                     {
                         __grid.get_grid()[start_point.second][start_point.first].set_cell_type(psync::CellType::START);
                     }
 
-                    for(auto& end_point: __grid.get_end_points())
+                    for (auto &end_point : __grid.get_end_points())
                     {
                         __grid.get_grid()[end_point.second][end_point.first].set_cell_type(psync::CellType::END);
                     }
-
                 }
             }
 
-            else if(event->getIf<sf::Event::KeyPressed>()->shift && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R))
+            /*SHOW HELP*/
+            else if (event->getIf<sf::Event::KeyPressed>()->shift && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::H))
             {
+                psync::Logger::get()->info(__help_stream.str().c_str());
+            }
+
+            /*CLEAR PATH*/
+            else if (event->getIf<sf::Event::KeyPressed>()->shift && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::P))
+            {
+                psync::Logger::get()->info("CLEARING PATH...");
+                __grid.clear_paths();
+            }
+
+            /*RESET GRID*/
+            else if (event->getIf<sf::Event::KeyPressed>()->shift && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R))
+            {
+                psync::Logger::get()->info("RESETTING GRID...");
                 __grid.reset_grid();
             }
         }
-
     }
-    
 }
 
 void VisualizationSystem::update()
@@ -165,6 +218,8 @@ void VisualizationSystem::update()
 
 void VisualizationSystem::run()
 {
+    psync::Logger::get()->info(__help_stream.str().c_str());
+
     while (__main_window.isOpen())
     {
         handle_event();

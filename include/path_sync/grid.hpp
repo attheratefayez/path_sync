@@ -28,6 +28,7 @@ public:
     Grid(VisualizationSystemConfig& system_config);
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
     std::vector<Coordinate> find_neighbors_b2(Coordinate candidate) const;
+    void clear_paths();
     void reset_grid();
 
     int get_num_of_rows() const {return __num_of_rows;}

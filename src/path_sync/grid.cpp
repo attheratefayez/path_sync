@@ -75,11 +75,23 @@ std::vector<Coordinate> Grid::find_neighbors_b2(Coordinate candidate) const
     return neighbours;
 }
 
+void Grid::clear_paths()
+{
+    for(std::vector<Cell>& row: __cell_grid)
+    {
+        for(psync::Cell& cell: row)
+        {
+            if(cell.get_cell_type() == psync::CellType::PATH)
+                cell.set_cell_type(psync::CellType::DEFAULT);
+        }
+    }
+}
+
 void Grid::reset_grid()
 {
-    for(auto& row: __cell_grid)
+    for(std::vector<Cell>& row: __cell_grid)
     {
-        for(auto& cell: row)
+        for(psync::Cell& cell: row)
         {
             cell.set_cell_type(psync::CellType::DEFAULT);
         }

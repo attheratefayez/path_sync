@@ -13,6 +13,7 @@
 #include <SFML/Window.hpp>
 
 #include "path_sync/astar_solver.hpp"
+#include "path_sync/bfs_solver.hpp"
 #include "path_sync/grid.hpp"
 #include "path_sync/path_finder.hpp"
 #include "path_sync/visualization_system_config.hpp"
@@ -67,6 +68,7 @@ public:
     void run();
 
 private:
+    std::stringstream __help_stream;
     VisualizationSystemConfig __system_config;
     static VisualizationSystem* __instance;
     sf::RenderWindow __main_window;
@@ -76,7 +78,10 @@ private:
     sf::Clock __deltaClock;
     psync::Grid __grid;
     psync::PathFinder __path_finder;
+    std::vector<ISolver*> __solvers;
     psync::Astar_Solver __astar_solver;
+    psync::BFS_Solver __bfs_solver;
+    std::size_t __selected_solver_index;
 
     VisualizationSystem(VisualizationSystemConfig& ) ;
 
