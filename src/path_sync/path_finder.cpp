@@ -22,10 +22,11 @@ std::optional<std::vector<Coordinate>> PathFinder::find_path(ISolver &solver, ps
     {
         std::map<Coordinate, Coordinate> node_map;
         std::vector<Coordinate> path;
+        __performance_met.solver_name = solver.get_solver_name();
 
         for (int counter = 0; counter < start_points.size(); counter++)
         {
-            node_map = solver.solve(grid, start_points[counter], end_points[counter]);
+            node_map = solver.solve(grid, start_points[counter], end_points[counter], __performance_met);
 
             if (node_map.empty())
             {
@@ -40,6 +41,7 @@ std::optional<std::vector<Coordinate>> PathFinder::find_path(ISolver &solver, ps
             }
 
             path = __construct_path(node_map, start_points[counter], end_points[counter]);
+            __performance_met.path_length = path.size();
         }
         return path;
     }

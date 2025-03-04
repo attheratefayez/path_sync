@@ -42,6 +42,7 @@ private:
     int __num_of_rows;
     int __num_of_cols;
     CellGrid __cell_grid;
+    CostGrid __cost_grid;
     std::vector<Coordinate> start_points;
     std::vector<Coordinate> end_points;
 };

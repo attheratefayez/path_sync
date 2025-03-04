@@ -1,3 +1,4 @@
+#include <chrono>
 #include <deque>
 #include "path_sync/bfs_solver.hpp"
 #include "path_sync/psync_types.hpp"
@@ -9,10 +10,10 @@ std::string BFS_Solver::get_solver_name() const
     return solver_name;
 }
 
-std::map<Coordinate, Coordinate> BFS_Solver::solve(Grid &grid, Coordinate start, Coordinate end)
+std::map<Coordinate, Coordinate> BFS_Solver::solve(Grid &grid, Coordinate start, Coordinate end, PerformanceMetrics& performance_met)
 {
+    auto start_time = std::chrono::high_resolution_clock::now();
     // DECLARATION
-
     bool reachedEnd = false;
     Coordinate grid_size = grid.get_grid_size();
 
@@ -32,6 +33,7 @@ std::map<Coordinate, Coordinate> BFS_Solver::solve(Grid &grid, Coordinate start,
     {
         Coordinate visiting = queue.front();
         queue.pop_front();
+        performance_met.num_of_nodes_expanded++;
 
         if (visited[visiting.second][visiting.first])
             continue;
@@ -42,6 +44,7 @@ std::map<Coordinate, Coordinate> BFS_Solver::solve(Grid &grid, Coordinate start,
         {
             if (not visited[n.second][n.first] and std::find(queue.begin(), queue.end(), n) == queue.end())
             {
+                performance_met.num_of_nodes_explored++;
                 queue.push_back(n);
                 came_from[n] = visiting;
 
@@ -56,6 +59,9 @@ std::map<Coordinate, Coordinate> BFS_Solver::solve(Grid &grid, Coordinate start,
 
     if (not reachedEnd)
         came_from.clear();
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    performance_met.runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 
     return came_from;
 }

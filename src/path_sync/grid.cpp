@@ -28,6 +28,13 @@ Grid::Grid(VisualizationSystemConfig& system_config)
         __cell_grid.push_back(temp_row);
     }
 
+    __cost_grid.resize(__num_of_rows);
+    __cost_grid[0].resize(__num_of_cols);
+    __cost_grid[0][0].resize(psync::VisualizationSystemConfig::NUM_OF_OBJECTIVES);
+
+    /*TODO: ADD COST ADDING IN COST VECTOR
+     * TWO MODES: single objective and multi-objective.*/
+
     std::cout << "Grid Created: " << __cell_grid.size() << ", " << __cell_grid[0].size() << std::endl;
 
 }

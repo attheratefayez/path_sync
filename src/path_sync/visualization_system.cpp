@@ -64,6 +64,8 @@ VisualizationSystem::VisualizationSystem(VisualizationSystemConfig &system_confi
     __help_stream << "\tc                  :   Change Solver.\n";
     __help_stream << "\tSpace              :   Find Solution.\n";
     __help_stream << "\tShift-H            :   Show This Help.\n";
+    __help_stream << "\tShift-P            :   Clear Path.\n";
+    __help_stream << "\tShift-M            :   Change Mode: (Single/Multi-Objective).\n";
     __help_stream << "\tShift-R            :   Clear Grid.\n";
 }
 
@@ -178,6 +180,8 @@ void VisualizationSystem::handle_event()
                     {
                         __grid.get_grid()[end_point.second][end_point.first].set_cell_type(psync::CellType::END);
                     }
+
+                    std::cout << __path_finder.get_performance_data().str() << std::endl;
                 }
             }
 
@@ -185,6 +189,12 @@ void VisualizationSystem::handle_event()
             else if (event->getIf<sf::Event::KeyPressed>()->shift && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::H))
             {
                 psync::Logger::get()->info(__help_stream.str().c_str());
+            }
+
+            /*CHNAGE MODE*/
+            else if (event->getIf<sf::Event::KeyPressed>()->shift && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::M))
+            {
+                psync::Logger::get()->info("Changing Mode...");
             }
 
             /*CLEAR PATH*/

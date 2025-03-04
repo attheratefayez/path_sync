@@ -26,6 +26,7 @@ struct VisualizationSystemConfig
     std::string TITLE;
 
     static int CELL_SIZE;
+    static int NUM_OF_OBJECTIVES;
 
     VisualizationSystemConfig(std::filesystem::path config_file_path)
     {
