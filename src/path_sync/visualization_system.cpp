@@ -1,13 +1,18 @@
+#include <exception>
+#include <filesystem>
 #include <iostream>
 #include <optional>
 
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
+#include <ostream>
 #include <sstream>
 #include <yaml-cpp/yaml.h>
 
 #include "SFML/Window/Keyboard.hpp"
+#include "path_sync/env_map.hpp"
+#include "path_sync/grid.hpp"
 #include "path_sync/logger.hpp"
 #include "path_sync/psync_types.hpp"
 #include "path_sync/visualization_system.hpp"
@@ -33,7 +38,7 @@ VisualizationSystem *VisualizationSystem::get()
 
 // CONSTRUCTOR
 VisualizationSystem::VisualizationSystem(VisualizationSystemConfig &system_config)
-    : __system_config(system_config), __grid(system_config)
+    : __system_config(system_config), __grid(system_config, GridMode::Map)
 {
     __main_window.create(sf::VideoMode({system_config.WIDTH, system_config.HEIGHT}), system_config.TITLE,
                          sf::Style::Titlebar | sf::Style::Close);
@@ -65,8 +70,12 @@ VisualizationSystem::VisualizationSystem(VisualizationSystemConfig &system_confi
     __help_stream << "\tSpace              :   Find Solution.\n";
     __help_stream << "\tShift-H            :   Show This Help.\n";
     __help_stream << "\tShift-P            :   Clear Path.\n";
-    __help_stream << "\tShift-M            :   Change Mode: (Single/Multi-Objective).\n";
+    __help_stream << "\tShift-N            :   Change Mode: (Single/Multi-Objective).\n";
+    __help_stream << "\tShift-M            :   Change Map.\n";
     __help_stream << "\tShift-R            :   Clear Grid.\n";
+
+    __get_available_maps();
+    __selected_map_index = 0;
 }
 
 // MEMBER FUNCTIONS
@@ -191,8 +200,15 @@ void VisualizationSystem::handle_event()
                 psync::Logger::get()->info(__help_stream.str().c_str());
             }
 
-            /*CHNAGE MODE*/
+            /*CHNAGE MAP*/
             else if (event->getIf<sf::Event::KeyPressed>()->shift && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::M))
+            {
+                psync::Logger::get()->info("Changing Map...");
+                __change_map();
+            }
+
+            /*CHNAGE MODE*/
+            else if (event->getIf<sf::Event::KeyPressed>()->shift && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::N))
             {
                 psync::Logger::get()->info("Changing Mode...");
             }
@@ -202,6 +218,13 @@ void VisualizationSystem::handle_event()
             {
                 psync::Logger::get()->info("CLEARING PATH...");
                 __grid.clear_paths();
+            }
+
+            /*CHANGE MODE(Single-Objective or Multi-Objective)*/
+            else if (event->getIf<sf::Event::KeyPressed>()->shift && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::M))
+            {
+                /*TODO: ADD SINGLE-OBJECTIVE MULTI-OBJECTIVE MODE CHANGEING FUNCTIONALITY*/
+                psync::Logger::get()->info("CHANGE MODE NOT YET IMPLEMENTED...");
             }
 
             /*RESET GRID*/
@@ -271,6 +294,28 @@ Coordinate VisualizationSystem::__draw_with_cell_type(psync::CellType cell_type)
     __grid.get_grid()[grid_cell.second][grid_cell.first].set_cell_type(cell_type);
 
     return grid_cell;
+}
+
+void VisualizationSystem::__get_available_maps()
+{
+    std::string map_directory = std::string(PROJECT_ROOT) + "/maps/";
+
+    for(const auto& entry: std::filesystem::directory_iterator(map_directory))
+    {
+        if(std::filesystem::is_regular_file(entry))
+        {
+            __available_maps.push_back(entry.path().filename().stem());
+        }
+    }
+}
+
+
+void VisualizationSystem::__change_map()
+{
+    ++__selected_map_index;
+    __selected_map_index = __selected_map_index % __available_maps.size();
+
+    __grid.change_current_map(__available_maps[__selected_map_index]);
 }
 
 VisualizationSystem::~VisualizationSystem()

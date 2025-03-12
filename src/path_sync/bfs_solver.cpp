@@ -1,9 +1,14 @@
 #include <chrono>
 #include <deque>
-#include "path_sync/bfs_solver.hpp"
+#include "path_sync/solvers/bfs_solver.hpp"
 #include "path_sync/psync_types.hpp"
 
-namespace psync {
+namespace psync
+{
+namespace solvers
+{
+namespace sapf
+{
 
 std::string BFS_Solver::get_solver_name() const
 {
@@ -66,4 +71,8 @@ std::map<Coordinate, Coordinate> BFS_Solver::solve(Grid &grid, Coordinate start,
     return came_from;
 }
 
-}
+
+} // namespace sapf
+} // namespace solvers
+} // namespace psync
+

@@ -1,49 +1,37 @@
+#include "path_sync/grid.hpp"
+
+#include <cstddef>
 #include <iostream>
+#include <sstream>
+
 #include "path_sync/cell.hpp"
 #include "path_sync/logger.hpp"
-#include "path_sync/grid.hpp"
 #include "path_sync/visualization_system_config.hpp"
 
-namespace psync {
+namespace psync
+{
 
-Grid::Grid(VisualizationSystemConfig& system_config)
-    : __num_of_rows(system_config.HEIGHT / psync::VisualizationSystemConfig::CELL_SIZE)
-    , __num_of_cols(system_config.WIDTH / psync::VisualizationSystemConfig::CELL_SIZE)
+Grid::Grid(VisualizationSystemConfig &system_config, GridMode grid_mode)
+    : __num_of_rows(system_config.HEIGHT / psync::VisualizationSystemConfig::CELL_SIZE),
+      __num_of_cols(system_config.WIDTH / psync::VisualizationSystemConfig::CELL_SIZE), __current_grid_mode(grid_mode), __map_file_name("AR0015SR"), __system_config(system_config)
 {
     std::cout << "Calculated Grid: " << __num_of_rows << ", " << __num_of_cols << std::endl;
 
-    for (int row_count = 0; row_count < __num_of_rows; ++row_count) {
-        std::vector<psync::Cell> temp_row;
-        for (int col_count = 0; col_count < __num_of_cols; ++col_count) {
-            temp_row.emplace_back(
-                Cell(psync::CellType::DEFAULT, 
-                {
-                    (float)(col_count * psync::VisualizationSystemConfig::CELL_SIZE),
-                    (float)(row_count * psync::VisualizationSystemConfig::CELL_SIZE),
-                
-                })
-            );
-        }
-        temp_row.shrink_to_fit();
-        __cell_grid.push_back(temp_row);
-    }
-
-    __cost_grid.resize(__num_of_rows);
-    __cost_grid[0].resize(__num_of_cols);
-    __cost_grid[0][0].resize(psync::VisualizationSystemConfig::NUM_OF_OBJECTIVES);
-
-    /*TODO: ADD COST ADDING IN COST VECTOR
-     * TWO MODES: single objective and multi-objective.*/
+    if (__current_grid_mode == GridMode::Free)
+        __create_free_grid();
+    else
+        __create_map_grid();
 
     std::cout << "Grid Created: " << __cell_grid.size() << ", " << __cell_grid[0].size() << std::endl;
-
+    std::cout << "Cost grid size: " << __cost_grid.size() << " " << __cost_grid[0].size() << " "
+        << __cost_grid[0][0].size() << std::endl;
 }
 
-void Grid::draw(sf::RenderTarget& target, sf::RenderStates states) const
+void Grid::draw(sf::RenderTarget &target, sf::RenderStates states) const
 {
-    for(auto& row: __cell_grid)
+    for (auto &row : __cell_grid)
     {
-        for(const psync::Cell& cell: row)
+        for (const psync::Cell &cell : row)
         {
             target.draw(cell);
         }
@@ -64,12 +52,14 @@ std::vector<Coordinate> Grid::find_neighbors_b2(Coordinate candidate) const
 
         if ((n_row < 0 or n_row >= __num_of_rows))
         {
-            /*std::cout << "Cont Row: " << n_row << ", " << n_col << " limit: " << __num_of_rows << std::endl;*/
+            /*std::cout << "Cont Row: " << n_row << ", " << n_col << " limit: " <<
+             * __num_of_rows << std::endl;*/
             continue;
         }
         if ((n_col < 0 or n_col >= __num_of_cols))
         {
-            /*std::cout << "Cont Col: " << n_row << ", " << n_col << " limit: " << __num_of_cols << std::endl;*/
+            /*std::cout << "Cont Col: " << n_row << ", " << n_col << " limit: " <<
+             * __num_of_cols << std::endl;*/
             continue;
         }
 
@@ -84,11 +74,11 @@ std::vector<Coordinate> Grid::find_neighbors_b2(Coordinate candidate) const
 
 void Grid::clear_paths()
 {
-    for(std::vector<Cell>& row: __cell_grid)
+    for (std::vector<Cell> &row : __cell_grid)
     {
-        for(psync::Cell& cell: row)
+        for (psync::Cell &cell : row)
         {
-            if(cell.get_cell_type() == psync::CellType::PATH)
+            if (cell.get_cell_type() == psync::CellType::PATH)
                 cell.set_cell_type(psync::CellType::DEFAULT);
         }
     }
@@ -96,16 +86,151 @@ void Grid::clear_paths()
 
 void Grid::reset_grid()
 {
-    for(std::vector<Cell>& row: __cell_grid)
+    for (std::vector<Cell> &row : __cell_grid)
     {
-        for(psync::Cell& cell: row)
+        for (psync::Cell &cell : row)
         {
             cell.set_cell_type(psync::CellType::DEFAULT);
         }
     }
 
-    start_points.clear();
-    end_points.clear();
+    __start_points.clear();
+    __end_points.clear();
+}
+
+void Grid::load_map(std::string map_name)
+{
+    Map temp_map(map_name);
+    __current_map = temp_map;
+}
+
+void Grid::change_grid_mode()
+{
+    reset_grid();
+
+    if (__current_grid_mode == GridMode::Free)
+    {
+        __create_map_grid();
+        __current_grid_mode = GridMode::Map;
+    }
+
+    else
+    {
+        __create_free_grid();
+        __current_grid_mode = GridMode::Free;
+    }
+}
+
+void Grid::change_current_map(std::string map_name)
+{
+    reset_grid();
+    __cell_grid.clear();
+    __cost_grid.clear();
+
+    __map_file_name = map_name;
+    __create_map_grid();
+}
+
+void Grid::__create_free_grid()
+{
+    for (int row_count = 0; row_count < __num_of_rows; ++row_count)
+    {
+        std::vector<psync::Cell> temp_row;
+        for (int col_count = 0; col_count < __num_of_cols; ++col_count)
+        {
+            temp_row.emplace_back(
+                Cell(psync::CellType::DEFAULT, {
+                                                   (float)(col_count * psync::VisualizationSystemConfig::CELL_SIZE),
+                                                   (float)(row_count * psync::VisualizationSystemConfig::CELL_SIZE),
+
+                                               }));
+        }
+        temp_row.shrink_to_fit();
+        __cell_grid.push_back(temp_row);
+    }
+
+    __create_cost_grid();
+}
+
+void Grid::__create_map_grid()
+{
+    load_map(__map_file_name);
+    __num_of_rows = __current_map.get_map_height();
+    __num_of_cols = __current_map.get_map_width();
+    __adjust_cell_size();
+    __create_free_grid();
+    __imprint_map_in_cell_grid();
+    __create_cost_grid();
+
+}
+
+void Grid::__create_cost_grid()
+{
+    if (psync::VisualizationSystemConfig::NUM_OF_OBJECTIVES == 1)
+    {
+        for (int r = 0; r < __num_of_rows; ++r)
+        {
+            std::vector<std::vector<size_t>> temp_row;
+            for (int c = 0; c < __num_of_cols; ++c)
+            {
+                temp_row.push_back(std::vector<size_t>{1});
+            }
+            temp_row.shrink_to_fit();
+            __cost_grid.push_back(temp_row);
+        }
+    }
+
+    __cost_grid.resize(__num_of_rows);
+    __cost_grid[0].resize(__num_of_cols);
+    __cost_grid[0][0].resize(psync::VisualizationSystemConfig::NUM_OF_OBJECTIVES);
+
+}
+
+void Grid::__adjust_cell_size()
+{
+    int temp_width = (int)(__system_config.WIDTH / __num_of_cols);
+    int temp_height = (int)(__system_config.HEIGHT / __num_of_rows);
+
+    temp_width = temp_width>0?temp_width:1;
+    temp_height = temp_height>0?temp_height:1;
+
+    __system_config.CELL_SIZE = temp_width < temp_height ? temp_width : temp_height;
+
+    std::stringstream ss;
+    ss << "Cell Size Adjusted: " << __system_config.CELL_SIZE << std::endl;
+
+    psync::Logger::get()->info(ss.str().c_str());
+}
+
+
+void Grid::__imprint_map_in_cell_grid()
+{
+    std::string line;
+    size_t row_counter = 0;
+
+    /*std::cout << "fn " << __current_map.get_map_name() << " " << __current_map.get_map_width() << " " << __current_map.get_map_height() << std::endl;*/
+
+    while(std::getline(__current_map.get_map(), line))
+    {
+        for(size_t col_counter = 0; col_counter < __num_of_cols; ++col_counter)
+        {
+            psync::CellType type = psync::CellType::DEFAULT;
+            if (line[col_counter] == '@' or line[col_counter] == 'O' or line[col_counter] == 'T' or line[col_counter] == 'W')
+            {
+                type = psync::CellType::WALL;
+
+            }
+
+            __cell_grid[row_counter][col_counter].set_cell_type(type);
+
+            /*std::cout << "imprinting: " << row_counter << ", " << col_counter << std::endl;*/
+
+        }
+        ++row_counter;
+    }
+
+    __current_map.get_map().clear();
+    __current_map.get_map().seekg(0);
 }
 
 } // namespace psync

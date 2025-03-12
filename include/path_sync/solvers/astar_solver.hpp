@@ -7,6 +7,10 @@
 
 namespace psync
 {
+namespace solvers
+{
+namespace sapf
+{
 
 class Astar_Solver : public ISolver
 {
@@ -19,5 +23,7 @@ class Astar_Solver : public ISolver
                                            PerformanceMetrics &performance_met) override;
 };
 
+} // namespace sapf
+} // namespace solvers
 } // namespace psync
 #endif

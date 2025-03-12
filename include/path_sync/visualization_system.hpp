@@ -12,8 +12,8 @@
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
 
-#include "path_sync/astar_solver.hpp"
-#include "path_sync/bfs_solver.hpp"
+#include "path_sync/solvers/astar_solver.hpp"
+#include "path_sync/solvers/bfs_solver.hpp"
 #include "path_sync/grid.hpp"
 #include "path_sync/path_finder.hpp"
 #include "path_sync/visualization_system_config.hpp"
@@ -79,9 +79,11 @@ private:
     psync::Grid __grid;
     psync::PathFinder __path_finder;
     std::vector<ISolver*> __solvers;
-    psync::Astar_Solver __astar_solver;
-    psync::BFS_Solver __bfs_solver;
+    psync::solvers::sapf::Astar_Solver __astar_solver;
+    psync::solvers::sapf::BFS_Solver __bfs_solver;
     std::size_t __selected_solver_index;
+    std::vector<std::string> __available_maps;
+    std::size_t __selected_map_index;
 
     VisualizationSystem(VisualizationSystemConfig& ) ;
 
@@ -97,6 +99,8 @@ private:
 
     bool __is_mouse_inside_window();
     Coordinate __draw_with_cell_type(psync::CellType cell_type);
+    void __get_available_maps();
+    void __change_map();
 
     ~VisualizationSystem();
 

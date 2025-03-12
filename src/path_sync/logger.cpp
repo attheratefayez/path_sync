@@ -18,17 +18,17 @@ Logger* Logger::get()
 
 void Logger::info(const char* msg)
 {
-    std::cout << "[ INFO ]  " << msg << "\n";
+    std::cout << GREEN << BOLD << "[ INFO ]  " << RESET << msg << "\n";
 }
 
 void Logger::warn(const char* msg)
 {
-    std::cout << YELLOW << "[ WARN ]  " << RESET << msg << "\n";
+    std::cout << YELLOW << BOLD << "[ WARN ]  " << RESET << msg << "\n";
 }
 
 void Logger::error(const char* msg)
 {
-    std::cerr << RED << "[ ERROR ] " << RESET << msg << "\n";
+    std::cerr << RED << BOLD << "[ ERROR ] " << RESET << msg << "\n";
     exit(0);
 }
 

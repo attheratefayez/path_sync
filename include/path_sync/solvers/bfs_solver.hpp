@@ -6,7 +6,12 @@
 #include "path_sync/solver.hpp"
 #include "path_sync/grid.hpp"
 
-namespace psync{
+namespace psync
+{
+namespace solvers
+{
+namespace sapf
+{
 
 class BFS_Solver : public ISolver
 {
@@ -19,5 +24,8 @@ class BFS_Solver : public ISolver
 };
 
 
-}
+} // namespace sapf
+} // namespace solvers
+} // namespace psync
+
 #endif
