@@ -161,7 +161,6 @@ void Grid::__create_map_grid()
     __create_free_grid();
     __imprint_map_in_cell_grid();
     __create_cost_grid();
-
 }
 
 void Grid::__create_cost_grid()

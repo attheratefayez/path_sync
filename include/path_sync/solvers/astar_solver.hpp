@@ -1,5 +1,5 @@
-#ifndef PATHFINDING_ASTARSOLVER_HPP
-#define PATHFINDING_ASTARSOLVER_HPP
+#ifndef __PATHFINDING_ASTARSOLVER_HPP__
+#define __PATHFINDING_ASTARSOLVER_HPP__
 
 #include "path_sync/performance_mat.hpp"
 #include "path_sync/psync_types.hpp"

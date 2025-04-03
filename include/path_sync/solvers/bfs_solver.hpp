@@ -1,5 +1,5 @@
-#ifndef PATHFINDING_BSFSOLVER_HPP
-#define PATHFINDING_BSFSOLVER_HPP
+#ifndef __PATHFINDING_BSFSOLVER_HPP__
+#define __PATHFINDING_BSFSOLVER_HPP__
 
 #include "path_sync/performance_mat.hpp"
 #include "path_sync/psync_types.hpp"
