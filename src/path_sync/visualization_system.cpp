@@ -1,4 +1,3 @@
-#include <exception>
 #include <filesystem>
 #include <iostream>
 #include <optional>
@@ -70,7 +69,6 @@ VisualizationSystem::VisualizationSystem(VisualizationSystemConfig &system_confi
     __help_stream << "\tSpace              :   Find Solution.\n";
     __help_stream << "\tShift-H            :   Show This Help.\n";
     __help_stream << "\tShift-P            :   Clear Path.\n";
-    __help_stream << "\tShift-N            :   Change Mode: (Single/Multi-Objective).\n";
     __help_stream << "\tShift-M            :   Change Map.\n";
     __help_stream << "\tShift-R            :   Clear Grid.\n";
 
@@ -207,24 +205,11 @@ void VisualizationSystem::handle_event()
                 __change_map();
             }
 
-            /*CHNAGE MODE*/
-            else if (event->getIf<sf::Event::KeyPressed>()->shift && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::N))
-            {
-                psync::Logger::get()->info("Changing Mode...");
-            }
-
             /*CLEAR PATH*/
             else if (event->getIf<sf::Event::KeyPressed>()->shift && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::P))
             {
                 psync::Logger::get()->info("CLEARING PATH...");
                 __grid.clear_paths();
-            }
-
-            /*CHANGE MODE(Single-Objective or Multi-Objective)*/
-            else if (event->getIf<sf::Event::KeyPressed>()->shift && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::M))
-            {
-                /*TODO: ADD SINGLE-OBJECTIVE MULTI-OBJECTIVE MODE CHANGEING FUNCTIONALITY*/
-                psync::Logger::get()->info("CHANGE MODE NOT YET IMPLEMENTED...");
             }
 
             /*RESET GRID*/
@@ -240,11 +225,10 @@ void VisualizationSystem::handle_event()
 void VisualizationSystem::update()
 {
     __main_window.clear();
-    /*__main_window.draw(__test_rect);*/
     __main_window.draw(__grid);
 
     /* HACK: setting view messes up with drawings on RenderWindow */
-    /*__main_window.setView(__main_view);*/
+    // __main_window.setView(__main_view);
 
     __main_window.display();
 }
