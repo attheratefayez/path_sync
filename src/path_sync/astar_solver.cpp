@@ -1,20 +1,19 @@
-#include "path_sync/solvers/astar_solver.hpp"
-#include "path_sync/grid.hpp"
-#include "path_sync/psync_types.hpp"
-
 #include <SFML/System/Vector2.hpp>
 #include <chrono>
 #include <cmath>
-#include <iostream>
 #include <map>
 #include <queue>
 #include <vector>
+
+#include "path_sync/psync_types.hpp"
+#include "path_sync/solvers/astar_solver.hpp"
+#include "path_sync/visualization_system/grid.hpp"
+
 
 int getManhattandistance(Coordinate start, Coordinate end)
 {
     return abs(start.first - end.first) + abs(start.second - end.second);
 }
-
 
 namespace psync
 {
@@ -22,8 +21,6 @@ namespace solvers
 {
 namespace sapf
 {
-
-
 
 std::string Astar_Solver::get_solver_name() const
 {
@@ -114,4 +111,3 @@ std::map<Coordinate, Coordinate> Astar_Solver::solve(psync::Grid &grid, Coordina
 } // namespace sapf
 } // namespace solvers
 } // namespace psync
-

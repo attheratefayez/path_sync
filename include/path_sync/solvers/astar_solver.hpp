@@ -1,7 +1,7 @@
 #ifndef __PATHFINDING_ASTARSOLVER_HPP__
 #define __PATHFINDING_ASTARSOLVER_HPP__
 
-#include "path_sync/performance_mat.hpp"
+#include "path_sync/performance/performance_mat.hpp"
 #include "path_sync/psync_types.hpp"
 #include "path_sync/solver.hpp"
 
@@ -12,6 +12,11 @@ namespace solvers
 namespace sapf
 {
 
+/**
+ * @class Astar_Solver
+ * @brief Solver Class that uses A* algorithm to get a solution.
+ *
+ */
 class Astar_Solver : public ISolver
 {
   private:

@@ -4,16 +4,30 @@
 #include <sstream>
 #include <string>
 
-#include "path_sync/logger.hpp"
-#include "path_sync/map_scene.hpp"
+#include "path_sync/logging/logger.hpp"
+#include "path_sync/map_loader/map_scene.hpp"
 
 namespace psync
 {
 
+/**
+ * @class Map
+ * @brief Contains a map with its scenes
+ *
+ * @details 
+ * A map contains free space and obstacles. 
+ * A scene in the map is a a set of numbers defining teh starting and ending positions.
+ *
+ */
 class Map
 {
   public:
     Map() = default;
+    /**
+     * @brief creates a map with map_name.
+     *
+     * @param map_name 
+     */
     Map(std::string map_name);
     Map(Map &);
     Map& operator=(const Map& obj);
@@ -28,6 +42,11 @@ class Map
         return __map_width;
     }
 
+    /**
+     * @brief Returns the plain map as a string stream
+     *
+     * @return 
+     */
     std::stringstream &get_map()
     {
         return __map;
@@ -43,6 +62,12 @@ class Map
         return __map_scenes;
     }
 
+    /**
+     * @brief A bucket is a collection of map scenes. 
+     * see doc of this class to learn about scenes.
+     *
+     * @return 
+     */
     int get_current_bucket() const
     {
         return __current_bucket;

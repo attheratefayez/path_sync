@@ -9,10 +9,10 @@
 #include <vector>
 #include <SFML/Graphics.hpp>
 
-#include "path_sync/cell.hpp"
-#include "path_sync/env_map.hpp"
+#include "path_sync/visualization_system/cell.hpp"
+#include "path_sync/map_loader/env_map.hpp"
 #include "path_sync/psync_types.hpp"
-#include "path_sync/visualization_system_config.hpp"
+#include "path_sync/visualization_system/visualization_system_config.hpp"
 
 enum GridMode
 {

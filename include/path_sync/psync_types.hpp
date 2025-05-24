@@ -4,7 +4,8 @@
 #include <cstddef>
 #include <vector>
 #include <SFML/System/Vector2.hpp>
-#include "path_sync/cell.hpp"
+
+#include "path_sync/visualization_system/cell.hpp"
 
 
 typedef std::vector<std::vector<psync::Cell>> CellGrid;

@@ -8,6 +8,11 @@
 namespace psync 
 {
 
+/**
+ * @class Scene
+ * @brief A scene is a set of numbers representing start_position, end_position on a specific map.
+ *
+ */
 class Scene
 {
   public:

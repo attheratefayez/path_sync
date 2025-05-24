@@ -10,11 +10,11 @@
 #include <yaml-cpp/yaml.h>
 
 #include "SFML/Window/Keyboard.hpp"
-#include "path_sync/env_map.hpp"
-#include "path_sync/grid.hpp"
-#include "path_sync/logger.hpp"
+#include "path_sync/map_loader/env_map.hpp"
+#include "path_sync/visualization_system/grid.hpp"
+#include "path_sync/logging/logger.hpp"
 #include "path_sync/psync_types.hpp"
-#include "path_sync/visualization_system.hpp"
+#include "path_sync/visualization_system/visualization_system.hpp"
 
 namespace psync
 {
