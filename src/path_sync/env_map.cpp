@@ -4,7 +4,7 @@
 #include <sstream>
 #include <string>
 
-#include "path_sync/env_map.hpp"
+#include "path_sync/map_loader/env_map.hpp"
 
 namespace psync
 {

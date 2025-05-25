@@ -1,19 +1,19 @@
-#include "path_sync/grid.hpp"
-
 #include <cstddef>
 #include <iostream>
 #include <sstream>
 
-#include "path_sync/cell.hpp"
-#include "path_sync/logger.hpp"
-#include "path_sync/visualization_system_config.hpp"
+#include "path_sync/logging/logger.hpp"
+#include "path_sync/visualization_system/cell.hpp"
+#include "path_sync/visualization_system/grid.hpp"
+#include "path_sync/visualization_system/visualization_system_config.hpp"
 
 namespace psync
 {
 
 Grid::Grid(VisualizationSystemConfig &system_config, GridMode grid_mode)
     : __num_of_rows(system_config.HEIGHT / psync::VisualizationSystemConfig::CELL_SIZE),
-      __num_of_cols(system_config.WIDTH / psync::VisualizationSystemConfig::CELL_SIZE), __current_grid_mode(grid_mode), __map_file_name("AR0015SR"), __system_config(system_config)
+      __num_of_cols(system_config.WIDTH / psync::VisualizationSystemConfig::CELL_SIZE), __current_grid_mode(grid_mode),
+      __map_file_name("AR0015SR"), __system_config(system_config)
 {
     std::cout << "Calculated Grid: " << __num_of_rows << ", " << __num_of_cols << std::endl;
 
@@ -24,7 +24,7 @@ Grid::Grid(VisualizationSystemConfig &system_config, GridMode grid_mode)
 
     std::cout << "Grid Created: " << __cell_grid.size() << ", " << __cell_grid[0].size() << std::endl;
     std::cout << "Cost grid size: " << __cost_grid.size() << " " << __cost_grid[0].size() << " "
-        << __cost_grid[0][0].size() << std::endl;
+              << __cost_grid[0][0].size() << std::endl;
 }
 
 void Grid::draw(sf::RenderTarget &target, sf::RenderStates states) const
@@ -182,7 +182,6 @@ void Grid::__create_cost_grid()
     __cost_grid.resize(__num_of_rows);
     __cost_grid[0].resize(__num_of_cols);
     __cost_grid[0][0].resize(psync::VisualizationSystemConfig::NUM_OF_OBJECTIVES);
-
 }
 
 void Grid::__adjust_cell_size()
@@ -190,8 +189,8 @@ void Grid::__adjust_cell_size()
     int temp_width = (int)(__system_config.WIDTH / __num_of_cols);
     int temp_height = (int)(__system_config.HEIGHT / __num_of_rows);
 
-    temp_width = temp_width>0?temp_width:1;
-    temp_height = temp_height>0?temp_height:1;
+    temp_width = temp_width > 0 ? temp_width : 1;
+    temp_height = temp_height > 0 ? temp_height : 1;
 
     __system_config.CELL_SIZE = temp_width < temp_height ? temp_width : temp_height;
 
@@ -201,29 +200,28 @@ void Grid::__adjust_cell_size()
     psync::Logger::get()->info(ss.str().c_str());
 }
 
-
 void Grid::__imprint_map_in_cell_grid()
 {
     std::string line;
     size_t row_counter = 0;
 
-    /*std::cout << "fn " << __current_map.get_map_name() << " " << __current_map.get_map_width() << " " << __current_map.get_map_height() << std::endl;*/
+    /*std::cout << "fn " << __current_map.get_map_name() << " " << __current_map.get_map_width() << " " <<
+     * __current_map.get_map_height() << std::endl;*/
 
-    while(std::getline(__current_map.get_map(), line))
+    while (std::getline(__current_map.get_map(), line))
     {
-        for(size_t col_counter = 0; col_counter < __num_of_cols; ++col_counter)
+        for (size_t col_counter = 0; col_counter < __num_of_cols; ++col_counter)
         {
             psync::CellType type = psync::CellType::DEFAULT;
-            if (line[col_counter] == '@' or line[col_counter] == 'O' or line[col_counter] == 'T' or line[col_counter] == 'W')
+            if (line[col_counter] == '@' or line[col_counter] == 'O' or line[col_counter] == 'T' or
+                line[col_counter] == 'W')
             {
                 type = psync::CellType::WALL;
-
             }
 
             __cell_grid[row_counter][col_counter].set_cell_type(type);
 
             /*std::cout << "imprinting: " << row_counter << ", " << col_counter << std::endl;*/
-
         }
         ++row_counter;
     }

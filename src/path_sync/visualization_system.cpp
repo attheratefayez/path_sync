@@ -10,10 +10,10 @@
 #include <yaml-cpp/yaml.h>
 
 #include "SFML/Window/Keyboard.hpp"
-#include "path_sync/map_loader/env_map.hpp"
-#include "path_sync/visualization_system/grid.hpp"
 #include "path_sync/logging/logger.hpp"
+#include "path_sync/map_loader/env_map.hpp"
 #include "path_sync/psync_types.hpp"
+#include "path_sync/visualization_system/grid.hpp"
 #include "path_sync/visualization_system/visualization_system.hpp"
 
 namespace psync
@@ -36,18 +36,13 @@ VisualizationSystem *VisualizationSystem::get()
 }
 
 // CONSTRUCTOR
+// FIX: add a way to change the map mode {MAP, FREE}
 VisualizationSystem::VisualizationSystem(VisualizationSystemConfig &system_config)
     : __system_config(system_config), __grid(system_config, GridMode::Map)
 {
     __main_window.create(sf::VideoMode({system_config.WIDTH, system_config.HEIGHT}), system_config.TITLE,
                          sf::Style::Titlebar | sf::Style::Close);
     __main_window.setFramerateLimit(system_config.FRAMERATE);
-
-    __main_view.setViewport(
-        sf::FloatRect({0, 0}, {static_cast<float>(system_config.WIDTH), static_cast<float>(system_config.HEIGHT)}));
-
-    __zoom_factor = 1.0;
-    __zoom_direction = 1;
 
     /* HACK: setting view messes up with drawings on RenderWindow */
     /*__main_window.setView(__main_view);*/
@@ -138,11 +133,6 @@ void VisualizationSystem::handle_event()
             }
         }
 
-        if (event->is<sf::Event::MouseWheelScrolled>())
-        {
-            __set_zoom(event->getIf<sf::Event::MouseWheelScrolled>());
-        }
-
         if (event->is<sf::Event::KeyPressed>())
         {
             /*CHANGE SOLVERS*/
@@ -166,7 +156,6 @@ void VisualizationSystem::handle_event()
                 ss << "Solver: " << __solvers[__selected_solver_index]->get_solver_name() << std::endl;
                 psync::Logger::get()->info(ss.str().c_str());
                 ss.str(std::string());
-
 
                 std::optional<std::vector<Coordinate>> returned_path =
                     __path_finder.find_path(*__solvers[__selected_solver_index], __grid);
@@ -227,9 +216,6 @@ void VisualizationSystem::update()
     __main_window.clear();
     __main_window.draw(__grid);
 
-    /* HACK: setting view messes up with drawings on RenderWindow */
-    // __main_window.setView(__main_view);
-
     __main_window.display();
 }
 
@@ -244,20 +230,6 @@ void VisualizationSystem::run()
     }
 }
 
-void VisualizationSystem::__set_zoom(const sf::Event::MouseWheelScrolled *scroll_event)
-{
-    if (__zoom_direction * scroll_event->delta == -1 || __zoom_factor > 1.2 || __zoom_factor < 0.8)
-        __zoom_factor = 1.0f;
-    else
-        __zoom_factor -= (scroll_event->delta * 0.05);
-
-    sf::Vector2f before_zoom = __main_window.mapPixelToCoords(sf::Mouse::getPosition(__main_window), __main_view);
-    __main_view.zoom(__zoom_factor);
-    sf::Vector2f after_zoom = __main_window.mapPixelToCoords(sf::Mouse::getPosition(__main_window), __main_view);
-
-    __main_view.move(before_zoom - after_zoom);
-    __zoom_direction = scroll_event->delta;
-}
 
 bool VisualizationSystem::__is_mouse_inside_window()
 {
@@ -284,15 +256,14 @@ void VisualizationSystem::__get_available_maps()
 {
     std::string map_directory = std::string(PROJECT_ROOT) + "/maps/";
 
-    for(const auto& entry: std::filesystem::directory_iterator(map_directory))
+    for (const auto &entry : std::filesystem::directory_iterator(map_directory))
     {
-        if(std::filesystem::is_regular_file(entry))
+        if (std::filesystem::is_regular_file(entry))
         {
             __available_maps.push_back(entry.path().filename().stem());
         }
     }
 }
-
 
 void VisualizationSystem::__change_map()
 {

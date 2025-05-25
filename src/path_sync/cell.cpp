@@ -1,5 +1,5 @@
-#include "path_sync/cell.hpp"
-#include "path_sync/visualization_system_config.hpp"
+#include "path_sync/visualization_system/cell.hpp"
+#include "path_sync/visualization_system/visualization_system_config.hpp"
 namespace psync{
 void Cell::__set_color_for_type()
 {

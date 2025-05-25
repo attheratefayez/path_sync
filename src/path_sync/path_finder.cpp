@@ -1,5 +1,5 @@
 #include "path_sync/path_finder.hpp"
-#include "path_sync/logger.hpp"
+#include "path_sync/logging/logger.hpp"
 
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>

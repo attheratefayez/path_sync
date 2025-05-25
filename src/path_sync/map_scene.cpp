@@ -5,9 +5,9 @@
 #include <random>
 #include <sstream>
 
-#include "path_sync/logger.hpp"
+#include "path_sync/logging/logger.hpp"
 #include "path_sync/psync_types.hpp"
-#include "path_sync/map_scene.hpp"
+#include "path_sync/map_loader/map_scene.hpp"
 
 namespace psync
 {

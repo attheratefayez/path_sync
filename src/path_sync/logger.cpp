@@ -1,4 +1,4 @@
-#include "path_sync/logger.hpp"
+#include "path_sync/logging/logger.hpp"
 #include <cstdlib>
 #include <iostream>
 

@@ -2,11 +2,11 @@
 #include <SFML/System.hpp>
 #include <SFML/Window.hpp>
 
-#include "path_sync/logger.hpp"
-#include "path_sync/cell.hpp"
-#include "path_sync/grid.hpp"
-#include "path_sync/visualization_system.hpp"
-#include "path_sync/visualization_system_config.hpp"
+#include "path_sync/logging/logger.hpp"
+#include "path_sync/visualization_system/cell.hpp"
+#include "path_sync/visualization_system/grid.hpp"
+#include "path_sync/visualization_system/visualization_system.hpp"
+#include "path_sync/visualization_system/visualization_system_config.hpp"
 
 void test_loop();
 void pfsync_loop();
@@ -32,7 +32,7 @@ void test_loop()
 {
     psync::VisualizationSystemConfig system_config = psync::VisualizationSystemConfig("/home/fayez/Bugs/Cpp/path_sync/config/env_vars.yaml");
     // this is a comment
-    sf::RenderWindow window(sf::VideoMode({1800, 900}), "PathSync", sf::Style::Titlebar | sf::Style::Close);
+    sf::RenderWindow window(sf::VideoMode({1800, 900}), "Path Sync", sf::Style::Titlebar | sf::Style::Close);
     window.setFramerateLimit(60);
 
 

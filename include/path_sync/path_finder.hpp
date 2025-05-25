@@ -1,8 +1,8 @@
 #ifndef __PATH_SYNC_PATH_FINDER_HPP__
 #define __PATH_SYNC_PATH_FINDER_HPP__
 
-#include "path_sync/grid.hpp"
-#include "path_sync/performance_mat.hpp"
+#include "path_sync/visualization_system/grid.hpp"
+#include "path_sync/performance/performance_mat.hpp"
 #include "path_sync/solver.hpp"
 #include <optional>
 
