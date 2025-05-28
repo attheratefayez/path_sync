@@ -11,6 +11,7 @@ class ISolver
 {
   public:
     virtual std::string get_solver_name() const = 0;
+
     virtual std::map<Coordinate, Coordinate> solve(psync::Grid &grid, Coordinate start, Coordinate goal,
                                                    psync::PerformanceMetrics &performance_met) = 0;
 
