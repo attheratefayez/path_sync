@@ -10,9 +10,9 @@
 #include "path_sync/visualization_system/grid.hpp"
 
 
-int getManhattandistance(Coordinate start, Coordinate end)
+int getManhattandistance(Coordinate start, Coordinate goal)
 {
-    return abs(start.first - end.first) + abs(start.second - end.second);
+    return abs(start.first - goal.first) + abs(start.second - goal.second);
 }
 
 namespace psync
@@ -27,7 +27,7 @@ std::string Astar_Solver::get_solver_name() const
     return solver_name;
 }
 
-std::map<Coordinate, Coordinate> Astar_Solver::solve(psync::Grid &grid, Coordinate start, Coordinate end,
+std::map<Coordinate, Coordinate> Astar_Solver::solve(psync::Grid &grid, Coordinate start, Coordinate goal,
                                                      PerformanceMetrics &performance_met)
 {
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -37,7 +37,7 @@ std::map<Coordinate, Coordinate> Astar_Solver::solve(psync::Grid &grid, Coordina
     bool visited[grid_size.first][grid_size.second];
 
     /* (distance from start node to node i: g-cost,
-     * distance from end node to node i: f-cost) */
+     * distance from goal node to node i: f-cost) */
     std::vector<std::vector<Coordinate>> cost_mat;
 
     /* this lambdafn compares two cost_mat entries and prioratizes the one with least f-cost*/
@@ -63,7 +63,7 @@ std::map<Coordinate, Coordinate> Astar_Solver::solve(psync::Grid &grid, Coordina
         cost_mat.push_back(temp);
     }
 
-    cost_mat[start.second][start.first] = Coordinate(0, getManhattandistance(start, end));
+    cost_mat[start.second][start.first] = Coordinate(0, getManhattandistance(start, goal));
     came_from[start] = Coordinate(-1, -1);
     priority_queue.push(std::pair<Coordinate, Coordinate>(start, cost_mat[start.second][start.first]));
 
@@ -78,7 +78,7 @@ std::map<Coordinate, Coordinate> Astar_Solver::solve(psync::Grid &grid, Coordina
         {
             performance_met.num_of_nodes_explored++;
             int new_dist = cost_mat[visiting.first.second][visiting.first.first].first + 1;
-            int new_manhattan_dist = getManhattandistance(n, end);
+            int new_manhattan_dist = getManhattandistance(n, goal);
 
             if (new_dist < cost_mat[n.second][n.first].first)
             {
@@ -90,7 +90,7 @@ std::map<Coordinate, Coordinate> Astar_Solver::solve(psync::Grid &grid, Coordina
                 came_from[n] = visiting.first;
             }
 
-            if (n == end)
+            if (n == goal)
             {
                 reachedEnd = true;
                 // grid.getCell(n.first, n.second).setCellType(END);
