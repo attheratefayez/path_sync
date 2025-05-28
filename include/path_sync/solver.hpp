@@ -2,6 +2,7 @@
 #define __PATH_SYNC_SOLVER_HPP__
 
 #include <memory>
+#include <string_view>
 
 #include "path_sync/performance/performance_mat.hpp"
 #include "path_sync/psync_types.hpp"
@@ -10,7 +11,7 @@
 class ISolver
 {
   public:
-    virtual std::string get_solver_name() const = 0;
+    virtual std::string_view get_solver_name() const = 0;
 
     virtual std::map<Coordinate, Coordinate> solve(psync::Grid &grid, Coordinate start, Coordinate goal,
                                                    psync::PerformanceMetrics &performance_met) = 0;

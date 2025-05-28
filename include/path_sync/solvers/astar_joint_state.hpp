@@ -26,7 +26,7 @@ class Astar_Joint_State_Solver : public ISolver
     const std::string solver_name = "Astar_Joint_State_Solver";
 
   public:
-    std::string get_solver_name() const override;
+    std::string_view get_solver_name() const override;
 
     std::map<Coordinate, Coordinate> solve(psync::Grid &grid, Coordinate start, Coordinate goal,
                                            PerformanceMetrics &performance_met) override

@@ -24,7 +24,7 @@ class BFS_Solver : public ISolver
     const std::string solver_name = "BFS_Solver";
 
   public:
-    std::string get_solver_name() const override;
+    std::string_view get_solver_name() const override;
     std::map<Coordinate, Coordinate> solve(Grid &grid, Coordinate start, Coordinate end, PerformanceMetrics& performance_met) override;
 };
 
