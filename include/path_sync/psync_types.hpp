@@ -14,10 +14,16 @@ typedef std::pair<int, int> Coordinate;
 
 namespace mapf_type
 {
+
 struct JointState
 {
     std::vector<Coordinate> positions;
     std::size_t time;
+
+    bool operator<(const JointState& right) const
+    {
+        return time < right.time;
+    }
 };
 
 struct Node
