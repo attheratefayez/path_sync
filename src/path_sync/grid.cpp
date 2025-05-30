@@ -12,8 +12,8 @@ namespace path_sync
 
 Grid::Grid(VisualizationSystemConfig &system_config, GridMode grid_mode)
     : __num_of_rows(system_config.HEIGHT / path_sync::VisualizationSystemConfig::CELL_SIZE),
-      __num_of_cols(system_config.WIDTH / path_sync::VisualizationSystemConfig::CELL_SIZE), __current_grid_mode(grid_mode),
-      __map_file_name("AR0015SR"), __system_config(system_config)
+      __num_of_cols(system_config.WIDTH / path_sync::VisualizationSystemConfig::CELL_SIZE),
+      __current_grid_mode(grid_mode), __map_file_name("AR0015SR"), __system_config(system_config)
 {
     std::cout << "Calculated Grid: " << __num_of_rows << ", " << __num_of_cols << std::endl;
 
@@ -22,9 +22,8 @@ Grid::Grid(VisualizationSystemConfig &system_config, GridMode grid_mode)
     else
         __create_map_grid();
 
-    std::cout << "Grid Created: " << __cell_grid.size() << ", " << __cell_grid[0].size() << std::endl;
-    std::cout << "Cost grid size: " << __cost_grid.size() << " " << __cost_grid[0].size() << " "
-              << __cost_grid[0][0].size() << std::endl;
+    std::cout << "Grid Created: " << __cell_grid.size() << ", " << __cell_grid[0].size() <<  "\n";
+    std::cout << "Cost grid size: " << __cost_grid.size() << " " << __cost_grid[0].size() << "\n";
 }
 
 void Grid::draw(sf::RenderTarget &target, sf::RenderStates states) const
@@ -138,12 +137,12 @@ void Grid::__create_free_grid()
         std::vector<path_sync::Cell> temp_row;
         for (int col_count = 0; col_count < __num_of_cols; ++col_count)
         {
-            temp_row.emplace_back(
-                Cell(path_sync::CellType::DEFAULT, {
-                                                   (float)(col_count * path_sync::VisualizationSystemConfig::CELL_SIZE),
-                                                   (float)(row_count * path_sync::VisualizationSystemConfig::CELL_SIZE),
+            temp_row.emplace_back(Cell(path_sync::CellType::DEFAULT,
+                                       {
+                                           (float)(col_count * path_sync::VisualizationSystemConfig::CELL_SIZE),
+                                           (float)(row_count * path_sync::VisualizationSystemConfig::CELL_SIZE),
 
-                                               }));
+                                       }));
         }
         temp_row.shrink_to_fit();
         __cell_grid.push_back(temp_row);
@@ -165,23 +164,10 @@ void Grid::__create_map_grid()
 
 void Grid::__create_cost_grid()
 {
-    if (path_sync::VisualizationSystemConfig::NUM_OF_OBJECTIVES == 1)
+    for (int r = 0; r < __num_of_rows; ++r)
     {
-        for (int r = 0; r < __num_of_rows; ++r)
-        {
-            std::vector<std::vector<size_t>> temp_row;
-            for (int c = 0; c < __num_of_cols; ++c)
-            {
-                temp_row.push_back(std::vector<size_t>{1});
-            }
-            temp_row.shrink_to_fit();
-            __cost_grid.push_back(temp_row);
-        }
+         __cost_grid.push_back(std::vector<std::size_t>(__num_of_cols, 0));
     }
-
-    __cost_grid.resize(__num_of_rows);
-    __cost_grid[0].resize(__num_of_cols);
-    __cost_grid[0][0].resize(path_sync::VisualizationSystemConfig::NUM_OF_OBJECTIVES);
 }
 
 void Grid::__adjust_cell_size()

@@ -3,7 +3,7 @@
 
 #include "path_sync/visualization_system/grid.hpp"
 #include "path_sync/performance/performance_mat.hpp"
-#include "path_sync/solver.hpp"
+#include "path_sync/solver_interface.hpp"
 #include <optional>
 
 namespace path_sync {

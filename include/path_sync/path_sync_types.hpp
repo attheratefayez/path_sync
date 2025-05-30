@@ -9,7 +9,7 @@
 #include "path_sync/visualization_system/cell.hpp"
 
 typedef std::vector<std::vector<path_sync::Cell>> CellGrid;
-typedef std::vector<std::vector<std::vector<size_t>>> CostGrid;
+typedef std::vector<std::vector<std::size_t>> CostGrid;
 typedef std::pair<int, int> Coordinate;
 
 namespace mapf_type

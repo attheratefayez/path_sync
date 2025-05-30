@@ -10,33 +10,27 @@ project(path_sync
     LANGUAGES CXX
 )
 
-file(GLOB PATH_SYNC_SOURCE_FILES "./src/path_sync/*.cpp")
-
+add_subdirectory(src)
 add_subdirectory(lib)
+# add_subdirectory(test)
 
 add_executable(${PROJECT_NAME}
     main.cpp
-    ${PATH_SYNC_SOURCE_FILES}
 )
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# to make PROJECT_ROOT available system wide
-target_compile_definitions(${PROJECT_NAME}
-    PRIVATE PROJECT_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
-)
-
 target_link_directories(${PROJECT_NAME}
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/lib/SFML/
-
 )
 
 target_link_libraries(${PROJECT_NAME}
     sfml-graphics
-    sfml-window
     sfml-system
+    sfml-window
     yaml-cpp
+    path_sync_src
 )
 

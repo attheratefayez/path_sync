@@ -11,7 +11,6 @@ void test_loop();
 void pfsync_loop();
 
 int path_sync::VisualizationSystemConfig::CELL_SIZE = 50;
-unsigned int path_sync::VisualizationSystemConfig::NUM_OF_OBJECTIVES = 1;
 
 int main()
 {

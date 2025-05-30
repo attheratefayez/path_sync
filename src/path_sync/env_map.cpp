@@ -52,7 +52,7 @@ Map::Map(Map &map_obj)
     __current_bucket = map_obj.__current_bucket;
 }
 
-Map& Map::operator=(const Map& obj)
+Map &Map::operator=(const Map &obj)
 {
     std::stringstream ss(obj.__map.str());
 
@@ -67,6 +67,4 @@ Map& Map::operator=(const Map& obj)
     return *this;
 }
 
-}
-
-
+} // namespace path_sync
