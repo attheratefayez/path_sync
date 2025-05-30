@@ -22,7 +22,7 @@ namespace solvers
 namespace sapf
 {
 
-std::string Astar_Solver::get_solver_name() const
+std::string_view Astar_Solver::get_solver_name() const
 {
     return solver_name;
 }

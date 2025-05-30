@@ -10,7 +10,7 @@ namespace solvers
 namespace sapf
 {
 
-std::string BFS_Solver::get_solver_name() const
+std::string_view BFS_Solver::get_solver_name() const
 {
     return solver_name;
 }
