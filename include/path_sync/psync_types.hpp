@@ -44,11 +44,13 @@ struct Node
     std::shared_ptr<Node> _parent;
 };
 
+using NodePtr = std::shared_ptr<Node>;
+
 struct CompareGreaterNode
 {
-    bool operator()(const Node& n1, const Node& n2) const 
+    bool operator()(const NodePtr n1, const NodePtr n2) const 
     {
-        return n1 > n2;
+        return *n1 > *n2;
     }
 };
 

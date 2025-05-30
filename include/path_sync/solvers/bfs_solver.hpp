@@ -25,9 +25,15 @@ class BFS_Solver : public ISolver
 
   public:
     std::string_view get_solver_name() const override;
-    std::map<Coordinate, Coordinate> solve(Grid &grid, Coordinate start, Coordinate end, PerformanceMetrics& performance_met) override;
-};
+    std::map<Coordinate, Coordinate> solve(Grid &grid, Coordinate start, Coordinate end,
+                                           PerformanceMetrics &performance_met) override;
 
+    mapf_type::NodePtr solve(psync::Grid &grid, std::vector<Coordinate> starts, std::vector<Coordinate> goals,
+                             psync::PerformanceMetrics &performance_met) override
+    {
+        throw std::logic_error("Use Solvers from psync::solvers::mapf namespace for multi-agent pathfinding.");
+    }
+};
 
 } // namespace sapf
 } // namespace solvers

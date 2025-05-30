@@ -30,7 +30,7 @@ class Astar_Solver : public ISolver
     std::map<Coordinate, Coordinate> solve(psync::Grid &grid, Coordinate start, Coordinate goal,
                                            PerformanceMetrics &performance_met) override;
 
-    std::shared_ptr<mapf_type::Node> solve(psync::Grid &grid, std::vector<Coordinate> starts,
+    mapf_type::NodePtr solve(psync::Grid &grid, std::vector<Coordinate> starts,
                                            std::vector<Coordinate> goals,
                                            psync::PerformanceMetrics &performance_met) override
     {
