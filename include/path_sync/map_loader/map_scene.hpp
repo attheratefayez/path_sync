@@ -4,8 +4,8 @@
 #include <map>
 #include <string>
 
-#include "path_sync/psync_types.hpp"
-namespace psync 
+#include "path_sync/path_sync_types.hpp"
+namespace path_sync 
 {
 
 /**

@@ -1,14 +1,13 @@
 #ifndef __PATHFINDING_ASTARSOLVER_HPP__
 #define __PATHFINDING_ASTARSOLVER_HPP__
 
-#include <memory>
 #include <stdexcept>
 
 #include "path_sync/performance/performance_mat.hpp"
-#include "path_sync/psync_types.hpp"
+#include "path_sync/path_sync_types.hpp"
 #include "path_sync/solver.hpp"
 
-namespace psync
+namespace path_sync
 {
 namespace solvers
 {
@@ -27,18 +26,18 @@ class Astar_Solver : public ISolver
 
   public:
     std::string_view get_solver_name() const override;
-    std::map<Coordinate, Coordinate> solve(psync::Grid &grid, Coordinate start, Coordinate goal,
+    std::map<Coordinate, Coordinate> solve(path_sync::Grid &grid, Coordinate start, Coordinate goal,
                                            PerformanceMetrics &performance_met) override;
 
-    mapf_type::NodePtr solve(psync::Grid &grid, std::vector<Coordinate> starts,
+    mapf_type::NodePtr solve(path_sync::Grid &grid, std::vector<Coordinate> starts,
                                            std::vector<Coordinate> goals,
-                                           psync::PerformanceMetrics &performance_met) override
+                                           path_sync::PerformanceMetrics &performance_met) override
     {
-        throw std::logic_error("Use Solvers from psync::solvers::mapf namespace for multi-agent pathfinding.");
+        throw std::logic_error("Use Solvers from path_sync::solvers::mapf namespace for multi-agent pathfinding.");
     }
 };
 
 } // namespace sapf
 } // namespace solvers
-} // namespace psync
+} // namespace path_sync
 #endif

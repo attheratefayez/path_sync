@@ -11,7 +11,7 @@
 
 #include "path_sync/visualization_system/cell.hpp"
 #include "path_sync/map_loader/env_map.hpp"
-#include "path_sync/psync_types.hpp"
+#include "path_sync/path_sync_types.hpp"
 #include "path_sync/visualization_system/visualization_system_config.hpp"
 
 enum GridMode
@@ -20,7 +20,7 @@ enum GridMode
     Map
 };
 
-namespace psync
+namespace path_sync
 {
 
 /**
@@ -66,6 +66,6 @@ private:
     void __imprint_map_in_cell_grid();
 };
 
-} // namespace psync
+} // namespace path_sync
 
 #endif // !__PATH_SYNC_GRID_HPP__

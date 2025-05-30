@@ -6,7 +6,7 @@
 #include <sstream>
 #include <string>
 
-namespace psync
+namespace path_sync
 {
 
 struct PerformanceMetrics
@@ -33,5 +33,5 @@ struct PerformanceMetrics
     }
 };
 
-} // namespace psync
+} // namespace path_sync
 #endif // !__PATH_SYNC_PERFORMANCE_MET_HPP__

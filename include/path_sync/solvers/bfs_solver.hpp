@@ -2,11 +2,11 @@
 #define __PATHFINDING_BSFSOLVER_HPP__
 
 #include "path_sync/performance/performance_mat.hpp"
-#include "path_sync/psync_types.hpp"
+#include "path_sync/path_sync_types.hpp"
 #include "path_sync/solver.hpp"
 #include "path_sync/visualization_system/grid.hpp"
 
-namespace psync
+namespace path_sync
 {
 namespace solvers
 {
@@ -28,15 +28,15 @@ class BFS_Solver : public ISolver
     std::map<Coordinate, Coordinate> solve(Grid &grid, Coordinate start, Coordinate end,
                                            PerformanceMetrics &performance_met) override;
 
-    mapf_type::NodePtr solve(psync::Grid &grid, std::vector<Coordinate> starts, std::vector<Coordinate> goals,
-                             psync::PerformanceMetrics &performance_met) override
+    mapf_type::NodePtr solve(path_sync::Grid &grid, std::vector<Coordinate> starts, std::vector<Coordinate> goals,
+                             path_sync::PerformanceMetrics &performance_met) override
     {
-        throw std::logic_error("Use Solvers from psync::solvers::mapf namespace for multi-agent pathfinding.");
+        throw std::logic_error("Use Solvers from path_sync::solvers::mapf namespace for multi-agent pathfinding.");
     }
 };
 
 } // namespace sapf
 } // namespace solvers
-} // namespace psync
+} // namespace path_sync
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef __PATH_SYNC_PSYNC_TYPES__
-#define __PATH_SYNC_PSYNC_TYPES__
+#ifndef __PATH_SYNC_PATH_SYNC_TYPES__
+#define __PATH_SYNC_PATH_SYNC_TYPES__
 
 #include <SFML/System/Vector2.hpp>
 #include <cstddef>
@@ -8,7 +8,7 @@
 
 #include "path_sync/visualization_system/cell.hpp"
 
-typedef std::vector<std::vector<psync::Cell>> CellGrid;
+typedef std::vector<std::vector<path_sync::Cell>> CellGrid;
 typedef std::vector<std::vector<std::vector<size_t>>> CostGrid;
 typedef std::pair<int, int> Coordinate;
 
@@ -55,4 +55,4 @@ struct CompareGreaterNode
 };
 
 } // namespace mapf_type
-#endif // !__PATH_SYNC_PSYNC_TYPES__
+#endif // !__PATH_SYNC_PATH_SYNC_TYPES__

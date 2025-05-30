@@ -10,7 +10,7 @@
 #ifndef __PATH_SYNC_CELL_HPP__
 #define __PATH_SYNC_CELL_HPP__
 
-namespace psync {
+namespace path_sync {
 enum CellType
 {
     DEFAULT,
@@ -42,7 +42,7 @@ public:
         /**
      * @brief Creates a Cell with given type and position. 
      *
-     * @param cell_type a type of cell in psync::CellType.
+     * @param cell_type a type of cell in path_sync::CellType.
      * @param position position of the cell to be placed.
      */
     Cell(CellType cell_type, sf::Vector2f position);
@@ -50,16 +50,16 @@ public:
     /**
      * @brief Sets the type of a cell. 
      *
-     * @param cell_type a type of cell in psync::CellType.
+     * @param cell_type a type of cell in path_sync::CellType.
      */
     void set_cell_type(CellType cell_type);
 
     /**
      * @brief returns the type of cell.
      *
-     * @return psync::CellType
+     * @return path_sync::CellType
      */
     CellType get_cell_type() const;
 };
-} // NAMESPACE PSYNC 
+} // end of namespace path_sync 
 #endif // !__PATH_SYNC_CELL_HPP__

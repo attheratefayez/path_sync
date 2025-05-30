@@ -1,13 +1,13 @@
-#ifndef __PATHFINDING_ASTAR_JOINT_STATE_SOLVER_HPP__
-#define __PATHFINDING_ASTAR_JOINT_STATE_SOLVER_HPP__
+#ifndef __PATH_SYNC_ASTAR_JOINT_STATE_SOLVER_HPP__
+#define __PATH_SYNC_ASTAR_JOINT_STATE_SOLVER_HPP__
 
 #include <stdexcept>
 
 #include "path_sync/performance/performance_mat.hpp"
-#include "path_sync/psync_types.hpp"
+#include "path_sync/path_sync_types.hpp"
 #include "path_sync/solver.hpp"
 
-namespace psync
+namespace path_sync
 {
 namespace solvers
 {
@@ -27,18 +27,18 @@ class Astar_Joint_State_Solver : public ISolver
   public:
     std::string_view get_solver_name() const override;
 
-    std::map<Coordinate, Coordinate> solve(psync::Grid &grid, Coordinate start, Coordinate goal,
+    std::map<Coordinate, Coordinate> solve(path_sync::Grid &grid, Coordinate start, Coordinate goal,
                                            PerformanceMetrics &performance_met) override
     {
-        throw std::logic_error("Use Solvers from psync::solvers::sapf namespace for single-agent pathfinding.");
+        throw std::logic_error("Use Solvers from path_sync::solvers::sapf namespace for single-agent pathfinding.");
     }
 
-    mapf_type::NodePtr solve(psync::Grid &grid, std::vector<Coordinate> starts,
+    mapf_type::NodePtr solve(path_sync::Grid &grid, std::vector<Coordinate> starts,
                                            std::vector<Coordinate> goals,
-                                           psync::PerformanceMetrics &performance_met) override;
+                                           path_sync::PerformanceMetrics &performance_met) override;
 };
 
 } // namespace mapf
 } // namespace solvers
-} // namespace psync
+} // namespace path_sync
 #endif

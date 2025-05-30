@@ -7,12 +7,12 @@
 #include "path_sync/visualization_system/grid.hpp"
 #include "path_sync/visualization_system/visualization_system_config.hpp"
 
-namespace psync
+namespace path_sync
 {
 
 Grid::Grid(VisualizationSystemConfig &system_config, GridMode grid_mode)
-    : __num_of_rows(system_config.HEIGHT / psync::VisualizationSystemConfig::CELL_SIZE),
-      __num_of_cols(system_config.WIDTH / psync::VisualizationSystemConfig::CELL_SIZE), __current_grid_mode(grid_mode),
+    : __num_of_rows(system_config.HEIGHT / path_sync::VisualizationSystemConfig::CELL_SIZE),
+      __num_of_cols(system_config.WIDTH / path_sync::VisualizationSystemConfig::CELL_SIZE), __current_grid_mode(grid_mode),
       __map_file_name("AR0015SR"), __system_config(system_config)
 {
     std::cout << "Calculated Grid: " << __num_of_rows << ", " << __num_of_cols << std::endl;
@@ -31,7 +31,7 @@ void Grid::draw(sf::RenderTarget &target, sf::RenderStates states) const
 {
     for (auto &row : __cell_grid)
     {
-        for (const psync::Cell &cell : row)
+        for (const path_sync::Cell &cell : row)
         {
             target.draw(cell);
         }
@@ -76,10 +76,10 @@ void Grid::clear_paths()
 {
     for (std::vector<Cell> &row : __cell_grid)
     {
-        for (psync::Cell &cell : row)
+        for (path_sync::Cell &cell : row)
         {
-            if (cell.get_cell_type() == psync::CellType::PATH)
-                cell.set_cell_type(psync::CellType::DEFAULT);
+            if (cell.get_cell_type() == path_sync::CellType::PATH)
+                cell.set_cell_type(path_sync::CellType::DEFAULT);
         }
     }
 }
@@ -88,9 +88,9 @@ void Grid::reset_grid()
 {
     for (std::vector<Cell> &row : __cell_grid)
     {
-        for (psync::Cell &cell : row)
+        for (path_sync::Cell &cell : row)
         {
-            cell.set_cell_type(psync::CellType::DEFAULT);
+            cell.set_cell_type(path_sync::CellType::DEFAULT);
         }
     }
 
@@ -135,13 +135,13 @@ void Grid::__create_free_grid()
 {
     for (int row_count = 0; row_count < __num_of_rows; ++row_count)
     {
-        std::vector<psync::Cell> temp_row;
+        std::vector<path_sync::Cell> temp_row;
         for (int col_count = 0; col_count < __num_of_cols; ++col_count)
         {
             temp_row.emplace_back(
-                Cell(psync::CellType::DEFAULT, {
-                                                   (float)(col_count * psync::VisualizationSystemConfig::CELL_SIZE),
-                                                   (float)(row_count * psync::VisualizationSystemConfig::CELL_SIZE),
+                Cell(path_sync::CellType::DEFAULT, {
+                                                   (float)(col_count * path_sync::VisualizationSystemConfig::CELL_SIZE),
+                                                   (float)(row_count * path_sync::VisualizationSystemConfig::CELL_SIZE),
 
                                                }));
         }
@@ -165,7 +165,7 @@ void Grid::__create_map_grid()
 
 void Grid::__create_cost_grid()
 {
-    if (psync::VisualizationSystemConfig::NUM_OF_OBJECTIVES == 1)
+    if (path_sync::VisualizationSystemConfig::NUM_OF_OBJECTIVES == 1)
     {
         for (int r = 0; r < __num_of_rows; ++r)
         {
@@ -181,7 +181,7 @@ void Grid::__create_cost_grid()
 
     __cost_grid.resize(__num_of_rows);
     __cost_grid[0].resize(__num_of_cols);
-    __cost_grid[0][0].resize(psync::VisualizationSystemConfig::NUM_OF_OBJECTIVES);
+    __cost_grid[0][0].resize(path_sync::VisualizationSystemConfig::NUM_OF_OBJECTIVES);
 }
 
 void Grid::__adjust_cell_size()
@@ -197,7 +197,7 @@ void Grid::__adjust_cell_size()
     std::stringstream ss;
     ss << "Cell Size Adjusted: " << __system_config.CELL_SIZE << std::endl;
 
-    psync::Logger::get()->info(ss.str().c_str());
+    path_sync::Logger::get()->info(ss.str().c_str());
 }
 
 void Grid::__imprint_map_in_cell_grid()
@@ -212,11 +212,11 @@ void Grid::__imprint_map_in_cell_grid()
     {
         for (size_t col_counter = 0; col_counter < __num_of_cols; ++col_counter)
         {
-            psync::CellType type = psync::CellType::DEFAULT;
+            path_sync::CellType type = path_sync::CellType::DEFAULT;
             if (line[col_counter] == '@' or line[col_counter] == 'O' or line[col_counter] == 'T' or
                 line[col_counter] == 'W')
             {
-                type = psync::CellType::WALL;
+                type = path_sync::CellType::WALL;
             }
 
             __cell_grid[row_counter][col_counter].set_cell_type(type);
@@ -230,4 +230,4 @@ void Grid::__imprint_map_in_cell_grid()
     __current_map.get_map().seekg(0);
 }
 
-} // namespace psync
+} // namespace path_sync

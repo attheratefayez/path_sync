@@ -22,7 +22,7 @@
 #define CYAN "\033[36m" /* Cyan */
 #define WHITE "\033[37m" /* White */
 
-namespace psync{
+namespace path_sync{
 /**
  * @class Logger
  * @brief Singleton class for logging functionalities in pathsync project.
@@ -75,6 +75,6 @@ private:
     ~Logger();
 };
 
-}
+} // end of namespace
 
 #endif // !__PATH_SYNC_LOGGER_HPP__

@@ -18,7 +18,7 @@
 #include "path_sync/path_finder.hpp"
 #include "path_sync/visualization_system/visualization_system_config.hpp"
 
-namespace psync {
+namespace path_sync {
 
 /**
  * @class VisualizationSystem
@@ -73,13 +73,13 @@ private:
     sf::RenderWindow __main_window;
 
     sf::Clock __deltaClock;
-    psync::Grid __grid;
+    path_sync::Grid __grid;
 
     // FIX: path_finder, solvers shouldn't be here
-    psync::PathFinder __path_finder;
+    path_sync::PathFinder __path_finder;
     std::vector<ISolver*> __solvers;
-    psync::solvers::sapf::Astar_Solver __astar_solver;
-    psync::solvers::sapf::BFS_Solver __bfs_solver;
+    path_sync::solvers::sapf::Astar_Solver __astar_solver;
+    path_sync::solvers::sapf::BFS_Solver __bfs_solver;
     std::size_t __selected_solver_index;
 
     std::vector<std::string> __available_maps;
@@ -92,7 +92,7 @@ private:
     VisualizationSystem& operator=(VisualizationSystem const&) = delete;
 
     bool __is_mouse_inside_window();
-    Coordinate __draw_with_cell_type(psync::CellType cell_type);
+    Coordinate __draw_with_cell_type(path_sync::CellType cell_type);
 
     void __get_available_maps();
     void __change_map();

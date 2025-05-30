@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <iostream>
 
-namespace psync {
+namespace path_sync {
 
 Logger* Logger::__instance= nullptr;
 

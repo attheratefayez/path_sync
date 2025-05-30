@@ -8,10 +8,10 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace psync
+namespace path_sync
 {
 
-std::optional<std::vector<Coordinate>> PathFinder::find_path(ISolver &solver, psync::Grid &grid)
+std::optional<std::vector<Coordinate>> PathFinder::find_path(ISolver &solver, path_sync::Grid &grid)
 {
     std::stringstream ss;
 
@@ -34,7 +34,7 @@ std::optional<std::vector<Coordinate>> PathFinder::find_path(ISolver &solver, ps
                    << ") to : (" << end_points[counter].second << ", " << end_points[counter].first << ")."
                    << std::endl;
 
-                psync::Logger::get()->info(ss.str().c_str());
+                path_sync::Logger::get()->info(ss.str().c_str());
                 ss.str(std::string());
 
                 return std::nullopt;
@@ -91,4 +91,4 @@ std::vector<Coordinate> PathFinder::__construct_path(std::map<Coordinate, Coordi
     return std::vector<Coordinate>(the_path.begin(), the_path.end());
 }
 
-} // namespace psync
+} // namespace path_sync

@@ -1,6 +1,6 @@
 #include "path_sync/visualization_system/cell.hpp"
 #include "path_sync/visualization_system/visualization_system_config.hpp"
-namespace psync{
+namespace path_sync{
 void Cell::__set_color_for_type()
 {
     switch (type)
@@ -40,7 +40,7 @@ void Cell::__set_color_for_type()
 
 Cell::Cell(CellType cell_type, sf::Vector2f position) : type(cell_type)
 {
-    setSize(sf::Vector2f(psync::VisualizationSystemConfig::CELL_SIZE, psync::VisualizationSystemConfig::CELL_SIZE));
+    setSize(sf::Vector2f(path_sync::VisualizationSystemConfig::CELL_SIZE, path_sync::VisualizationSystemConfig::CELL_SIZE));
     setPosition(position);
     __set_color_for_type();
 }
@@ -56,4 +56,4 @@ CellType Cell::get_cell_type() const
     return type;
 }
 
-} // NAMESPACE PSYNC
+} // NAMESPACE path_sync

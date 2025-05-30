@@ -1,9 +1,9 @@
 #include <chrono>
 #include <deque>
 #include "path_sync/solvers/bfs_solver.hpp"
-#include "path_sync/psync_types.hpp"
+#include "path_sync/path_sync_types.hpp"
 
-namespace psync
+namespace path_sync
 {
 namespace solvers
 {
@@ -74,5 +74,5 @@ std::map<Coordinate, Coordinate> BFS_Solver::solve(Grid &grid, Coordinate start,
 
 } // namespace sapf
 } // namespace solvers
-} // namespace psync
+} // namespace path_sync
 

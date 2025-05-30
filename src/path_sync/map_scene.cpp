@@ -6,10 +6,10 @@
 #include <sstream>
 
 #include "path_sync/logging/logger.hpp"
-#include "path_sync/psync_types.hpp"
+#include "path_sync/path_sync_types.hpp"
 #include "path_sync/map_loader/map_scene.hpp"
 
-namespace psync
+namespace path_sync
 {
 Scene::Scene(std::string mapname) : map_name(mapname)
 {
@@ -77,7 +77,7 @@ std::vector<std::pair<Coordinate, Coordinate>> Scene::get_n_agent(int no_of_agen
 
     else
     {
-        psync::Logger::get()->warn("Dont have enough agents");
+        path_sync::Logger::get()->warn("Dont have enough agents");
     }
 
     return ret;

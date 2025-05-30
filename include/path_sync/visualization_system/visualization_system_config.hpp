@@ -10,7 +10,7 @@
 #include <string>
 #include <yaml-cpp/yaml.h>
 
-namespace psync{
+namespace path_sync{
 /**
  * @class VisualizationSystemConfig
  * @brief PathSync Visulaization system's env_vars. 

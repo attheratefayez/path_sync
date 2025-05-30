@@ -6,7 +6,7 @@
 #include "path_sync/solver.hpp"
 #include <optional>
 
-namespace psync {
+namespace path_sync {
 
 class PathFinder
 {
@@ -19,9 +19,9 @@ class PathFinder
     {
     }
 
-    std::optional<std::vector<Coordinate>> find_path(ISolver &solver, psync::Grid &grid);
+    std::optional<std::vector<Coordinate>> find_path(ISolver &solver, path_sync::Grid &grid);
     std::stringstream get_performance_data() const { return __performance_met.report(); }
 };
 
-} // END OF NAMESPACE PSYNC
+} // END OF NAMESPACE path_sync
 #endif // !__PATH_SYNC_PATH_FINDER_HPP__

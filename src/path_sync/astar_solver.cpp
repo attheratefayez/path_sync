@@ -5,7 +5,7 @@
 #include <queue>
 #include <vector>
 
-#include "path_sync/psync_types.hpp"
+#include "path_sync/path_sync_types.hpp"
 #include "path_sync/solvers/astar_solver.hpp"
 #include "path_sync/visualization_system/grid.hpp"
 
@@ -15,7 +15,7 @@ int getManhattandistance(Coordinate start, Coordinate goal)
     return abs(start.first - goal.first) + abs(start.second - goal.second);
 }
 
-namespace psync
+namespace path_sync
 {
 namespace solvers
 {
@@ -27,7 +27,7 @@ std::string_view Astar_Solver::get_solver_name() const
     return solver_name;
 }
 
-std::map<Coordinate, Coordinate> Astar_Solver::solve(psync::Grid &grid, Coordinate start, Coordinate goal,
+std::map<Coordinate, Coordinate> Astar_Solver::solve(path_sync::Grid &grid, Coordinate start, Coordinate goal,
                                                      PerformanceMetrics &performance_met)
 {
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -110,4 +110,4 @@ std::map<Coordinate, Coordinate> Astar_Solver::solve(psync::Grid &grid, Coordina
 
 } // namespace sapf
 } // namespace solvers
-} // namespace psync
+} // namespace path_sync

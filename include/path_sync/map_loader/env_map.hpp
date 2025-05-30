@@ -1,5 +1,5 @@
-#ifndef __PSYNC_ENV_MAP_HPP__
-#define __PSYNC_ENV_MAP_HPP__
+#ifndef __PATH_SYNC_ENV_MAP_HPP__
+#define __PATH_SYNC_ENV_MAP_HPP__
 
 #include <sstream>
 #include <string>
@@ -7,7 +7,7 @@
 #include "path_sync/logging/logger.hpp"
 #include "path_sync/map_loader/map_scene.hpp"
 
-namespace psync
+namespace path_sync
 {
 
 /**
@@ -82,7 +82,7 @@ class Map
 
         else
         {
-            psync::Logger::get()->warn("No next bucket.");
+            path_sync::Logger::get()->warn("No next bucket.");
         }
 
         return __current_bucket;
@@ -96,7 +96,7 @@ class Map
         }
         else
         {
-            psync::Logger::get()->warn("No previous bucket.");
+            path_sync::Logger::get()->warn("No previous bucket.");
         }
 
         return __current_bucket;
@@ -111,6 +111,6 @@ class Map
     Scene __map_scenes;
 };
 
-} // END OF NAMESPACE psync
+} // END OF NAMESPACE
 
-#endif // !__PSYNC_ENV_MAP_HPP__
+#endif // !__path_sync_ENV_MAP_HPP__

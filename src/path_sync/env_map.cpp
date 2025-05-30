@@ -6,7 +6,7 @@
 
 #include "path_sync/map_loader/env_map.hpp"
 
-namespace psync
+namespace path_sync
 {
 
 Map::Map(std::string mapname) : __map_name(mapname), __map_scenes(Scene(mapname)), __current_bucket(0)
