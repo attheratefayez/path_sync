@@ -12,7 +12,7 @@ project(path_sync
 
 add_subdirectory(src)
 add_subdirectory(lib)
-# add_subdirectory(test)
+add_subdirectory(test)
 
 add_executable(${PROJECT_NAME}
     main.cpp

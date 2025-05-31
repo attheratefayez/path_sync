@@ -1,6 +1,5 @@
-# to stop cmake bitching about DOWNLOAD_EXTRACT_TIMESTAMP 
+# adding this to stop cmake bitching about DOWNLOAD_EXTRACT_TIMESTAMP 
 # when using URL in FetchContent
-
 cmake_policy(SET CMP0135 NEW) 
 
 include(FetchContent)
@@ -10,10 +9,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(google_test)
 
-enable_testing()
+set(test_src_files
+    ./solvers/astar_joint_state_utils.cpp
+    ./main_test.cpp
+)
 
+
+enable_testing()
 add_executable(path_sync_test
-    main_test.cpp
+    ${test_src_files}
 )
 
 target_link_directories(path_sync_test
