@@ -38,6 +38,8 @@ struct Utils
     // CHECK VALIDITY OF STATE: (check for edge collision and vertex collision)
     static bool check_validity_of_state(const mapf_type::JointState &current_state,
                                          const mapf_type::JointState &new_state);
+
+    static std::vector<std::vector<Coordinate>> extract_paths(mapf_type::NodePtr&);
 };
 } // namespace astar_joint_state
 } // namespace mapf

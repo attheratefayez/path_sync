@@ -1,4 +1,7 @@
+#include <algorithm>
+
 #include "path_sync/solvers/astar_joint_state_utils.hpp"
+#include "path_sync/path_sync_types.hpp"
 
 namespace mapf
 {
@@ -22,7 +25,8 @@ float Utils::heuristic(std::vector<Coordinate> starts, std::vector<Coordinate> g
     return h_score;
 }
 
-std::optional<std::vector<std::vector<Coordinate>>> Utils::cartesian_product(std::vector<std::vector<Coordinate>> input_vec)
+std::optional<std::vector<std::vector<Coordinate>>> Utils::cartesian_product(
+    std::vector<std::vector<Coordinate>> input_vec)
 {
     if (input_vec.size() < 2)
         return std::nullopt;
@@ -141,6 +145,29 @@ bool Utils::check_validity_of_state(const mapf_type::JointState &current_state, 
     return true;
 }
 
+std::vector<std::vector<Coordinate>> extract_paths(mapf_type::NodePtr &current)
+{
+    std::vector<std::vector<Coordinate>> paths;
+
+    std::size_t num_of_agents = current->_state.positions.size();
+
+    while (current != nullptr)
+    {
+        for(int idx = 0; idx < num_of_agents; ++idx)
+        {
+            paths[idx].push_back(current->_state.positions[idx]);
+        }
+
+        current = current->_parent;
+    }
+
+    for(auto& path: paths)
+    {
+        std::reverse(path.begin(), path.end());
+    }
+
+    return paths;
+}
 
 } // namespace astar_joint_state
 } // namespace mapf

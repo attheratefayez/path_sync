@@ -22,14 +22,16 @@ namespace sapf
 class Astar_Solver : public ISolver
 {
   private:
-    const std::string solver_name = "Astar_Solver";
+    const std::string solver_name_ = "Astar_Solver";
+    const SolverType solver_type_ = SolverType::SingleAgentSolver;
 
   public:
     std::string_view get_solver_name() const override;
+    SolverType get_solver_type() const override;
     std::map<Coordinate, Coordinate> solve(path_sync::Grid &grid, Coordinate start, Coordinate goal,
                                            PerformanceMetrics &performance_met) override;
 
-    mapf_type::NodePtr solve(path_sync::Grid &grid, std::vector<Coordinate> starts,
+    std::optional<std::vector<std::vector<Coordinate>>> solve(path_sync::Grid &grid, std::vector<Coordinate> starts,
                                            std::vector<Coordinate> goals,
                                            path_sync::PerformanceMetrics &performance_met) override
     {

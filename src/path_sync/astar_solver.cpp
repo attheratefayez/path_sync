@@ -24,9 +24,13 @@ namespace sapf
 
 std::string_view Astar_Solver::get_solver_name() const
 {
-    return solver_name;
+    return solver_name_;
 }
 
+SolverType Astar_Solver::get_solver_type() const 
+{
+    return solver_type_;
+}
 std::map<Coordinate, Coordinate> Astar_Solver::solve(path_sync::Grid &grid, Coordinate start, Coordinate goal,
                                                      PerformanceMetrics &performance_met)
 {

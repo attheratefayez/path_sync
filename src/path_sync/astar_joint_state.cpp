@@ -14,15 +14,20 @@ using util_funcs = mapf::astar_joint_state::Utils;
 
 std::string_view mapf_astar::get_solver_name() const
 {
-    return solver_name;
+    return solver_name_;
 }
 
-mapf_type::NodePtr mapf_astar::solve(path_sync::Grid &grid, std::vector<Coordinate> starts, std::vector<Coordinate> goals,
+SolverType mapf_astar::get_solver_type() const 
+{
+    return solver_type_;
+}
+
+std::optional<std::vector<std::vector<Coordinate>>> mapf_astar::solve(path_sync::Grid &grid, std::vector<Coordinate> starts, std::vector<Coordinate> goals,
                                      path_sync::PerformanceMetrics &performance_met)
 {
     // NOTE: can be set to raise a error too if path_finder can handle and process error
     if (starts.size() != goals.size())
-        return nullptr;
+        return std::nullopt;
 
     // INITIALIZATION START
     mapf_type::JointState new_state;
@@ -44,7 +49,7 @@ mapf_type::NodePtr mapf_astar::solve(path_sync::Grid &grid, std::vector<Coordina
         open_set.pop();
 
         if (current->_state.positions == goals)
-            return parent_node;
+            return util_funcs::extract_paths(current);
 
         if (closed_set.contains(current->_state) && closed_set[current->_state] <= current->_g_score)
             continue;
@@ -55,7 +60,7 @@ mapf_type::NodePtr mapf_astar::solve(path_sync::Grid &grid, std::vector<Coordina
             util_funcs::possible_actions_with_state(current->_state, grid);
 
         if (!possible_actions.has_value())
-            return parent_node;
+            return std::nullopt;
 
         for (std::vector<Coordinate> &action : possible_actions.value())
         {
@@ -74,5 +79,5 @@ mapf_type::NodePtr mapf_astar::solve(path_sync::Grid &grid, std::vector<Coordina
         }
     }
 
-    return parent_node;
+    return std::nullopt;
 }

@@ -18,7 +18,13 @@ std::optional<std::vector<Coordinate>> PathFinder::find_path(ISolver &solver, pa
     std::vector<Coordinate> start_points = grid.get_start_points();
     std::vector<Coordinate> end_points = grid.get_end_points();
 
-    if (start_points.size() == end_points.size())
+    if(start_points.size() != end_points.size() )
+    {
+        throw std::logic_error("Start and End points are not equal.");
+    }
+
+
+    if (start_points.size() == 1)
     {
         std::map<Coordinate, Coordinate> node_map;
         std::vector<Coordinate> path;
@@ -46,6 +52,10 @@ std::optional<std::vector<Coordinate>> PathFinder::find_path(ISolver &solver, pa
         return path;
     }
 
+    else {
+        solver.solve(grid, start_points, end_points, __performance_met);
+    }
+
     /*else if (start_points.size() == 1 and end_points.size() > 1)*/
     /*{*/
     /*    std::map<Coordinate, Coordinate> node_map;*/
@@ -64,12 +74,6 @@ std::optional<std::vector<Coordinate>> PathFinder::find_path(ISolver &solver, pa
     /*        current_start = it;*/
     /*    }*/
     /*}*/
-
-    else
-    {
-        throw std::logic_error("Start and End points are not equal.");
-    }
-
     return std::nullopt;
 }
 

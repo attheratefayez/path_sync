@@ -12,7 +12,12 @@ namespace sapf
 
 std::string_view BFS_Solver::get_solver_name() const
 {
-    return solver_name;
+    return solver_name_;
+}
+
+SolverType BFS_Solver::get_solver_type() const 
+{
+    return solver_type_;
 }
 
 std::map<Coordinate, Coordinate> BFS_Solver::solve(Grid &grid, Coordinate start, Coordinate end, PerformanceMetrics& performance_met)

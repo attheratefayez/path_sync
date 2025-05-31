@@ -22,10 +22,12 @@ namespace mapf
 class Astar_Joint_State_Solver : public ISolver
 {
   private:
-    const std::string solver_name = "Astar_Joint_State_Solver";
+    const std::string solver_name_ = "Astar_Joint_State_Solver";
+    const SolverType solver_type_ = SolverType::MultiAgentSolver;
 
   public:
     std::string_view get_solver_name() const override;
+    SolverType get_solver_type() const override;
 
     std::map<Coordinate, Coordinate> solve(path_sync::Grid &grid, Coordinate start, Coordinate goal,
                                            PerformanceMetrics &performance_met) override
@@ -33,7 +35,7 @@ class Astar_Joint_State_Solver : public ISolver
         throw std::logic_error("Use Solvers from path_sync::solvers::sapf namespace for single-agent pathfinding.");
     }
 
-    mapf_type::NodePtr solve(path_sync::Grid &grid, std::vector<Coordinate> starts,
+    std::optional<std::vector<std::vector<Coordinate>>> solve(path_sync::Grid &grid, std::vector<Coordinate> starts,
                                            std::vector<Coordinate> goals,
                                            path_sync::PerformanceMetrics &performance_met) override;
 };

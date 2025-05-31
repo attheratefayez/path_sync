@@ -21,14 +21,16 @@ namespace sapf
 class BFS_Solver : public ISolver
 {
   private:
-    const std::string solver_name = "BFS_Solver";
+    const std::string solver_name_ = "BFS_Solver";
+    const SolverType solver_type_ = SolverType::SingleAgentSolver;
 
   public:
     std::string_view get_solver_name() const override;
+    SolverType get_solver_type() const override;
     std::map<Coordinate, Coordinate> solve(Grid &grid, Coordinate start, Coordinate end,
                                            PerformanceMetrics &performance_met) override;
 
-    mapf_type::NodePtr solve(path_sync::Grid &grid, std::vector<Coordinate> starts, std::vector<Coordinate> goals,
+    std::optional<std::vector<std::vector<Coordinate>>> solve(path_sync::Grid &grid, std::vector<Coordinate> starts, std::vector<Coordinate> goals,
                              path_sync::PerformanceMetrics &performance_met) override
     {
         throw std::logic_error("Use Solvers from path_sync::solvers::mapf namespace for multi-agent pathfinding.");
