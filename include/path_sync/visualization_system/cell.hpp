@@ -1,6 +1,7 @@
 /**
  * @file cell.hpp
- * @brief Header file for a single cell in the Drawing Grid / Map grid of the Path Sync Project.
+ * @brief Defines a Cell of a Grid. A Cell can be of CellType. 
+ *
  */
 
 #include <SFML/Graphics/Color.hpp>
@@ -11,7 +12,7 @@
 #define __PATH_SYNC_CELL_HPP__
 
 namespace path_sync {
-enum CellType
+enum class CellType
 {
     DEFAULT,
     WALL,
