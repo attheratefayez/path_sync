@@ -6,17 +6,37 @@
 #include <sstream>
 
 #include "path_sync/logging/logger.hpp"
-#include "path_sync/path_sync_types.hpp"
 #include "path_sync/map_loader/map_scene.hpp"
+#include "path_sync/path_sync_types.hpp"
 
 namespace path_sync
 {
-Scene::Scene(std::string mapname) : map_name(mapname)
+Scene::Scene(std::string map_name) : map_name_(map_name)
 {
     std::string folder_name = map_name + ".map-scen";
     std::string scene_file_name = map_name + ".map.scen";
-    std::filesystem::path scene_file_path = std::string(PROJECT_ROOT) + std::string("/maps/scenes/") + folder_name + "/" + scene_file_name;
 
+    std::filesystem::path scene_file_path =
+        std::string(PROJECT_ROOT) + std::string("/maps/scenes/") + folder_name + "/" + scene_file_name;
+
+    read_scene_(scene_file_name);
+}
+
+Scene::Scene(Scene &&map_scene)
+{
+    map_name_ = std::move(map_scene.map_name_);
+    agent_pool_ = std::move(map_scene.agent_pool_);
+    bucket_agent_mapping_ = std::move(map_scene.bucket_agent_mapping_);
+}
+
+Scene &Scene::operator=(Scene &&map_scene)
+{
+    *this = std::move(map_scene);
+    return *this;
+}
+
+void Scene::read_scene_(std::filesystem::path scene_file_path)
+{
     if (std::filesystem::exists(scene_file_path))
     {
         std::stringstream ss;
@@ -39,15 +59,15 @@ Scene::Scene(std::string mapname) : map_name(mapname)
                 std::stringstream sline(line);
                 sline >> bucket >> temp >> temp >> temp >> startx >> starty >> goalx >> goaly >> temp;
 
-                if (!bucket_agent_mapping.count(bucket))
-                    bucket_agent_mapping[bucket] = std::pair<std::vector<Coordinate>, std::vector<Coordinate>>();
+                if (!bucket_agent_mapping_.count(bucket))
+                    bucket_agent_mapping_[bucket] = std::pair<std::vector<Coordinate>, std::vector<Coordinate>>();
 
                 Coordinate start_pos(startx, starty);
                 Coordinate goal_pos(goalx, goaly);
 
-                bucket_agent_mapping[bucket].first.push_back(start_pos);
-                bucket_agent_mapping[bucket].second.push_back(goal_pos);
-                agent_pool.push_back(std::pair<Coordinate, Coordinate>(start_pos, goal_pos));
+                bucket_agent_mapping_[bucket].first.push_back(start_pos);
+                bucket_agent_mapping_[bucket].second.push_back(goal_pos);
+                agent_pool_.push_back(std::pair<Coordinate, Coordinate>(start_pos, goal_pos));
             }
             scene_file.close();
         }
@@ -60,27 +80,4 @@ Scene::Scene(std::string mapname) : map_name(mapname)
     }
 }
 
-std::vector<std::pair<Coordinate, Coordinate>> Scene::get_n_agent(int no_of_agenets)
-{
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::shuffle(agent_pool.begin(), agent_pool.end(), gen);
-    std::vector<std::pair<Coordinate, Coordinate>> ret;
-
-    if (agent_pool.size() >= no_of_agenets)
-    {
-
-        ret = std::vector<std::pair<Coordinate, Coordinate>>(agent_pool.begin(), agent_pool.begin() + no_of_agenets);
-
-        agent_pool = std::vector<std::pair<Coordinate, Coordinate>>(agent_pool.begin() + no_of_agenets, agent_pool.end());
-    }
-
-    else
-    {
-        path_sync::Logger::get()->warn("Dont have enough agents");
-    }
-
-    return ret;
-}
-}
-
+} // namespace path_sync

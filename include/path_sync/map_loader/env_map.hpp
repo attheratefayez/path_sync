@@ -1,11 +1,13 @@
 #ifndef __PATH_SYNC_ENV_MAP_HPP__
 #define __PATH_SYNC_ENV_MAP_HPP__
 
+#include <filesystem>
 #include <sstream>
 #include <string>
 
 #include "path_sync/logging/logger.hpp"
 #include "path_sync/map_loader/map_scene.hpp"
+#include "path_sync/path_sync_types.hpp"
 
 namespace path_sync
 {
@@ -14,103 +16,68 @@ namespace path_sync
  * @class Map
  * @brief Contains a map with its scenes
  *
- * @details 
- * A map contains free space and obstacles. 
- * A scene in the map is a a set of numbers defining teh starting and ending positions.
+ * @details
+ * A map contains free space and obstacles.
+ * A scene in the map is a a set of numbers defining the starting and ending
+ * positions.
  *
  */
 class Map
 {
   public:
-    Map() = default;
+    Map() : selected_map_index_(0)
+    {
+        get_available_maps_();
+    } // default constructor
     /**
      * @brief creates a map with map_name.
      *
-     * @param map_name 
+     * @param map_name
      */
     Map(std::string map_name);
-    Map(Map &);
-    Map& operator=(const Map& obj);
 
-    int get_map_height() const
+    Map(Map &&other);
+    Map &operator=(Map &&other);
+
+    Map(const Map &) = delete;
+    Map &operator=(const Map &) = delete;
+
+    inline const MapInfo &get_map_info() const
     {
-        return __map_height;
+        return current_map_info_;
     }
-
-    int get_map_width() const
-    {
-        return __map_width;
-    }
-
     /**
-     * @brief Returns the plain map as a string stream
+     * @brief A bucket is a collection of map scenes.
+     * see doc of this class to learn about scenes.
      *
-     * @return 
+     * @return
      */
-    std::stringstream &get_map()
-    {
-        return __map;
-    }
+   std::pair<std::vector<Coordinate>, std::vector<Coordinate>> load_n_agents(int n = 1);
 
-    std::string &get_map_name()
-    {
-        return __map_name;
-    }
+  private:
+    std::vector<std::string> available_maps_;
+    std::size_t selected_map_index_;
+
+    MapInfo current_map_info_;
+    Scene map_scenes_;
+    int current_bucket_idx_;
+    std::pair<std::vector<Coordinate>, std::vector<Coordinate>> current_bucket_;
+    int available_agents_in_current_bucket_;
+
+    void get_available_maps_();
+    void read_map_(std::filesystem::path map_path);
 
     Scene &get_map_scenes()
     {
-        return __map_scenes;
+        return map_scenes_;
     }
 
-    /**
-     * @brief A bucket is a collection of map scenes. 
-     * see doc of this class to learn about scenes.
-     *
-     * @return 
-     */
-    int get_current_bucket() const
-    {
-        return __current_bucket;
-    }
+    std::pair<std::vector<Coordinate>, std::vector<Coordinate>> get_current_bucket_();
+    std::pair<std::vector<Coordinate>, std::vector<Coordinate>> next_bucket_();
+    std::pair<std::vector<Coordinate>, std::vector<Coordinate>> previous_bucket_();
 
-    int next_bucket()
-    {
-        if (__current_bucket < __map_scenes.get_bucket_agent_map().size())
-        {
-            __current_bucket++;
-        }
-
-        else
-        {
-            path_sync::Logger::get()->warn("No next bucket.");
-        }
-
-        return __current_bucket;
-    }
-
-    int previous_bucket()
-    {
-        if (__current_bucket > 0)
-        {
-            __current_bucket--;
-        }
-        else
-        {
-            path_sync::Logger::get()->warn("No previous bucket.");
-        }
-
-        return __current_bucket;
-    }
-
-  private:
-    int __map_height;
-    int __map_width;
-    std::stringstream __map;
-    std::string __map_name;
-    int __current_bucket;
-    Scene __map_scenes;
 };
 
-} // END OF NAMESPACE
+} // namespace path_sync
 
 #endif // !__path_sync_ENV_MAP_HPP__
