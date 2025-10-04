@@ -30,6 +30,29 @@ struct MapInfo
     std::stringstream map;
     std::size_t width;
     std::size_t height;
+
+    MapInfo() = default;
+
+    MapInfo(MapInfo const& mapinfo)
+    {
+        this->map_name = mapinfo.map_name;
+        this->map <<  mapinfo.map.str();
+        this->height  = mapinfo.height;
+        this->width  = mapinfo.width;
+    }
+
+    MapInfo& operator=(MapInfo const& mapinfo)
+    {
+        if(this == &mapinfo)
+            return *this;
+
+        this->map_name = mapinfo.map_name;
+        this->map << mapinfo.map.str();
+        this->height = mapinfo.height;
+        this->width = mapinfo.width;
+
+        return *this;
+    }
 };
 
 namespace mapf_type

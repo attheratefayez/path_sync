@@ -2,9 +2,7 @@
 #define __PATH_SYNC_MAP_SCENE_HPP__
 
 #include <filesystem>
-#include <map>
 #include <string>
-#include <variant>
 
 #include "path_sync_core/path_sync_types.hpp"
 
@@ -31,32 +29,22 @@ class Scene
 
     Scene(const Scene &) = delete;
     Scene &operator=(const Scene &) = delete;
+    
 
     /**
-     * @brief Get the Agent_Pool in Bucket n.
+     * @brief getter for scene_data_
      *
-     * @param n : int
-     *
-     * @return :
-     * if nth index in inbound, returns the nth agent_pool.
-     * otherwise returns the bucket_agent_mapping_'s size.
+     * @return scene_data_ : std::vector<std::pair<Coordinate, Coordinate>> 
      */
-    std::variant<std::pair<std::vector<Coordinate>, std::vector<Coordinate>>, int> get_nth_bucket(int n)
+    std::vector<std::pair<Coordinate, Coordinate>> const& get_scene_data() const 
     {
-        std::size_t map_size = bucket_agent_mapping_.size();
-
-        if (n >= 0 and n < map_size)
-            return bucket_agent_mapping_[n];
-
-        return static_cast<int>(map_size);
+        return scene_data_;
     }
 
   private:
     std::string map_name_;
-    std::vector<std::pair<Coordinate, Coordinate>> agent_pool_;
-    std::map<int, std::pair<std::vector<Coordinate>, std::vector<Coordinate>>>
-        bucket_agent_mapping_; // bucket_no: <start_positions, end_positions>
-    //
+    std::vector< std::pair<Coordinate, Coordinate>> scene_data_; // pair <start_positions, end_positions>
+
     void read_scene_(std::filesystem::path scene_file_path);
 };
 

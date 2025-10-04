@@ -15,10 +15,38 @@ namespace path_sync
 
 class PathFinder
 {
-  private:
+public:
+    PathFinder();
+
+    void change_solver();
+
+    // TODO: implement logic to run the solve for a selected algorithm, or to test env
+    // for all algorithms. Like,
+    // find_path(map_data, starts, ends, run_on = "astar_solver")
+    // find_path(map_data, starts, ends, run_on = "bfs_solver")
+    // find_path(map_data, starts, ends, run_on = "test_all")
+
+    [[nodiscard]] std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> find_path(
+        const path_sync::MapData &map_data, const std::vector<Coordinate> &start_points,
+        const std::vector<Coordinate> &end_points);
+
+    std::string_view get_current_solver_name() const
+    {
+        if (current_sa_solver_)
+            return current_sa_solver_->get_solver_name();
+        return "No Solver Selected";
+    }
+
+    std::stringstream get_performance_data() const
+    {
+        return performance_met_.report();
+    }
+
+private:
     PerformanceMetrics performance_met_;
 
-    ISolver *current_solver_;
+    ISolver *current_sa_solver_;
+    IMASolver *current_ma_solver_;
     std::size_t current_solver_index_;
 
     std::vector<ISolver *> sa_solvers_;
@@ -30,26 +58,6 @@ class PathFinder
 
     std::vector<Coordinate> __construct_path(std::map<Coordinate, Coordinate> &node_map, const Coordinate &start,
                                              const Coordinate &end);
-
-  public:
-    PathFinder();
-
-    void change_solver();
-
-    // TODO: implement logic to run the solve for a selected algorithm, or to test env 
-    // for all algorithms. Like, 
-    // find_path(map_data, starts, ends, run_on = "astar_solver")
-    // find_path(map_data, starts, ends, run_on = "bfs_solver")
-    // find_path(map_data, starts, ends, run_on = "test_all")
-
-    std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> find_path(
-        const path_sync::MapData &map_data, const std::vector<Coordinate> &start_points,
-        const std::vector<Coordinate> &end_points);
-
-    std::stringstream get_performance_data() const
-    {
-        return performance_met_.report();
-    }
 };
 
 } // END OF NAMESPACE path_sync

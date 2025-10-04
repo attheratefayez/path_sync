@@ -72,9 +72,9 @@ public:
 
 private:
     Logger();
-
     void log_in_file_(const std::stringstream& ss);
-    ~Logger();
+
+    ~Logger() = default;
 };
 
 }

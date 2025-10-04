@@ -94,7 +94,7 @@ std::vector<path_sync::Coordinate> Utils::possible_actions_with_agent(const path
         int x = agent.first + move.first;
         int y = agent.second + move.second;
 
-        if (map_data.get_cell_type(x, y) != path_sync::CellType::WALL)
+        if (map_data.get_cell_type(path_sync::Coordinate(x, y)) != path_sync::CellType::WALL)
         {
             agent_moves.push_back(path_sync::Coordinate(x, y));
         }

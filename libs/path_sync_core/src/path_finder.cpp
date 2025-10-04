@@ -6,22 +6,38 @@
 
 #include <algorithm>
 #include <iostream>
-#include <optional>
 #include <sstream>
 #include <stdexcept>
 
 namespace path_sync
 {
-PathFinder::PathFinder() : performance_met_{}, current_solver_(nullptr)
+PathFinder::PathFinder()
+    : performance_met_{}
+    , current_sa_solver_(nullptr)
+    , current_ma_solver_(nullptr)
+    , current_solver_index_(0)
 {
     sa_solvers_.push_back(&astar_solver_);
     sa_solvers_.push_back(&bfs_solver_);
     ma_solvers_.push_back(&astar_joint_state_solver);
+
+    // Initialize current_solver_ to the first single-agent solver
+    if (!sa_solvers_.empty())
+    {
+        current_sa_solver_ = sa_solvers_[0];
+    }
 }
 
 void PathFinder::change_solver()
 {
-    // TODO: implement or delete this func
+    if (sa_solvers_.empty())
+    {
+        path_sync::Logger::get().warn("No single-agent solvers available to change.");
+        return;
+    }
+
+    current_solver_index_ = (++current_solver_index_) % sa_solvers_.size();
+    current_sa_solver_ = sa_solvers_[current_solver_index_];
 }
 
 std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> PathFinder::find_path(
@@ -40,11 +56,17 @@ std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> Path
         std::map<Coordinate, Coordinate> node_map;
         std::vector<Coordinate> path;
 
-        current_solver_ = sa_solvers_[0];
+        // Ensure current_solver_ is a single-agent solver
+        if (!current_sa_solver_)
+        {
+            path_sync::Logger::get().warn("Solver is not selected yet. Selected the first sa_solver");
+            current_sa_solver_ = sa_solvers_[0];
+            current_solver_index_ = 0;
+        }
 
-        performance_met_.solver_name = current_solver_->get_solver_name();
+        performance_met_.solver_name = current_sa_solver_->get_solver_name();
 
-        node_map = current_solver_->solve(map_data, start_points[0], end_points[0], performance_met_);
+        node_map = current_sa_solver_->solve(map_data, start_points[0], end_points[0], performance_met_);
 
         if (node_map.empty())
         {
@@ -62,7 +84,7 @@ std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> Path
         return path;
     }
 
-    // NOTE: not considering mapf for now
+    // TODO: add logic to handle multi-agent case
 
     // else
     // {

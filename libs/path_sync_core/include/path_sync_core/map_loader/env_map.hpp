@@ -23,10 +23,11 @@ namespace path_sync
 class Map
 {
   public:
-    Map() 
+    Map()
+        : map_info_{}
+        , map_scenes_{}
     {
-        get_available_maps_();
-    } // default constructor
+    }
     /**
      * @brief creates a map with map_name.
      *
@@ -41,35 +42,22 @@ class Map
     Map(const Map &) = delete;
     Map &operator=(const Map &) = delete;
 
-    inline const MapInfo &get_map_info() const
+    MapInfo const &get_map_info() const
     {
-        return current_map_info_;
+        return map_info_;
     }
 
-    std::pair<std::vector<Coordinate>, std::vector<Coordinate>> load_n_agents(int n = 1);
-    MapInfo& change_current_map();
-
-  private:
-    std::vector<std::string> available_maps_;
-    std::size_t selected_map_index_;
-
-    MapInfo current_map_info_;
-    Scene map_scenes_;
-    int current_bucket_idx_;
-    std::pair<std::vector<Coordinate>, std::vector<Coordinate>> current_bucket_;
-    int available_agents_in_current_bucket_;
-
-    void get_available_maps_();
-    void read_map_(std::filesystem::path map_path);
-
-    Scene &get_map_scenes()
+    Scene const &get_map_scenes() const
     {
         return map_scenes_;
     }
 
-    std::pair<std::vector<Coordinate>, std::vector<Coordinate>> get_current_bucket_();
-    std::pair<std::vector<Coordinate>, std::vector<Coordinate>> next_bucket_();
-    std::pair<std::vector<Coordinate>, std::vector<Coordinate>> previous_bucket_();
+  private:
+    MapInfo map_info_;
+    Scene map_scenes_;
+
+    void read_map_(std::filesystem::path map_path);
+
 };
 
 } // namespace path_sync

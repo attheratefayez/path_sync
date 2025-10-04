@@ -17,7 +17,7 @@ std::vector<path_sync::Coordinate> find_neighbors(const path_sync::MapData& map_
         int n_col = candidate.first + y_moves[i];
         int n_row = candidate.second + x_moves[i];
 
-        if (map_data.get_cell_type(n_col, n_row) != path_sync::CellType::WALL) {
+        if (map_data.get_cell_type(path_sync::Coordinate(n_col, n_row)) != path_sync::CellType::WALL) {
             neighbors.push_back({n_col, n_row});
         }
     }

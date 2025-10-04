@@ -5,21 +5,47 @@
 
 #include "path_sync_core/path_sync_types.hpp"
 
-namespace path_sync {
+namespace path_sync
+{
 
-class MapData {
-public:
-    MapData(int width, int height);
+/**
+ * @class MapData
+ * @details Stores Map data, but it is specifically designed to used in path_sync_core
+ * and path_sync_ui. This class makes a grid like object of cells (CellType). So, the map is not a str
+ * any more.
+ */
+class MapData
+{
+  public:
+    MapData()
+        : map_info_{}
+    {
+    }
 
-    int get_width() const { return width_; }
-    int get_height() const { return height_; }
-    CellType get_cell_type(int x, int y) const;
-    void set_cell_type(int x, int y, CellType type);
+    MapData(MapInfo const &map_info);
 
-private:
-    int width_;
-    int height_;
+    int get_width() const
+    {
+        return map_info_.width;
+    }
+    int get_height() const
+    {
+        return map_info_.height;
+    }
+
+    MapInfo get_map_info() const
+    {
+        return map_info_;
+    }
+
+    CellType get_cell_type(Coordinate pos) const;
+    void set_cell_type(Coordinate pos, CellType type);
+
+  private:
+    MapInfo map_info_;
     std::vector<std::vector<CellType>> grid_data_;
+
+    void create_grid_data_();
 };
 
 } // namespace path_sync

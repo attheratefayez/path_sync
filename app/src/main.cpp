@@ -7,17 +7,17 @@
 // #include "path_sync/visualization_system/visualization_system_config.hpp"
 
 void test_loop();
-void pfsync_loop();
+void path_sync_loop();
 
 // int path_sync::VisualizationSystemConfig::CELL_SIZE = 5;
 
 int main()
 {
-    pfsync_loop();
+    path_sync_loop();
     /*test_loop();*/
 }
 
-void pfsync_loop()
+void path_sync_loop()
 {
     // load path_sync configs
     // initialize the Visualization System
@@ -25,8 +25,8 @@ void pfsync_loop()
     // path_sync::VisualizationSystemConfig system_config =
         // path_sync::VisualizationSystemConfig("/home/fayez/Bugs/Cpp/path_sync/config/env_vars.yaml");
     
-    path_sync::PathSyncApp app(100, 200);
-    app.run_headless_experiments();
+    path_sync::PathSyncApp app{};
+    app.solve_current_scene();
 }
 
 void test_loop()

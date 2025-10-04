@@ -11,7 +11,3 @@ target_include_directories(path_sync_core PUBLIC
 target_compile_definitions(path_sync_core PUBLIC PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
 
 
-# FIX: this linking may not be necessay here. 
-# yaml-cpp is needed only for the visualization system
-
-# target_link_libraries(path_sync_core PUBLIC yaml-cpp)

@@ -4,6 +4,3 @@ window:
   title: "Path Sync"
   framerate: 30
 
-path:
-  project_root: "/home/fayez/Bugs/Cpp/momapf/"
-

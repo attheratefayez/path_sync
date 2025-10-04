@@ -10,18 +10,22 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(google_test)
 
 set(test_src_files
-    ./solvers/astar_joint_state_utils.cpp
     ./main_test.cpp
+    ./path_sync_core_test/map_scene_test.cpp
+    ./path_sync_core_test/env_map_test.cpp
+    ./path_sync_core_test/map_data_test.cpp
+    ./path_sync_core_test/map_manager_test.cpp
+
 )
 
 
 enable_testing()
 add_executable(path_sync_test
     ${test_src_files}
-)
+    )
 
 target_link_directories(path_sync_test
-    PUBLIC ${CMAKE_SOURCE_DIR}/lib/SFML/
+    PUBLIC ${CMAKE_SOURCE_DIR}/libs/path_sync_ui/lib/SFML/
 )
 
 target_link_libraries(path_sync_test
@@ -30,7 +34,7 @@ target_link_libraries(path_sync_test
     sfml-window
     sfml-system
     yaml-cpp
-    path_sync_src
+    path_sync_core
 )
 
 include(GoogleTest)
