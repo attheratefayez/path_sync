@@ -7,10 +7,10 @@ int path_sync::VisualizationSystemConfig::CELL_SIZE = 5;
 
 int main()
 {
-    // path_sync::PathSyncApp app_;
-    // std::unique_ptr<path_sync::VisualizationSystemConfig> vsc_ = 
-    //     std::make_unique<path_sync::VisualizationSystemConfig>(std::string(PROJECT_ROOT) + "/config/env_vars.yaml");
-    //
-    // path_sync::VisualizationSystem visualization_system_(app_, std::move(vsc_));
-    // visualization_system_.run();
+    path_sync::PathSyncApp app_;
+    std::unique_ptr<path_sync::VisualizationSystemConfig> vsc_ = 
+        std::make_unique<path_sync::VisualizationSystemConfig>(std::string(PROJECT_ROOT) + "/config/env_vars.yaml");
+
+    path_sync::VisualizationSystem visualization_system_(app_, std::move(vsc_));
+    visualization_system_.run();
 }
