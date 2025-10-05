@@ -77,6 +77,9 @@ void Scene::read_scene_(std::filesystem::path scene_file_path)
             }
             scene_file.close();
         }
+        ss.str(std::string());
+        ss << "Got " << scene_data_.size() << " scenes for map: " << scene_file_path.filename().stem() << std::endl;
+        path_sync::Logger::get().info(ss.str().c_str());
     }
 
     else

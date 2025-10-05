@@ -34,7 +34,7 @@ class PathSyncApp
 
   private:
     path_sync::MapManager map_manager_;
-    path_sync::MapData current_map_data_;
+    std::shared_ptr<path_sync::MapData> current_map_data_;
     std::pair<std::vector<Coordinate>, std::vector<Coordinate>> current_scene_;
     std::vector<Coordinate> current_sa_solution_;
     std::vector<std::vector<Coordinate>> current_ma_solution_;

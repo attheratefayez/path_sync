@@ -16,7 +16,7 @@ PathSyncApp::PathSyncApp()
     , current_ma_solution_{}
     , num_agents_{1}
 {
-    current_map_data_ = map_manager_.get_next_map_data();
+    current_map_data_ = std::make_shared<path_sync::MapData>(map_manager_.get_next_map_data());
     current_scene_ = map_manager_.get_next_scene(num_agents_);
 
     update_map_data_with_current_scene_();
@@ -29,21 +29,27 @@ PathSyncApp::PathSyncApp()
 
 bool PathSyncApp::request_next_map()
 {
-    current_map_data_ = map_manager_.get_next_map_data();
-    return bool(current_map_data_.get_height());
+    current_map_data_ = std::make_shared<path_sync::MapData>(map_manager_.get_next_map_data());
+    return bool(current_map_data_->get_height());
 }
 
 bool PathSyncApp::request_next_scene()
 {
-    clear_scene();
+    for(auto& elem: current_scene_.first)
+    current_map_data_->set_cell_type(elem, path_sync::CellType::DEFAULT);
+
+    for(auto& elem: current_scene_.second)
+    current_map_data_->set_cell_type(elem, path_sync::CellType::DEFAULT);
+
     current_scene_ = map_manager_.get_next_scene(num_agents_);
     update_map_data_with_current_scene_();
+
     return bool(current_scene_.first.size());
 }
 
 bool PathSyncApp::solve_current_scene()
 {
-    auto current_solution_ = path_finder_.find_path(current_map_data_, current_scene_.first, current_scene_.second);
+    auto current_solution_ = path_finder_.find_path(*current_map_data_, current_scene_.first, current_scene_.second);
 
     if (std::holds_alternative<std::vector<Coordinate>>(current_solution_))
     {
@@ -51,8 +57,11 @@ bool PathSyncApp::solve_current_scene()
         if (current_sa_solution_.empty())
             return false;
 
+        current_sa_solution_ =
+            std::vector<Coordinate>(current_sa_solution_.begin() + 1, current_sa_solution_.end() - 1);
+
         for (Coordinate const &elem : current_sa_solution_)
-            current_map_data_.set_cell_type(elem, path_sync::CellType::PATH);
+            current_map_data_->set_cell_type(elem, path_sync::CellType::PATH);
     }
     else
     {
@@ -63,8 +72,10 @@ bool PathSyncApp::solve_current_scene()
 
         for (auto &path : current_ma_solution_)
         {
+            path = std::vector<Coordinate>(path.begin()+1, path.end()-1);
+
             for (auto &elem : path)
-                current_map_data_.set_cell_type(elem, path_sync::CellType::PATH);
+                current_map_data_->set_cell_type(elem, path_sync::CellType::PATH);
         }
     }
 
@@ -74,37 +85,35 @@ bool PathSyncApp::solve_current_scene()
 
 std::shared_ptr<path_sync::MapData const> PathSyncApp::get_current_map_data() const
 {
-    std::shared_ptr<path_sync::MapData const> temp = std::make_shared<path_sync::MapData const>(current_map_data_);
-    return temp;
+    return current_map_data_;
 }
 
-void PathSyncApp::clear_scene()
-{
-    for (int y = 0; y < current_map_data_.get_height(); ++y)
-    {
-        for (int x = 0; x < current_map_data_.get_width(); ++x)
-        {
-            CellType current_type = current_map_data_.get_cell_type(Coordinate(x, y));
-            if (current_type == path_sync::CellType::START || current_type == path_sync::CellType::END)
-            {
-                current_map_data_.set_cell_type(Coordinate(x, y), CellType::DEFAULT);
-            }
-        }
-    }
-    path_sync::Logger::get().info("Scene cleared.");
-}
-
+// void PathSyncApp::clear_scene()
+// {
+//     for (int y = 0; y < current_map_data_.get_height(); ++y)
+//     {
+//         for (int x = 0; x < current_map_data_.get_width(); ++x)
+//         {
+//             CellType current_type = current_map_data_.get_cell_type(Coordinate(x, y));
+//             if (current_type == path_sync::CellType::START || current_type == path_sync::CellType::END)
+//             {
+//                 current_map_data_.set_cell_type(Coordinate(x, y), CellType::DEFAULT);
+//             }
+//         }
+//     }
+//     path_sync::Logger::get().info("Scene cleared.");
+// }
 
 void PathSyncApp::clear_paths()
 {
-    for (int y = 0; y < current_map_data_.get_height(); ++y)
+    for (int y = 0; y < current_map_data_->get_height(); ++y)
     {
-        for (int x = 0; x < current_map_data_.get_width(); ++x)
+        for (int x = 0; x < current_map_data_->get_width(); ++x)
         {
-            CellType current_type = current_map_data_.get_cell_type(Coordinate(x, y));
+            CellType current_type = current_map_data_->get_cell_type(Coordinate(x, y));
             if (current_type == CellType::PATH || current_type == CellType::VISITED || current_type == CellType::FOUND)
             {
-                current_map_data_.set_cell_type(Coordinate(x, y), CellType::DEFAULT);
+                current_map_data_->set_cell_type(Coordinate(x, y), CellType::DEFAULT);
             }
         }
     }
@@ -113,7 +122,7 @@ void PathSyncApp::clear_paths()
 
 void PathSyncApp::reset_grid()
 {
-    current_map_data_ = map_manager_.get_current_map_data();
+    current_map_data_ = std::make_shared<path_sync::MapData>(map_manager_.get_current_map_data());
     current_scene_.first.clear();
     current_scene_.second.clear();
     current_sa_solution_.clear();
@@ -123,11 +132,11 @@ void PathSyncApp::reset_grid()
 
 void PathSyncApp::update_map_data_with_current_scene_()
 {
-    for(auto& elem: current_scene_.first)
-    current_map_data_.set_cell_type(elem, path_sync::CellType::START);
+    for (auto &elem : current_scene_.first)
+        current_map_data_->set_cell_type(elem, path_sync::CellType::START);
 
-    for(auto& elem: current_scene_.second)
-    current_map_data_.set_cell_type(elem, path_sync::CellType::END);
+    for (auto &elem : current_scene_.second)
+        current_map_data_->set_cell_type(elem, path_sync::CellType::END);
 }
 
 } // namespace path_sync

@@ -1,10 +1,10 @@
-#include <exception>
 #include <filesystem>
 #include <stdexcept>
-#include <iostream>
 
+#include "path_sync_core/logger.hpp"
 #include "path_sync_core/map_loader/map_manager.hpp"
 #include "path_sync_core/path_sync_types.hpp"
+
 namespace path_sync
 {
 
@@ -14,6 +14,7 @@ MapManager::MapManager()
     , current_scene_{}
     , current_map_idx_{-1}
     , current_scene_idx_{0}
+    , total_scenes_{}
 {
     _get_available_maps();
 }
@@ -42,6 +43,8 @@ MapManager::MapManager()
         current_scene_.second.clear();
         current_scene_idx_ = 0;
 
+        total_scenes_ = current_map_.get_map_scenes().get_scene_data().size();
+
         return current_map_data_;
     }
 
@@ -58,7 +61,7 @@ std::pair<std::vector<Coordinate>, std::vector<Coordinate>> MapManager::get_curr
     return current_scene_;
 }
 
-[[nodiscard]] std::pair<std::vector<Coordinate>, std::vector<Coordinate>> MapManager::get_next_scene(int n_agent) 
+[[nodiscard]] std::pair<std::vector<Coordinate>, std::vector<Coordinate>> MapManager::get_next_scene(int n_agent)
 {
     // NOTE:
     // Scene data is returned as a vector of start-end pairs.
@@ -79,6 +82,8 @@ std::pair<std::vector<Coordinate>, std::vector<Coordinate>> MapManager::get_curr
 
         current_scene_.first.reserve(n_agent);
         current_scene_.second.reserve(n_agent);
+        current_scene_.first.clear();
+        current_scene_.second.clear();
 
         for (auto start_end_pair : temp)
         {
@@ -87,6 +92,10 @@ std::pair<std::vector<Coordinate>, std::vector<Coordinate>> MapManager::get_curr
         }
 
         current_scene_idx_ += n_agent;
+
+        std::stringstream ss;
+        ss << "Scene: " << current_scene_idx_+1 << " Total Scenes: " << total_scenes_ << std::endl;
+        path_sync::Logger::get().info(ss.str().c_str());
 
         return current_scene_;
     }

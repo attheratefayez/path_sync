@@ -17,10 +17,10 @@ namespace path_sync
 
 // CONSTRUCTOR
 // TODO: add a way to change the map mode {MAP, FREE}
-VisualizationSystem::VisualizationSystem(PathSyncApp& app, std::unique_ptr<VisualizationSystemConfig> system_config)
-    : app_(app),
-      system_config_(std::move(system_config)),
-      grid_(*app.get_current_map_data(), system_config_->CELL_SIZE)
+VisualizationSystem::VisualizationSystem(PathSyncApp &app, std::unique_ptr<VisualizationSystemConfig> system_config)
+    : app_(app)
+    , system_config_(std::move(system_config))
+    , grid_(*app.get_current_map_data(), system_config_->CELL_SIZE)
 {
     main_window_.create(sf::VideoMode({system_config_->WIDTH, system_config_->HEIGHT}), system_config_->TITLE,
                         sf::Style::Titlebar | sf::Style::Close);
@@ -51,6 +51,13 @@ void VisualizationSystem::setup_keybindings()
     };
 
     key_bindings_[sf::Keyboard::Key::Space] = [this]() {
+        if (app_.solve_current_scene())
+        {
+        }
+        else
+        {
+            path_sync::Logger::get().warn("No Solution Found.");
+        }
     };
 
     key_bindings_[sf::Keyboard::Key::H] = [this]() {
@@ -75,7 +82,7 @@ void VisualizationSystem::setup_keybindings()
             sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift))
         {
             path_sync::Logger::get().info("CLEARING PATH...");
-            // app_.clear_paths(); // TODO: Implement in PathSyncApp
+            app_.clear_paths();
         }
     };
 
@@ -85,6 +92,14 @@ void VisualizationSystem::setup_keybindings()
         {
             path_sync::Logger::get().info("RESETTING GRID...");
             // app_.reset_grid(); // TODO: Implement in PathSyncApp
+        }
+    };
+
+    key_bindings_[sf::Keyboard::Key::RBracket] = [this]() {
+        if(!app_.request_next_scene())
+        {
+            path_sync::Logger::get().warn("No next scene.");
+            return;
         }
     };
 }
@@ -196,8 +211,7 @@ bool VisualizationSystem::is_point_inside_window_bounds(const sf::Vector2i &poin
 
 Coordinate VisualizationSystem::get_grid_cell_from_mouse_position(const sf::Vector2i &mouse_position)
 {
-    Coordinate grid_cell = {mouse_position.x / system_config_->CELL_SIZE,
-                            mouse_position.y / system_config_->CELL_SIZE};
+    Coordinate grid_cell = {mouse_position.x / system_config_->CELL_SIZE, mouse_position.y / system_config_->CELL_SIZE};
     return grid_cell;
 }
 
