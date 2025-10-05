@@ -23,7 +23,6 @@ typedef std::vector<std::vector<path_sync::CellType>> CellGrid;
 typedef std::vector<std::vector<std::size_t>> CostGrid;
 typedef std::pair<int, int> Coordinate;
 
-
 struct MapInfo
 {
     std::string map_name;
@@ -33,21 +32,25 @@ struct MapInfo
 
     MapInfo() = default;
 
-    MapInfo(MapInfo const& mapinfo)
+    MapInfo(MapInfo const &mapinfo)
     {
         this->map_name = mapinfo.map_name;
-        this->map <<  mapinfo.map.str();
-        this->height  = mapinfo.height;
-        this->width  = mapinfo.width;
+        this->map << mapinfo.map.str();
+        this->height = mapinfo.height;
+        this->width = mapinfo.width;
     }
 
-    MapInfo& operator=(MapInfo const& mapinfo)
+    MapInfo &operator=(MapInfo const &mapinfo)
     {
-        if(this == &mapinfo)
+        if (this == &mapinfo)
             return *this;
 
         this->map_name = mapinfo.map_name;
+
+        this->map.str("");
+        this->map.clear();
         this->map << mapinfo.map.str();
+
         this->height = mapinfo.height;
         this->width = mapinfo.width;
 
@@ -72,7 +75,10 @@ struct JointState
 struct Node
 {
     Node(JointState state, std::size_t g_score, std::size_t h_score, std::shared_ptr<Node> parent = nullptr)
-        : _state(state), _g_score(g_score), _h_score(h_score), _parent(parent)
+        : _state(state)
+        , _g_score(g_score)
+        , _h_score(h_score)
+        , _parent(parent)
     {
     }
 

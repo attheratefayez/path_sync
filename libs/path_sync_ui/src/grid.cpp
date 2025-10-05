@@ -38,6 +38,9 @@ void Grid::draw(sf::RenderTarget &target, sf::RenderStates states) const
 
 void Grid::sync_with_map_data(const path_sync::MapData &map_data)
 {
+    if(map_data.get_height() != drawable_grid_.size() or map_data.get_width() != drawable_grid_[0].size())
+        *this = std::move(Grid(map_data, 2));
+
     for (int y = 0; y < map_data.get_height(); ++y)
     {
         for (int x = 0; x < map_data.get_width(); ++x)

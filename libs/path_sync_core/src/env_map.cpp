@@ -1,9 +1,7 @@
 #include <filesystem>
 #include <fstream>
-#include <sstream>
 #include <string>
 
-#include "path_sync_core/logger.hpp"
 #include "path_sync_core/map_loader/env_map.hpp"
 
 namespace path_sync
@@ -27,6 +25,9 @@ Map::Map(std::string mapname)
 
 Map::Map(Map &&other)
 {
+    if(this == &other)
+        return;
+
     this->map_info_ = std::move(other.map_info_);
     this->map_scenes_ = std::move(other.map_scenes_);
 }
@@ -55,7 +56,7 @@ void Map::read_map_(std::filesystem::path map_path)
 
             while (std::getline(map_file, temp_str))
             {
-                if (!temp_str.size())
+                if (!temp_str.size() or temp_str.size() != map_info_.width)
                     continue;
 
                 map_info_.map << temp_str << "\n";

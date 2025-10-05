@@ -73,7 +73,7 @@ void VisualizationSystem::setup_keybindings()
             sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift))
         {
             path_sync::Logger::get().info("Changing Map...");
-            // app_.change_map(); // TODO: Implement in PathSyncApp
+            app_.request_next_map();
         }
     };
 

@@ -37,6 +37,7 @@ MapManager::MapManager()
         ++current_map_idx_;
 
         current_map_ = std::move(Map(available_maps_[current_map_idx_]));
+
         current_map_data_ = MapData(current_map_.get_map_info());
 
         current_scene_.first.clear();

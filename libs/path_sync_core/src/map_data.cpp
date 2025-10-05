@@ -44,6 +44,7 @@ void MapData::create_grid_data_()
 {
     std::string line;
     int row = 0, col = 0;
+
     while(std::getline(map_info_.map, line))
     {
         col = 0;
@@ -58,6 +59,7 @@ void MapData::create_grid_data_()
             ++col;
         }
         row++;
+
     }
 
 }
