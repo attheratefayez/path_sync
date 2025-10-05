@@ -26,7 +26,7 @@ void path_sync_loop()
         // path_sync::VisualizationSystemConfig("/home/fayez/Bugs/Cpp/path_sync/config/env_vars.yaml");
     
     path_sync::PathSyncApp app{};
-    app.solve_current_scene();
+    app.solve_current_map();
 }
 
 void test_loop()

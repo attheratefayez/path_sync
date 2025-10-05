@@ -13,6 +13,4 @@ int main()
     //
     // path_sync::VisualizationSystem visualization_system_(app_, std::move(vsc_));
     // visualization_system_.run();
-    path_sync::Logger::get().set_log_file_path(std::string(PROJECT_ROOT) + "/log/logging.txt");
-    path_sync::Logger::get().info("Testing if logging file works");
 }

@@ -20,6 +20,7 @@ class PathSyncApp
     bool request_next_map();
     bool request_next_scene();
     bool solve_current_scene();
+    bool solve_current_map();
 
     std::shared_ptr<path_sync::MapData const> get_current_map_data() const;
 

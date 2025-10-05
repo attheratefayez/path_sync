@@ -101,6 +101,7 @@ void VisualizationSystem::setup_keybindings()
             path_sync::Logger::get().warn("No next scene.");
             return;
         }
+        app_.clear_paths();
     };
 }
 

@@ -13,6 +13,7 @@
 #define __PATH_SYNC_LOGGER_HPP__
 
 #include <filesystem>
+#include <fstream>
 #include <sstream>
 
 #define RESET "\033[0m"
@@ -54,31 +55,24 @@ public:
      *
      * @param msg Message to log.
      */
-    void info(const char *msg);
+    void info(const char *msg, std::shared_ptr<std::ofstream> log_file = nullptr);
 
     /**
      * @brief log an warn message.
      *
      * @param msg Message to log.
      */
-    void warn(const char *msg);
+    void warn(const char *msg, std::shared_ptr<std::ofstream> log_file = nullptr);
 
     /**
      * @brief log an error message.
      *
      * @param msg Message to log.
      */
-    void error(const char *msg);
-
-    void set_log_file_path(std::string path)
-    {
-        log_file_ = path;
-    }
+    void error(const char *msg, std::shared_ptr<std::ofstream> log_file = nullptr);
 
 private:
     Logger();
-    std::filesystem::path log_file_;
-    void log_in_file_(const std::stringstream &ss);
 
     ~Logger() = default;
 };

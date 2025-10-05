@@ -2,7 +2,11 @@
 #include "path_sync_core/logger.hpp"
 #include "path_sync_core/path_sync_types.hpp"
 
+#include <ctime>
+#include <iomanip>
 #include <iostream>
+#include <memory>
+#include <sstream>
 #include <vector>
 
 namespace path_sync
@@ -35,11 +39,11 @@ bool PathSyncApp::request_next_map()
 
 bool PathSyncApp::request_next_scene()
 {
-    for(auto& elem: current_scene_.first)
-    current_map_data_->set_cell_type(elem, path_sync::CellType::DEFAULT);
+    for (auto &elem : current_scene_.first)
+        current_map_data_->set_cell_type(elem, path_sync::CellType::DEFAULT);
 
-    for(auto& elem: current_scene_.second)
-    current_map_data_->set_cell_type(elem, path_sync::CellType::DEFAULT);
+    for (auto &elem : current_scene_.second)
+        current_map_data_->set_cell_type(elem, path_sync::CellType::DEFAULT);
 
     current_scene_ = map_manager_.get_next_scene(num_agents_);
     update_map_data_with_current_scene_();
@@ -72,7 +76,7 @@ bool PathSyncApp::solve_current_scene()
 
         for (auto &path : current_ma_solution_)
         {
-            path = std::vector<Coordinate>(path.begin()+1, path.end()-1);
+            path = std::vector<Coordinate>(path.begin() + 1, path.end() - 1);
 
             for (auto &elem : path)
                 current_map_data_->set_cell_type(elem, path_sync::CellType::PATH);
@@ -80,6 +84,45 @@ bool PathSyncApp::solve_current_scene()
     }
 
     Logger::get().info(path_finder_.get_performance_data().str().c_str());
+    return true;
+}
+
+bool PathSyncApp::solve_current_map()
+{
+    // map_manager_.reset();
+
+    // NOTE:
+    // getting a clear map_data. Because, in initalization, update_map_data_with_current_scene_
+    // sets starts and ends in mapdata
+    current_map_data_ = std::make_shared<path_sync::MapData>(map_manager_.get_current_map_data());
+    current_scene_ = map_manager_.get_next_scene(1);
+
+    std::string log_file_name = "";
+    std::string log_file_path = "";
+
+    log_file_name += current_map_data_->get_map_info().map_name;
+
+    auto time_now = std::chrono::system_clock::now();
+    auto time_now_c = std::chrono::system_clock::to_time_t(time_now);
+    std::tm time_now_tm = *std::localtime(&time_now_c);
+    std::stringstream ss;
+    ss << std::put_time(&time_now_tm, "%d_%m_%Y-%H:%M");
+
+    log_file_name += ss.str();
+    log_file_name += ".txt";
+    log_file_path = std::string(PROJECT_ROOT) + "/log/" + log_file_name;
+    std::shared_ptr<std::ofstream> log_file = std::make_shared<std::ofstream>(log_file_path);
+
+    while(not current_scene_.first.empty())
+    {
+        path_finder_.find_path(*current_map_data_, current_scene_.first, current_scene_.second);
+        current_scene_ = map_manager_.get_next_scene(1);
+
+        path_sync::Logger::get().info(path_finder_.get_performance_data().str().c_str(), log_file);
+    }
+
+    log_file->close();
+
     return true;
 }
 
