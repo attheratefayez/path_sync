@@ -131,21 +131,21 @@ std::shared_ptr<path_sync::MapData const> PathSyncApp::get_current_map_data() co
     return current_map_data_;
 }
 
-// void PathSyncApp::clear_scene()
-// {
-//     for (int y = 0; y < current_map_data_.get_height(); ++y)
-//     {
-//         for (int x = 0; x < current_map_data_.get_width(); ++x)
-//         {
-//             CellType current_type = current_map_data_.get_cell_type(Coordinate(x, y));
-//             if (current_type == path_sync::CellType::START || current_type == path_sync::CellType::END)
-//             {
-//                 current_map_data_.set_cell_type(Coordinate(x, y), CellType::DEFAULT);
-//             }
-//         }
-//     }
-//     path_sync::Logger::get().info("Scene cleared.");
-// }
+void PathSyncApp::clear_scene()
+{
+    for (int y = 0; y < current_map_data_->get_height(); ++y)
+    {
+        for (int x = 0; x < current_map_data_->get_width(); ++x)
+        {
+            CellType current_type = current_map_data_->get_cell_type(Coordinate(x, y));
+            if (current_type == path_sync::CellType::START || current_type == path_sync::CellType::END)
+            {
+                current_map_data_->set_cell_type(Coordinate(x, y), CellType::DEFAULT);
+            }
+        }
+    }
+    path_sync::Logger::get().info("Scene cleared.");
+}
 
 void PathSyncApp::clear_paths()
 {
