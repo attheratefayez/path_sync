@@ -14,9 +14,9 @@ struct PerformanceMetrics
     std::string solver_name;
     std::string map_name;
     std::chrono::milliseconds runtime;
-    uint16_t path_length;
-    uint16_t num_of_nodes_explored;
-    uint16_t num_of_nodes_expanded;
+    std::size_t path_length;
+    std::size_t num_of_nodes_explored;
+    std::size_t num_of_nodes_expanded;
 
     std::stringstream report() const
     {
