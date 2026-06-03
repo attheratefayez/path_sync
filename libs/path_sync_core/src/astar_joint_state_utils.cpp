@@ -111,7 +111,7 @@ path_sync::mapf_type::JointState Utils::apply_actions(const path_sync::mapf_type
 
     path_sync::mapf_type::JointState new_state;
 
-    for (int agent = 0; agent > state.positions.size(); ++agent)
+    for (std::size_t agent = 0; agent < state.positions.size(); ++agent)
     {
         new_state.positions.push_back(Utils::apply_single_action(state.positions[agent], actions[agent]));
     }
