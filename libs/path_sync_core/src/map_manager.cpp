@@ -75,7 +75,7 @@ std::pair<std::vector<Coordinate>, std::vector<Coordinate>> MapManager::get_curr
         throw std::runtime_error("No scene available. Map is not initialied. Call get_next_map_data() to load a map.");
     }
 
-    if (current_scene_idx_ + n_agent < total_scenes_)
+    if (current_scene_idx_ + n_agent <= total_scenes_)
     {
         std::vector<std::pair<path_sync::Coordinate, path_sync::Coordinate>> temp(
             current_map_.get_map_scenes().get_scene_data().begin() + current_scene_idx_,
