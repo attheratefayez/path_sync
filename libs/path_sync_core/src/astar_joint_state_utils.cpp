@@ -30,7 +30,15 @@ std::optional<std::vector<std::vector<path_sync::Coordinate>>> Utils::cartesian_
     std::vector<std::vector<path_sync::Coordinate>> input_vec)
 {
     if (input_vec.size() < 2)
-        return std::nullopt;
+    {
+        if (input_vec.empty())
+            return std::nullopt;
+
+        std::vector<std::vector<path_sync::Coordinate>> single_result;
+        for (auto &action : input_vec[0])
+            single_result.push_back({action});
+        return single_result;
+    }
 
     std::vector<std::vector<path_sync::Coordinate>> res;
 
