@@ -70,8 +70,8 @@ bool PathSyncApp::solve_current_scene()
     else
     {
         current_ma_solution_ = std::get<std::vector<std::vector<Coordinate>>>(current_solution_);
-        if (std::all_of(current_ma_solution_.begin(), current_ma_solution_.end(),
-                        [](std::vector<Coordinate> &elem) { return not elem.empty(); }))
+        if (std::any_of(current_ma_solution_.begin(), current_ma_solution_.end(),
+                        [](std::vector<Coordinate> &elem) { return elem.empty(); }))
             return false;
 
         for (auto &path : current_ma_solution_)
