@@ -151,6 +151,7 @@ bool Utils::check_validity_of_state(const path_sync::mapf_type::JointState &curr
 std::vector<std::vector<path_sync::Coordinate>> Utils::extract_paths(path_sync::mapf_type::NodePtr &current)
 {
     std::vector<std::vector<path_sync::Coordinate>> paths;
+    paths.resize(current->_state.positions.size());
 
     std::size_t num_of_agents = current->_state.positions.size();
 
