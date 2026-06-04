@@ -36,6 +36,7 @@ VisualizationSystem::VisualizationSystem(PathSyncApp &app, std::unique_ptr<Visua
     help_stream_ << "\tMouse-Right + Drag :   Erase Wall.\n";
     help_stream_ << "\tc                  :   Change Solver.\n";
     help_stream_ << "\tSpace              :   Find Solution.\n";
+    help_stream_ << "\t]                  :   Next Scene.\n";
     help_stream_ << "\tShift-H            :   Show This Help.\n";
     help_stream_ << "\tShift-P            :   Clear Path.\n";
     help_stream_ << "\tShift-M            :   Change Map.\n";
