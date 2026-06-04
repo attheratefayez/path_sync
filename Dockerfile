@@ -8,6 +8,7 @@ RUN apt-get update && \
       gdb \
       git \
       libyaml-cpp-dev \
+      qt6-base-dev \
       libxrandr-dev \
       libxcursor-dev \
       libxi-dev \
