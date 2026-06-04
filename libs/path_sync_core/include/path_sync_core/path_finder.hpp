@@ -25,6 +25,8 @@ public:
     PathFinder();
 
     void change_solver();
+    void select_solver_by_index(std::size_t index);
+    std::vector<std::string> get_all_solver_names() const;
 
     // TODO: implement logic to run the solve for a selected algorithm, or to test env
     // for all algorithms. Like,

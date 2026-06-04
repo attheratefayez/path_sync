@@ -150,6 +150,16 @@ void PathSyncApp::change_solver()
     path_finder_.change_solver();
 }
 
+void PathSyncApp::select_solver_by_index(std::size_t index)
+{
+    path_finder_.select_solver_by_index(index);
+}
+
+std::vector<std::string> PathSyncApp::get_solver_names() const
+{
+    return path_finder_.get_all_solver_names();
+}
+
 void PathSyncApp::toggle_agent_mode()
 {
     for (auto &elem : current_scene_.first)
@@ -178,6 +188,21 @@ std::shared_ptr<path_sync::MapData> PathSyncApp::get_current_map_data() const
 std::string_view PathSyncApp::get_current_solver_name() const
 {
     return path_finder_.get_current_solver_name();
+}
+
+int PathSyncApp::get_scene_index() const
+{
+    return map_manager_.get_current_scene_index();
+}
+
+int PathSyncApp::get_total_scenes() const
+{
+    return map_manager_.get_total_scenes();
+}
+
+std::string PathSyncApp::get_current_map_name() const
+{
+    return current_map_data_->get_map_info().map_name;
 }
 
 void PathSyncApp::clear_scene()

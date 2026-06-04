@@ -57,6 +57,34 @@ void PathFinder::change_solver()
     }
 }
 
+void PathFinder::select_solver_by_index(std::size_t index)
+{
+    std::size_t total = sa_solvers_.size() + ma_solvers_.size();
+    if (total == 0 || index >= total)
+        return;
+    current_solver_index_ = index;
+    if (current_solver_index_ < sa_solvers_.size())
+    {
+        current_sa_solver_ = sa_solvers_[current_solver_index_];
+        current_ma_solver_ = nullptr;
+    }
+    else
+    {
+        current_ma_solver_ = ma_solvers_[current_solver_index_ - sa_solvers_.size()];
+        current_sa_solver_ = nullptr;
+    }
+}
+
+std::vector<std::string> PathFinder::get_all_solver_names() const
+{
+    std::vector<std::string> names;
+    for (auto *s : sa_solvers_)
+        names.push_back(std::string(s->get_solver_name()));
+    for (auto *s : ma_solvers_)
+        names.push_back(std::string(s->get_solver_name()));
+    return names;
+}
+
 std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> PathFinder::find_path(
     const path_sync::MapData &map_data, const std::vector<Coordinate> &start_points,
     const std::vector<Coordinate> &end_points)

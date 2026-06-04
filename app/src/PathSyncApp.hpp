@@ -23,6 +23,8 @@ class PathSyncApp
     bool solve_current_scene();
     bool solve_current_map();
     void change_solver();
+    void select_solver_by_index(std::size_t index);
+    std::vector<std::string> get_solver_names() const;
     void toggle_agent_mode();
 
     std::shared_ptr<path_sync::MapData> get_current_map_data() const;
@@ -32,6 +34,9 @@ class PathSyncApp
     void reset_grid();
 
     std::string_view get_current_solver_name() const;
+    int get_scene_index() const;
+    int get_total_scenes() const;
+    std::string get_current_map_name() const;
    
     std::stringstream get_performance_data() const
     {
