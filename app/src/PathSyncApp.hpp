@@ -19,6 +19,7 @@ class PathSyncApp
 
     bool request_next_map();
     bool request_next_scene();
+    bool request_previous_scene();
     bool solve_current_scene();
     bool solve_current_map();
     void change_solver();

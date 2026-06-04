@@ -36,6 +36,7 @@ VisualizationSystem::VisualizationSystem(PathSyncApp &app, std::unique_ptr<Visua
     help_stream_ << "\tMouse-Right + Drag :   Erase Wall.\n";
     help_stream_ << "\tc                  :   Change Solver.\n";
     help_stream_ << "\tSpace              :   Find Solution.\n";
+    help_stream_ << "\t[                  :   Previous Scene.\n";
     help_stream_ << "\t]                  :   Next Scene.\n";
     help_stream_ << "\tShift-H            :   Show This Help.\n";
     help_stream_ << "\tShift-P            :   Clear Path.\n";
@@ -94,6 +95,15 @@ void VisualizationSystem::setup_keybindings()
             path_sync::Logger::get().info("RESETTING GRID...");
             // app_.reset_grid(); // TODO: Implement in PathSyncApp
         }
+    };
+
+    key_bindings_[sf::Keyboard::Key::LBracket] = [this]() {
+        if(!app_.request_previous_scene())
+        {
+            path_sync::Logger::get().warn("No previous scene.");
+            return;
+        }
+        app_.clear_paths();
     };
 
     key_bindings_[sf::Keyboard::Key::RBracket] = [this]() {

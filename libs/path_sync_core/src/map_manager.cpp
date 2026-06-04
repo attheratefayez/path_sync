@@ -104,6 +104,42 @@ std::pair<std::vector<Coordinate>, std::vector<Coordinate>> MapManager::get_curr
     return std::pair<std::vector<Coordinate>, std::vector<Coordinate>>();
 }
 
+[[nodiscard]] std::pair<std::vector<Coordinate>, std::vector<Coordinate>> MapManager::get_prev_scene(int n_agent)
+{
+    if (current_map_.get_map_scenes().get_scene_data().empty())
+    {
+        throw std::runtime_error("No scene available. Map is not initialied. Call get_next_map_data() to load a map.");
+    }
+
+    if (current_scene_idx_ - 2 * n_agent < 0)
+        return std::pair<std::vector<Coordinate>, std::vector<Coordinate>>();
+
+    current_scene_idx_ -= 2 * n_agent;
+
+    std::vector<std::pair<path_sync::Coordinate, path_sync::Coordinate>> temp(
+        current_map_.get_map_scenes().get_scene_data().begin() + current_scene_idx_,
+        current_map_.get_map_scenes().get_scene_data().begin() + current_scene_idx_ + n_agent);
+
+    current_scene_.first.clear();
+    current_scene_.second.clear();
+    current_scene_.first.reserve(n_agent);
+    current_scene_.second.reserve(n_agent);
+
+    for (auto start_end_pair : temp)
+    {
+        current_scene_.first.push_back(start_end_pair.first);
+        current_scene_.second.push_back(start_end_pair.second);
+    }
+
+    current_scene_idx_ += n_agent;
+
+    std::stringstream ss;
+    ss << "Scene: " << current_scene_idx_ + 1 << " Total Scenes: " << total_scenes_ << std::endl;
+    path_sync::Logger::get().info(ss.str().c_str());
+
+    return current_scene_;
+}
+
 void MapManager::reset()
 {
     *this = MapManager();

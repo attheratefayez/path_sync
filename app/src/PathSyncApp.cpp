@@ -53,6 +53,20 @@ bool PathSyncApp::request_next_scene()
     return bool(current_scene_.first.size());
 }
 
+bool PathSyncApp::request_previous_scene()
+{
+    for (auto &elem : current_scene_.first)
+        current_map_data_->set_cell_type(elem, path_sync::CellType::DEFAULT);
+
+    for (auto &elem : current_scene_.second)
+        current_map_data_->set_cell_type(elem, path_sync::CellType::DEFAULT);
+
+    current_scene_ = map_manager_.get_prev_scene(num_agents_);
+    update_map_data_with_current_scene_();
+
+    return bool(current_scene_.first.size());
+}
+
 bool PathSyncApp::solve_current_scene()
 {
     auto current_solution_ = path_finder_.find_path(*current_map_data_, current_scene_.first, current_scene_.second);
