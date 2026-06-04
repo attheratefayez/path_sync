@@ -5,11 +5,17 @@ A C++20 pathfinding visualization tool for single-agent and multi-agent pathfind
 ## Algorithms
 
 ### Single-Agent Solvers
-- **A\*** - Classic A\* with Manhattan distance heuristic
-- **BFS** - Breadth-First Search (unweighted grids)
+- **A\*** - Classic A\* with Manhattan distance heuristic (4-dir)
+- **BFS** - Breadth-First Search for unweighted grids (4-dir)
+- **JPS** - Jump Point Search with 8-directional movement and Chebyshev heuristic
+- **Theta\*** - Any-angle pathfinding with line-of-sight shortcutting (8-dir)
+- **HPA\*** - Hierarchical Pathfinding A\* using cluster decomposition (4-dir)
+- **D\* Lite** - Incremental replanning from goal-to-start (8-dir)
+- **EPEA\*** - Enhanced Partial Expansion A\* with delayed successor generation (4-dir)
 
 ### Multi-Agent Solvers
 - **Joint-State A\*** - Multi-agent pathfinding in joint state space (WIP)
+- **M\*** - Subdimensional expansion with independent planning + conflict resolution (4-dir)
 
 ## Dependencies
 
@@ -48,7 +54,7 @@ Run tests:
 │   ├── path_sync_core/           # Core library
 │   │   ├── include/path_sync_core/
 │   │   │   ├── map_loader/       # Map & scene parsing
-│   │   │   ├── solvers/          # A*, BFS, Joint-State A*
+│   │   │   ├── solvers/          # A*, BFS, JPS, Theta*, HPA*, D* Lite, EPEA*, Joint-State A*, M*
 │   │   │   ├── logger.hpp        # Singleton logger
 │   │   │   └── path_sync_types.hpp
 │   │   └── src/
@@ -73,6 +79,8 @@ Run tests:
 | `Shift+P` | Clear paths |
 | `Shift+R` | Reset grid |
 | `]` | Next scene |
+| `[` | Previous scene |
+| `A` | Cycle agent count (1–10) |
 | `Shift+H` | Help overlay |
 
 ## Map Format
