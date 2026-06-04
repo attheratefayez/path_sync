@@ -27,8 +27,6 @@ struct VisualizationSystemConfig
     unsigned int HEIGHT;
     unsigned int FRAMERATE;
 
-    static int CELL_SIZE;
-
     VisualizationSystemConfig() = default;
 
     explicit VisualizationSystemConfig(std::filesystem::path config_file_path)

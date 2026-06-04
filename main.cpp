@@ -1,16 +1,16 @@
-#include "app/src/PathSyncApp.hpp"
+#include <QApplication>
+
+#include "PathSyncApp.hpp"
 #include "path_sync_ui/visualization_system.hpp"
 #include "path_sync_ui/visualization_system_config.hpp"
-#include "path_sync_core/logger.hpp"
 
-int path_sync::VisualizationSystemConfig::CELL_SIZE = 5;
-
-int main()
+int main(int argc, char *argv[])
 {
-    path_sync::PathSyncApp app_;
-    std::unique_ptr<path_sync::VisualizationSystemConfig> vsc_ = 
-        std::make_unique<path_sync::VisualizationSystemConfig>(std::string(PROJECT_ROOT) + "/config/env_vars.yaml");
+    QApplication app(argc, argv);
 
-    path_sync::VisualizationSystem visualization_system_(app_, std::move(vsc_));
-    visualization_system_.run();
+    path_sync::PathSyncApp app_logic;
+    path_sync::VisualizationSystem widget(app_logic);
+    widget.show();
+
+    return app.exec();
 }
