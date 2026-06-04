@@ -1,9 +1,13 @@
-set(CMAKE_AUTOMOC ON)
-
 file(GLOB path_sync_ui_srcs "./src/*.cpp")
+file(GLOB path_sync_ui_headers "./include/path_sync_ui/*.hpp")
 
 add_library(path_sync_ui SHARED
     ${path_sync_ui_srcs}
+    ${path_sync_ui_headers}
+)
+
+set_target_properties(path_sync_ui PROPERTIES
+    AUTOMOC ON
 )
 
 target_include_directories(path_sync_ui PUBLIC

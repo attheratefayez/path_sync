@@ -8,6 +8,8 @@
 namespace path_sync
 {
 
+VisualizationSystem::~VisualizationSystem() = default;
+
 VisualizationSystem::VisualizationSystem(PathSyncApp& app, QWidget *parent)
     : QWidget(parent)
     , app_(app)
@@ -34,15 +36,15 @@ VisualizationSystem::VisualizationSystem(PathSyncApp& app, QWidget *parent)
                  << "]    - Next scene" << "\n"
                  << "Mouse click - Toggle wall";
 
-    Logger::get().info(help_stream_.str());
+    Logger::get().info(help_stream_.str().c_str());
 }
 
 void VisualizationSystem::setup_keybindings()
 {
-    key_bindings_[Qt::Key_C] = [this]() { app_.change_solver(); Logger::get().info(std::string("Solver: ") + app_.get_current_solver_name().data()); };
+    key_bindings_[Qt::Key_C] = [this]() { app_.change_solver(); Logger::get().info((std::string("Solver: ") + std::string(app_.get_current_solver_name())).c_str()); };
     key_bindings_[Qt::Key_A] = [this]() { app_.toggle_agent_mode(); };
     key_bindings_[Qt::Key_Space] = [this]() { app_.solve_current_scene(); };
-    key_bindings_[Qt::Key_H] = [this]() { Logger::get().info(help_stream_.str()); };
+    key_bindings_[Qt::Key_H] = [this]() { Logger::get().info(help_stream_.str().c_str()); };
     key_bindings_[Qt::Key_M] = [this]() { app_.request_next_map(); };
     key_bindings_[Qt::Key_P] = [this]() { app_.clear_paths(); };
     key_bindings_[Qt::Key_R] = [this]() { app_.reset_grid(); };

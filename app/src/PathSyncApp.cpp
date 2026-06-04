@@ -134,7 +134,7 @@ bool PathSyncApp::solve_current_map()
     while(not current_scene_.first.empty())
     {
         path_finder_.set_scene_id(map_manager_.get_current_scene_index() - 1);
-        path_finder_.find_path(*current_map_data_, current_scene_.first, current_scene_.second);
+        (void)path_finder_.find_path(*current_map_data_, current_scene_.first, current_scene_.second);
         current_scene_ = map_manager_.get_next_scene(1);
 
         path_sync::Logger::get().info(path_finder_.get_performance_data().str().c_str(), log_file);
@@ -170,9 +170,14 @@ void PathSyncApp::toggle_agent_mode()
     path_sync::Logger::get().info(ss.str().c_str());
 }
 
-std::shared_ptr<path_sync::MapData const> PathSyncApp::get_current_map_data() const
+std::shared_ptr<path_sync::MapData> PathSyncApp::get_current_map_data() const
 {
     return current_map_data_;
+}
+
+std::string_view PathSyncApp::get_current_solver_name() const
+{
+    return path_finder_.get_current_solver_name();
 }
 
 void PathSyncApp::clear_scene()

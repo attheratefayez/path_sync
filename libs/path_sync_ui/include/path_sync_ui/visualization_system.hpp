@@ -26,7 +26,7 @@ class VisualizationSystem : public QWidget
 
 public:
     explicit VisualizationSystem(PathSyncApp& app, QWidget *parent = nullptr);
-    ~VisualizationSystem() override = default;
+    ~VisualizationSystem() override;
 
 protected:
     void paintEvent(QPaintEvent *event) override;

@@ -25,11 +25,13 @@ class PathSyncApp
     void change_solver();
     void toggle_agent_mode();
 
-    std::shared_ptr<path_sync::MapData const> get_current_map_data() const;
+    std::shared_ptr<path_sync::MapData> get_current_map_data() const;
 
     void clear_scene();
     void clear_paths();
     void reset_grid();
+
+    std::string_view get_current_solver_name() const;
    
     std::stringstream get_performance_data() const
     {

@@ -10,7 +10,8 @@ static MapData make_test_map(int width, int height)
     info.width = width;
     info.height = height;
     info.map_name = "test";
-    info.map << std::string(width * height, '.');
+    for (int i = 0; i < height; ++i)
+        info.map << std::string(width, '.') << "\n";
     return MapData(info);
 }
 
@@ -21,7 +22,7 @@ TEST(GridTest, ConstructFromMapData)
 
     EXPECT_EQ(g.get_width(), 10);
     EXPECT_EQ(g.get_height(), 10);
-    EXPECT_EQ(g.get_cell_size(), 5);
+    EXPECT_EQ(g.get_cell_size(), 95);  // 950 / 10
 }
 
 TEST(GridTest, CellAccessorReturnsCorrectType)

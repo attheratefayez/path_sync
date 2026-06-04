@@ -17,6 +17,7 @@ set(test_src_files
     ./path_sync_ui_test/cell_test.cpp
     ./path_sync_ui_test/color_test.cpp
     ./path_sync_ui_test/grid_test.cpp
+    ${CMAKE_SOURCE_DIR}/app/src/PathSyncApp.cpp
 )
 
 enable_testing()
@@ -26,6 +27,7 @@ add_executable(path_sync_test
 
 target_include_directories(path_sync_test PUBLIC
     ${CMAKE_SOURCE_DIR}/libs/path_sync_ui/include
+    ${CMAKE_SOURCE_DIR}/app/src
 )
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
@@ -35,6 +37,7 @@ target_link_libraries(path_sync_test
     Qt6::Widgets
     yaml-cpp
     path_sync_core
+    path_sync_ui
 )
 
 include(GoogleTest)
