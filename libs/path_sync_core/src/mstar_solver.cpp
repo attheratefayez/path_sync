@@ -219,7 +219,8 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::joint_search(
     const std::vector<Coordinate> &starts,
     const std::vector<Coordinate> &goals,
     const std::vector<std::vector<Coordinate>> &fixed_paths,
-    int from_timestep)
+    int from_timestep,
+    PerformanceMetrics &performance_met)
 {
     int na = static_cast<int>(agent_indices.size());
     int total_agents = static_cast<int>(starts.size());
@@ -350,6 +351,7 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::joint_search(
 
     g_score[init_state] = 0;
     open.push(init_state);
+    performance_met.peak_open_size = open.size();
 
     const int ndx[] = {0, 1, 0, -1, 0};
     const int ndy[] = {-1, 0, 1, 0, 0};
@@ -434,6 +436,8 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::joint_search(
                         g_score[next_state] = tent_g;
                         came_from[next_state] = current;
                         open.push(next_state);
+                        if (open.size() > performance_met.peak_open_size)
+                            performance_met.peak_open_size = open.size();
                     }
                 }
 
@@ -468,6 +472,8 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::joint_search(
                         g_score[next_state] = tent_g;
                         came_from[next_state] = current;
                         open.push(next_state);
+                        if (open.size() > performance_met.peak_open_size)
+                            performance_met.peak_open_size = open.size();
                     }
                 }
             }
@@ -537,7 +543,7 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::solve(
     auto paths = individual_paths(map_data, starts, goals);
     if (paths.empty())
     {
-        performance_met.runtime = std::chrono::duration_cast<std::chrono::milliseconds>(
+        performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::high_resolution_clock::now() - start_time);
         return std::nullopt;
     }
@@ -551,7 +557,8 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::solve(
         if (!conflict.has_value())
         {
             // No conflicts found
-            performance_met.runtime = std::chrono::duration_cast<std::chrono::milliseconds>(
+            performance_met.success = true;
+            performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::high_resolution_clock::now() - start_time);
             return paths;
         }
@@ -565,15 +572,16 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::solve(
 
         // Run joint search for the joint set
         std::vector<int> joint_agents(joint_set.begin(), joint_set.end());
-        auto result = joint_search(map_data, joint_agents, starts, goals, paths, conflict_time);
+        auto result = joint_search(map_data, joint_agents, starts, goals, paths, conflict_time, performance_met);
 
         if (!result.has_value())
         {
             // Joint search failed - try with all agents
             std::vector<int> all_agents(n);
             for (int i = 0; i < n; i++) all_agents[i] = i;
-            auto result2 = joint_search(map_data, all_agents, starts, goals, paths, 0);
-            performance_met.runtime = std::chrono::duration_cast<std::chrono::milliseconds>(
+            auto result2 = joint_search(map_data, all_agents, starts, goals, paths, 0, performance_met);
+            performance_met.success = result2.has_value();
+            performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::high_resolution_clock::now() - start_time);
             return result2;
         }

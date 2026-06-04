@@ -129,6 +129,9 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
         {
             U.insert({u, calc_key(u)});
             in_U.insert(u);
+            if (U.size() > performance_met.peak_open_size)
+                performance_met.peak_open_size = U.size();
+            performance_met.num_of_nodes_reopened++;
         }
     };
 
@@ -144,6 +147,7 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
         Key k = calc_key(goal);
         U.insert({goal, k});
         in_U.insert(goal);
+        performance_met.peak_open_size = U.size();
     }
 
     // ComputeShortestPath
@@ -173,6 +177,9 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
             {
                 U.insert({u, k_new});
                 in_U.insert(u);
+                if (U.size() > performance_met.peak_open_size)
+                    performance_met.peak_open_size = U.size();
+                performance_met.num_of_nodes_reopened++;
             }
             else if (g[u] > rhs[u])
             {
@@ -211,7 +218,11 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
     std::map<Coordinate, Coordinate> came_from;
 
     if (rhs[start] == std::numeric_limits<float>::infinity())
+    {
+        auto end_time = std::chrono::high_resolution_clock::now();
+        performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
         return {};
+    }
 
     ps_coord current = start;
     came_from[start] = {-1, -1};
@@ -251,8 +262,9 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
         performance_met.num_of_nodes_explored++;
     }
 
+    performance_met.success = !came_from.empty();
     auto end_time = std::chrono::high_resolution_clock::now();
-    performance_met.runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 
     return came_from;
 }

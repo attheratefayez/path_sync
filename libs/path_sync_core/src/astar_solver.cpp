@@ -71,6 +71,8 @@ std::map<Coordinate, Coordinate> Astar_Solver::solve(const path_sync::MapData &m
     cost_mat[start.second][start.first] = {0, getManhattanDistance(start, goal)};
     came_from[start] = {-1, -1};
     priority_queue.push({start, cost_mat[start.second][start.first]});
+    if (priority_queue.size() > performance_met.peak_open_size)
+        performance_met.peak_open_size = priority_queue.size();
 
     while (!priority_queue.empty() && !reachedEnd)
     {
@@ -89,6 +91,8 @@ std::map<Coordinate, Coordinate> Astar_Solver::solve(const path_sync::MapData &m
             {
                 cost_mat[n.second][n.first] = {new_dist, new_manhattan_dist};
                 priority_queue.push({n, {new_dist, new_manhattan_dist}});
+                if (priority_queue.size() > performance_met.peak_open_size)
+                    performance_met.peak_open_size = priority_queue.size();
                 came_from[n] = visiting.first;
             }
 
@@ -103,8 +107,9 @@ std::map<Coordinate, Coordinate> Astar_Solver::solve(const path_sync::MapData &m
     if (!reachedEnd)
         came_from.clear();
 
+    performance_met.success = reachedEnd;
     auto end_time = std::chrono::high_resolution_clock::now();
-    performance_met.runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 
     return came_from;
 }

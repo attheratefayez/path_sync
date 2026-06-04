@@ -87,6 +87,7 @@ std::map<Coordinate, Coordinate> EPEA_Star_Solver::solve(const path_sync::MapDat
     came_from[start] = {-1, -1};
     op_index[start] = 0;
     open.push({start, manhattan_distance(start, goal), 0});
+    performance_met.peak_open_size = open.size();
 
     bool found = false;
 
@@ -137,6 +138,8 @@ std::map<Coordinate, Coordinate> EPEA_Star_Solver::solve(const path_sync::MapDat
                         op_index[neighbor] = 0;
 
                     open.push({neighbor, tent_g + manhattan_distance(neighbor, goal), 0});
+                    if (open.size() > performance_met.peak_open_size)
+                        performance_met.peak_open_size = open.size();
                 }
             }
 
@@ -148,6 +151,9 @@ std::map<Coordinate, Coordinate> EPEA_Star_Solver::solve(const path_sync::MapDat
             {
                 int f_val = g_score[current] + manhattan_distance(current, goal);
                 open.push({current, f_val, cur_op_idx});
+                performance_met.num_of_nodes_reopened++;
+                if (open.size() > performance_met.peak_open_size)
+                    performance_met.peak_open_size = open.size();
             }
         }
     }
@@ -155,8 +161,9 @@ std::map<Coordinate, Coordinate> EPEA_Star_Solver::solve(const path_sync::MapDat
     if (!found)
         came_from.clear();
 
+    performance_met.success = found;
     auto end_time = std::chrono::high_resolution_clock::now();
-    performance_met.runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 
     return came_from;
 }

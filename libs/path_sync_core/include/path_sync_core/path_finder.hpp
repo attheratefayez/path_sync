@@ -50,6 +50,11 @@ public:
         return performance_met_.report();
     }
 
+    void set_scene_id(int id)
+    {
+        performance_met_.scene_id = id;
+    }
+
 private:
     PerformanceMetrics performance_met_;
 

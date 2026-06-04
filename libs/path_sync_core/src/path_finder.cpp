@@ -63,6 +63,8 @@ std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> Path
 {
     std::stringstream ss;
 
+    performance_met_.map_name = map_data.get_map_info().map_name;
+
     if (start_points.size() != end_points.size())
     {
         throw std::logic_error("Start and End points are not equal.");
@@ -123,7 +125,21 @@ std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> Path
         return std::vector<Coordinate>();
     }
 
-    return paths.value();
+    const auto &result = paths.value();
+
+    // Compute sum_of_costs and makespan for MAPF
+    std::size_t soc = 0;
+    std::size_t makespan = 0;
+    for (const auto &agent_path : result)
+    {
+        soc += agent_path.size() - 1;
+        if (agent_path.size() > makespan)
+            makespan = agent_path.size() - 1;
+    }
+    performance_met_.sum_of_costs = soc;
+    performance_met_.makespan = makespan;
+
+    return result;
 }
 
 std::vector<Coordinate> PathFinder::__construct_path(std::map<Coordinate, Coordinate> &node_map,

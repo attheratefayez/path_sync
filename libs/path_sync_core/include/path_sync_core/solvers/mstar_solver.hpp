@@ -45,7 +45,8 @@ class MStar_Solver : public IMASolver
         const std::vector<Coordinate> &starts,
         const std::vector<Coordinate> &goals,
         const std::vector<std::vector<Coordinate>> &fixed_paths,
-        int from_timestep);
+        int from_timestep,
+        PerformanceMetrics &performance_met);
 
   public:
     std::string_view get_solver_name() const override;

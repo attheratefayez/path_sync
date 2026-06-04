@@ -128,6 +128,7 @@ std::map<Coordinate, Coordinate> JPS_Solver::solve(const path_sync::MapData &map
     g_score[start] = 0;
     came_from[start] = {-1, -1};
     open.push(start);
+    performance_met.peak_open_size = open.size();
 
     bool found = false;
 
@@ -151,6 +152,8 @@ std::map<Coordinate, Coordinate> JPS_Solver::solve(const path_sync::MapData &map
                 g_score[jp] = tent_g;
                 came_from[jp] = current;
                 open.push(jp);
+                if (open.size() > performance_met.peak_open_size)
+                    performance_met.peak_open_size = open.size();
                 performance_met.num_of_nodes_explored++;
 
                 if (jp == goal)
@@ -165,8 +168,9 @@ std::map<Coordinate, Coordinate> JPS_Solver::solve(const path_sync::MapData &map
     if (!found)
         came_from.clear();
 
+    performance_met.success = found;
     auto end_time = std::chrono::high_resolution_clock::now();
-    performance_met.runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 
     return came_from;
 }

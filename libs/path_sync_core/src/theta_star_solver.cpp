@@ -117,6 +117,7 @@ std::map<Coordinate, Coordinate> Theta_Star_Solver::solve(const path_sync::MapDa
     g_score[start] = 0;
     came_from[start] = start;
     open.push(start);
+    performance_met.peak_open_size = open.size();
 
     const int dx[] = {0, 1, 1, 1, 0, -1, -1, -1};
     const int dy[] = {-1, -1, 0, 1, 1, 1, 0, -1};
@@ -163,6 +164,8 @@ std::map<Coordinate, Coordinate> Theta_Star_Solver::solve(const path_sync::MapDa
                     g_score[neighbor] = tent_g;
                     came_from[neighbor] = grandparent;
                     open.push(neighbor);
+                    if (open.size() > performance_met.peak_open_size)
+                        performance_met.peak_open_size = open.size();
                 }
             }
             else
@@ -174,6 +177,8 @@ std::map<Coordinate, Coordinate> Theta_Star_Solver::solve(const path_sync::MapDa
                     g_score[neighbor] = tent_g;
                     came_from[neighbor] = current;
                     open.push(neighbor);
+                    if (open.size() > performance_met.peak_open_size)
+                        performance_met.peak_open_size = open.size();
                 }
             }
         }
@@ -182,8 +187,9 @@ std::map<Coordinate, Coordinate> Theta_Star_Solver::solve(const path_sync::MapDa
     if (!found)
         came_from.clear();
 
+    performance_met.success = found;
     auto end_time = std::chrono::high_resolution_clock::now();
-    performance_met.runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 
     return came_from;
 }

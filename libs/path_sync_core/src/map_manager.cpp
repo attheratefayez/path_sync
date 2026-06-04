@@ -152,6 +152,11 @@ void MapManager::reset_scene_index()
     current_scene_.second.clear();
 }
 
+int MapManager::get_current_scene_index() const
+{
+    return current_scene_idx_;
+}
+
 int MapManager::get_total_scenes() const
 {
     return total_scenes_;

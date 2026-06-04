@@ -45,6 +45,7 @@ std::map<Coordinate, Coordinate> BFS_Solver::solve(const path_sync::MapData& map
 
     came_from[start] = {-1, -1};
     queue.push_back(start);
+    performance_met.peak_open_size = 1;
 
     while (!queue.empty() && !reachedEnd) {
         Coordinate visiting = queue.front();
@@ -59,6 +60,8 @@ std::map<Coordinate, Coordinate> BFS_Solver::solve(const path_sync::MapData& map
             if (!visited[n.second][n.first]) {
                 performance_met.num_of_nodes_explored++;
                 queue.push_back(n);
+                if (queue.size() > performance_met.peak_open_size)
+                    performance_met.peak_open_size = queue.size();
                 came_from[n] = visiting;
 
                 if (n == end) {
@@ -71,8 +74,9 @@ std::map<Coordinate, Coordinate> BFS_Solver::solve(const path_sync::MapData& map
 
     if (!reachedEnd) came_from.clear();
 
+    performance_met.success = reachedEnd;
     auto end_time = std::chrono::high_resolution_clock::now();
-    performance_met.runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 
     return came_from;
 }

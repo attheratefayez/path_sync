@@ -314,6 +314,9 @@ std::map<Coordinate, Coordinate> HPA_Solver::solve(const path_sync::MapData &map
         for (size_t i = 1; i < path.size(); i++)
             came_from[path[i]] = path[i - 1];
 
+        auto end_time = std::chrono::high_resolution_clock::now();
+        performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+        performance_met.success = true;
         return came_from;
     }
 
@@ -379,6 +382,7 @@ std::map<Coordinate, Coordinate> HPA_Solver::solve(const path_sync::MapData &map
 
     abstract_g[start_id] = 0;
     abstract_open.push({0, start_id});
+    performance_met.peak_open_size = abstract_open.size();
 
     bool found = false;
 
@@ -405,6 +409,8 @@ std::map<Coordinate, Coordinate> HPA_Solver::solve(const path_sync::MapData &map
                 abstract_g[nb] = tent;
                 abstract_parent[nb] = cur;
                 abstract_open.push({tent, nb});
+                if (abstract_open.size() > performance_met.peak_open_size)
+                    performance_met.peak_open_size = abstract_open.size();
             }
         }
     }
@@ -431,7 +437,8 @@ std::map<Coordinate, Coordinate> HPA_Solver::solve(const path_sync::MapData &map
         came_from[full_path[i]] = full_path[i - 1];
 
     auto end_time = std::chrono::high_resolution_clock::now();
-    performance_met.runtime = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+    performance_met.success = true;
 
     return came_from;
 }

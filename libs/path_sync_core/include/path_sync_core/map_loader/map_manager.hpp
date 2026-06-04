@@ -32,6 +32,7 @@ public:
 
     void reset();
     void reset_scene_index();
+    int get_current_scene_index() const;
     int get_total_scenes() const;
 
 private:

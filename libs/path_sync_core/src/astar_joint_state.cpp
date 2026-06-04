@@ -1,3 +1,4 @@
+#include <chrono>
 #include <cstddef>
 #include <cstdlib>
 #include <map>
@@ -20,11 +21,11 @@ std::string_view mapf_astar::get_solver_name() const
 std::optional<std::vector<std::vector<path_sync::Coordinate>>> mapf_astar::solve(const path_sync::MapData &map_data, std::vector<Coordinate> starts, std::vector<Coordinate> goals,
                                      path_sync::PerformanceMetrics &performance_met)
 {
-    // NOTE: can be set to raise a error too if path_finder can handle and process error
+    auto start_time = std::chrono::high_resolution_clock::now();
+
     if (starts.size() != goals.size())
         return std::nullopt;
 
-    // INITIALIZATION START
     mapf_type::JointState new_state;
     new_state.positions = starts;
     new_state.time = 0;
@@ -34,17 +35,23 @@ std::optional<std::vector<std::vector<path_sync::Coordinate>>> mapf_astar::solve
 
     std::priority_queue<mapf_type::NodePtr, std::vector<mapf_type::NodePtr>, mapf_type::CompareGreaterNode> open_set;
     open_set.push(parent_node);
+    performance_met.peak_open_size = open_set.size();
 
     std::map<mapf_type::JointState, int> closed_set;
-    // INITIALIZATION END
 
     while (!open_set.empty())
     {
         mapf_type::NodePtr current = open_set.top();
         open_set.pop();
+        performance_met.num_of_nodes_expanded++;
 
         if (current->_state.positions == goals)
+        {
+            auto end_time = std::chrono::high_resolution_clock::now();
+            performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+            performance_met.success = true;
             return util_funcs::extract_paths(current);
+        }
 
         if (closed_set.contains(current->_state) && closed_set[current->_state] <= current->_g_score)
             continue;
@@ -55,7 +62,11 @@ std::optional<std::vector<std::vector<path_sync::Coordinate>>> mapf_astar::solve
             util_funcs::possible_actions_with_state(current->_state, map_data);
 
         if (!possible_actions.has_value())
+        {
+            auto end_time = std::chrono::high_resolution_clock::now();
+            performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
             return std::nullopt;
+        }
 
         for (std::vector<Coordinate> &action : possible_actions.value())
         {
@@ -71,8 +82,13 @@ std::optional<std::vector<std::vector<path_sync::Coordinate>>> mapf_astar::solve
             std::size_t h_score = util_funcs::heuristic(new_state.positions, goals);
             mapf_type::NodePtr new_node = std::make_shared<mapf_type::Node>(new_state, g_score, h_score, current);
             open_set.push(new_node);
+            if (open_set.size() > performance_met.peak_open_size)
+                performance_met.peak_open_size = open_set.size();
+            performance_met.num_of_nodes_explored++;
         }
     }
 
+    auto end_time = std::chrono::high_resolution_clock::now();
+    performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
     return std::nullopt;
 }

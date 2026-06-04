@@ -2,6 +2,7 @@
 #include "path_sync_core/logger.hpp"
 #include "path_sync_core/path_sync_types.hpp"
 
+#include <algorithm>
 #include <ctime>
 #include <iomanip>
 #include <iostream>
@@ -69,6 +70,7 @@ bool PathSyncApp::request_previous_scene()
 
 bool PathSyncApp::solve_current_scene()
 {
+    path_finder_.set_scene_id(std::max(0, map_manager_.get_current_scene_index() - num_agents_));
     auto current_solution_ = path_finder_.find_path(*current_map_data_, current_scene_.first, current_scene_.second);
 
     if (std::holds_alternative<std::vector<Coordinate>>(current_solution_))
@@ -131,6 +133,7 @@ bool PathSyncApp::solve_current_map()
 
     while(not current_scene_.first.empty())
     {
+        path_finder_.set_scene_id(map_manager_.get_current_scene_index() - 1);
         path_finder_.find_path(*current_map_data_, current_scene_.first, current_scene_.second);
         current_scene_ = map_manager_.get_next_scene(1);
 
