@@ -7,6 +7,12 @@
 #include "path_sync_core/solvers/astar_joint_state.hpp"
 #include "path_sync_core/solvers/astar_solver.hpp"
 #include "path_sync_core/solvers/bfs_solver.hpp"
+#include "path_sync_core/solvers/jps_solver.hpp"
+#include "path_sync_core/solvers/theta_star_solver.hpp"
+#include "path_sync_core/solvers/hpa_solver.hpp"
+#include "path_sync_core/solvers/dstar_lite_solver.hpp"
+#include "path_sync_core/solvers/epea_solver.hpp"
+#include "path_sync_core/solvers/mstar_solver.hpp"
 #include "path_sync_core/solvers/astar_joint_state_utils.hpp"
 
 namespace ps = path_sync;
@@ -194,16 +200,198 @@ TEST_F(SolverTest, ChangeSolverCyclesAllSolvers)
     ps::PathFinder finder;
 
     std::string_view first = finder.get_current_solver_name();
-    finder.change_solver();
-    std::string_view second = finder.get_current_solver_name();
-    EXPECT_NE(first, second);
+    std::string_view prev = first;
+    int count = 1;
 
-    finder.change_solver();
-    std::string_view third = finder.get_current_solver_name();
-    EXPECT_NE(second, third);
+    for (int i = 0; i < 20; i++)
+    {
+        finder.change_solver();
+        std::string_view cur = finder.get_current_solver_name();
+        if (cur == first) break;
+        EXPECT_NE(cur, prev);
+        prev = cur;
+        count++;
+    }
 
-    finder.change_solver();
     EXPECT_EQ(finder.get_current_solver_name(), first);
+    EXPECT_GT(count, 4); // at least 5+ solvers now
+}
+
+// --- JPS Solver ---
+
+TEST_F(SolverTest, JpsFindsPathOnOpenGrid)
+{
+    auto info = make_map(3, 3, {"...", "...", "..."});
+    ps::MapData map(info);
+    ps::solvers::sapf::JPS_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    auto result = solver.solve(map, {0, 0}, {2, 2}, perf);
+
+    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.contains({0, 0}));
+    EXPECT_TRUE(result.contains({2, 2}));
+}
+
+TEST_F(SolverTest, JpsReturnsEmptyForUnreachableGoal)
+{
+    auto info = make_map(1, 1, {"#"});
+    ps::MapData map(info);
+    ps::solvers::sapf::JPS_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    auto result = solver.solve(map, {0, 0}, {0, 0}, perf);
+
+    EXPECT_TRUE(result.empty());
+}
+
+// --- Theta* Solver ---
+
+TEST_F(SolverTest, ThetaStarFindsPathOnOpenGrid)
+{
+    auto info = make_map(3, 3, {"...", "...", "..."});
+    ps::MapData map(info);
+    ps::solvers::sapf::Theta_Star_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    auto result = solver.solve(map, {0, 0}, {2, 2}, perf);
+
+    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.contains({0, 0}));
+    EXPECT_TRUE(result.contains({2, 2}));
+}
+
+TEST_F(SolverTest, ThetaStarReturnsEmptyForUnreachableGoal)
+{
+    auto info = make_map(1, 1, {"#"});
+    ps::MapData map(info);
+    ps::solvers::sapf::Theta_Star_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    auto result = solver.solve(map, {0, 0}, {0, 0}, perf);
+
+    EXPECT_TRUE(result.empty());
+}
+
+// --- HPA* Solver ---
+
+TEST_F(SolverTest, HpaFindsPathOnOpenGrid)
+{
+    auto info = make_map(6, 6, {"......", "......", "......", "......", "......", "......"});
+    ps::MapData map(info);
+    ps::solvers::sapf::HPA_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    auto result = solver.solve(map, {0, 0}, {5, 5}, perf);
+
+    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.contains({0, 0}));
+    EXPECT_TRUE(result.contains({5, 5}));
+}
+
+TEST_F(SolverTest, HpaReturnsEmptyForUnreachableGoal)
+{
+    auto info = make_map(1, 1, {"#"});
+    ps::MapData map(info);
+    ps::solvers::sapf::HPA_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    auto result = solver.solve(map, {0, 0}, {0, 0}, perf);
+
+    EXPECT_TRUE(result.empty());
+}
+
+// --- D* Lite Solver ---
+
+TEST_F(SolverTest, DStarLiteFindsPathOnOpenGrid)
+{
+    auto info = make_map(3, 3, {"...", "...", "..."});
+    ps::MapData map(info);
+    ps::solvers::sapf::DStar_Lite_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    auto result = solver.solve(map, {0, 0}, {2, 2}, perf);
+
+    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.contains({0, 0}));
+    EXPECT_TRUE(result.contains({2, 2}));
+}
+
+TEST_F(SolverTest, DStarLiteReturnsEmptyForUnreachableGoal)
+{
+    auto info = make_map(1, 1, {"#"});
+    ps::MapData map(info);
+    ps::solvers::sapf::DStar_Lite_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    auto result = solver.solve(map, {0, 0}, {0, 0}, perf);
+
+    EXPECT_TRUE(result.empty());
+}
+
+// --- EPEA* Solver ---
+
+TEST_F(SolverTest, EpeaStarFindsPathOnOpenGrid)
+{
+    auto info = make_map(3, 3, {"...", "...", "..."});
+    ps::MapData map(info);
+    ps::solvers::sapf::EPEA_Star_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    auto result = solver.solve(map, {0, 0}, {2, 2}, perf);
+
+    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(result.contains({0, 0}));
+    EXPECT_TRUE(result.contains({2, 2}));
+}
+
+TEST_F(SolverTest, EpeaStarReturnsEmptyForUnreachableGoal)
+{
+    auto info = make_map(1, 1, {"#"});
+    ps::MapData map(info);
+    ps::solvers::sapf::EPEA_Star_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    auto result = solver.solve(map, {0, 0}, {0, 0}, perf);
+
+    EXPECT_TRUE(result.empty());
+}
+
+// --- M* Solver ---
+
+TEST_F(SolverTest, MStarFindsPathsForTwoAgents)
+{
+    auto info = make_map(3, 3, {"...", "...", "..."});
+    ps::MapData map(info);
+    ps::solvers::mapf::MStar_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    std::vector<ps::Coordinate> starts = {{0, 0}, {2, 0}};
+    std::vector<ps::Coordinate> goals = {{2, 2}, {0, 2}};
+
+    auto result = solver.solve(map, starts, goals, perf);
+
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result->size(), 2);
+    EXPECT_FALSE(result->at(0).empty());
+    EXPECT_FALSE(result->at(1).empty());
+    EXPECT_EQ(result->at(0).back(), goals[0]);
+    EXPECT_EQ(result->at(1).back(), goals[1]);
+}
+
+TEST_F(SolverTest, MStarReturnsNulloptForMismatchedCounts)
+{
+    auto info = make_map(3, 3, {"...", "...", "..."});
+    ps::MapData map(info);
+    ps::solvers::mapf::MStar_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    std::vector<ps::Coordinate> starts = {{0, 0}, {1, 0}};
+    std::vector<ps::Coordinate> goals = {{2, 2}};
+
+    auto result = solver.solve(map, starts, goals, perf);
+
+    EXPECT_FALSE(result.has_value());
 }
 
 // --- Utils ---

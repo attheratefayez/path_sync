@@ -19,7 +19,13 @@ PathFinder::PathFinder()
 {
     sa_solvers_.push_back(&astar_solver_);
     sa_solvers_.push_back(&bfs_solver_);
+    sa_solvers_.push_back(&jps_solver_);
+    sa_solvers_.push_back(&theta_star_solver_);
+    sa_solvers_.push_back(&hpa_solver_);
+    sa_solvers_.push_back(&dstar_lite_solver_);
+    sa_solvers_.push_back(&epea_star_solver_);
     ma_solvers_.push_back(&astar_joint_state_solver);
+    ma_solvers_.push_back(&mstar_solver_);
 
     // Initialize current_solver_ to the first single-agent solver
     if (!sa_solvers_.empty())
