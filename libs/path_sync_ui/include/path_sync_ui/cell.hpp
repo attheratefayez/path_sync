@@ -1,57 +1,28 @@
-/**
- * @file cell.hpp
- * @brief Defines a Cell of a Grid. A Cell can be of CellType. 
- *
- */
-
-#include <SFML/Graphics/RectangleShape.hpp>
-#include <SFML/System/Vector2.hpp>
-
-#include "path_sync_core/path_sync_types.hpp"
-
 #ifndef __PATH_SYNC_CELL_HPP__
 #define __PATH_SYNC_CELL_HPP__
 
-namespace path_sync {
+#include <QColor>
 
-/**
- * @class Cell
- * @brief Class for a single cell in Grid (Drawing/Map).
- *
- */
-class Cell : public sf::RectangleShape
+#include "path_sync_core/path_sync_types.hpp"
+
+namespace path_sync
 {
-private:
-    /**
-     * @brief Deleted default, copy and move constructors.
-     */
-    Cell() = delete;
 
-    CellType type;
-    void __set_color_for_type();
+struct Cell
+{
+    CellType type = CellType::DEFAULT;
 
-public:
-        /**
-     * @brief Creates a Cell with given type and position. 
-     *
-     * @param cell_type a type of cell in path_sync::CellType.
-     * @param position position of the cell to be placed.
-     */
-    Cell(CellType cell_type, sf::Vector2f position);
+    Cell() = default;
+    Cell(CellType cell_type, int x, int y);
 
-    /**
-     * @brief Sets the type of a cell. 
-     *
-     * @param cell_type a type of cell in path_sync::CellType.
-     */
     void set_cell_type(CellType cell_type);
-
-    /**
-     * @brief returns the type of cell.
-     *
-     * @return path_sync::CellType
-     */
     CellType get_cell_type() const;
+
+    int grid_x = 0;
+    int grid_y = 0;
 };
-} // end of namespace path_sync 
-#endif // !__PATH_SYNC_CELL_HPP__
+
+QColor cell_type_to_color(CellType type);
+
+} // namespace path_sync
+#endif
