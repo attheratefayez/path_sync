@@ -1,236 +1,162 @@
-#include <yaml-cpp/yaml.h>
-
-#include <SFML/Graphics.hpp>
-#include <SFML/System.hpp>
-#include <SFML/Window.hpp>
-#include <optional>
-#include <sstream>
-
-#include "SFML/Window/Keyboard.hpp"
-#include "path_sync_core/logger.hpp"
-#include "path_sync_core/path_sync_types.hpp"
-#include "path_sync_ui/grid.hpp"
 #include "path_sync_ui/visualization_system.hpp"
+
+#include <QPainter>
+#include <QFont>
+
+#include "path_sync_core/logger.hpp"
 
 namespace path_sync
 {
 
-// CONSTRUCTOR
-// TODO: add a way to change the map mode {MAP, FREE}
-VisualizationSystem::VisualizationSystem(PathSyncApp &app, std::unique_ptr<VisualizationSystemConfig> system_config)
-    : app_(app)
-    , system_config_(std::move(system_config))
-    , grid_(*app.get_current_map_data(), system_config_->CELL_SIZE)
+VisualizationSystem::VisualizationSystem(PathSyncApp& app, QWidget *parent)
+    : QWidget(parent)
+    , app_(app)
+    , grid_()
+    , timer_(new QTimer(this))
 {
-    main_window_.create(sf::VideoMode({system_config_->WIDTH, system_config_->HEIGHT}), system_config_->TITLE,
-                        sf::Style::Titlebar | sf::Style::Close);
-    main_window_.setFramerateLimit(system_config_->FRAMERATE);
+    setWindowTitle("Path Sync");
+    resize(1850, 950);
+
+    connect(timer_, &QTimer::timeout, this, QOverload<>::of(&QWidget::update));
+    timer_->start(16);
 
     setup_keybindings();
 
-    help_stream_ << "\n";
-    help_stream_ << "\t\tPath Sync Controls\n";
-    help_stream_ << "\ts    + Mouse-Left  :   Draw Start Point.\n";
-    help_stream_ << "\te    + Mouse-Left  :   Draw End Point.\n";
-    help_stream_ << "\tMouse-Left  + Drag :   Draw Wall.\n";
-    help_stream_ << "\tMouse-Right + Drag :   Erase Wall.\n";
-    help_stream_ << "\tc                  :   Change Solver.\n";
-    help_stream_ << "\ta                  :   Toggle Agent Mode.\n";
-    help_stream_ << "\tSpace              :   Find Solution.\n";
-    help_stream_ << "\t[                  :   Previous Scene.\n";
-    help_stream_ << "\t]                  :   Next Scene.\n";
-    help_stream_ << "\tShift-H            :   Show This Help.\n";
-    help_stream_ << "\tShift-P            :   Clear Path.\n";
-    help_stream_ << "\tShift-M            :   Change Map.\n";
-    help_stream_ << "\tShift-R            :   Clear Grid.\n";
+    help_stream_ << "Available Key Bindings:" << "\n"
+                 << "C    - Change solver" << "\n"
+                 << "A    - Toggle agent mode" << "\n"
+                 << "Space - Solve current scene" << "\n"
+                 << "Shift+H - Help (this message)" << "\n"
+                 << "Shift+M - Next map" << "\n"
+                 << "Shift+P - Clear paths" << "\n"
+                 << "Shift+R - Reset grid" << "\n"
+                 << "[    - Previous scene" << "\n"
+                 << "]    - Next scene" << "\n"
+                 << "Mouse click - Toggle wall";
+
+    Logger::get().info(help_stream_.str());
 }
 
-// MEMBER FUNCTIONS
 void VisualizationSystem::setup_keybindings()
 {
-    key_bindings_[sf::Keyboard::Key::C] = [this]() {
-        path_sync::Logger::get().info("Changing Solver...");
-        app_.change_solver();
-    };
-
-    key_bindings_[sf::Keyboard::Key::A] = [this]() {
-        path_sync::Logger::get().info("Toggling Agent Mode...");
-        app_.toggle_agent_mode();
-    };
-
-    key_bindings_[sf::Keyboard::Key::Space] = [this]() {
-        if (app_.solve_current_scene())
-        {
-        }
-        else
-        {
-            path_sync::Logger::get().warn("No Solution Found.");
-        }
-    };
-
-    key_bindings_[sf::Keyboard::Key::H] = [this]() {
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) ||
-            sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift))
-        {
-            path_sync::Logger::get().info(help_stream_.str().c_str());
-        }
-    };
-
-    key_bindings_[sf::Keyboard::Key::M] = [this]() {
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) ||
-            sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift))
-        {
-            path_sync::Logger::get().info("Changing Map...");
-            app_.request_next_map();
-        }
-    };
-
-    key_bindings_[sf::Keyboard::Key::P] = [this]() {
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) ||
-            sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift))
-        {
-            path_sync::Logger::get().info("CLEARING PATH...");
-            app_.clear_paths();
-        }
-    };
-
-    key_bindings_[sf::Keyboard::Key::R] = [this]() {
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) ||
-            sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift))
-        {
-            path_sync::Logger::get().info("RESETTING GRID...");
-            // app_.reset_grid(); // TODO: Implement in PathSyncApp
-        }
-    };
-
-    key_bindings_[sf::Keyboard::Key::LBracket] = [this]() {
-        if(!app_.request_previous_scene())
-        {
-            path_sync::Logger::get().warn("No previous scene.");
-            return;
-        }
-        app_.clear_paths();
-    };
-
-    key_bindings_[sf::Keyboard::Key::RBracket] = [this]() {
-        if(!app_.request_next_scene())
-        {
-            path_sync::Logger::get().warn("No next scene.");
-            return;
-        }
-        app_.clear_paths();
-    };
+    key_bindings_[Qt::Key_C] = [this]() { app_.change_solver(); Logger::get().info(std::string("Solver: ") + app_.get_current_solver_name().data()); };
+    key_bindings_[Qt::Key_A] = [this]() { app_.toggle_agent_mode(); };
+    key_bindings_[Qt::Key_Space] = [this]() { app_.solve_current_scene(); };
+    key_bindings_[Qt::Key_H] = [this]() { Logger::get().info(help_stream_.str()); };
+    key_bindings_[Qt::Key_M] = [this]() { app_.request_next_map(); };
+    key_bindings_[Qt::Key_P] = [this]() { app_.clear_paths(); };
+    key_bindings_[Qt::Key_R] = [this]() { app_.reset_grid(); };
+    key_bindings_[Qt::Key_BracketLeft]  = [this]() { app_.request_previous_scene(); app_.clear_paths(); };
+    key_bindings_[Qt::Key_BracketRight] = [this]() { app_.request_next_scene(); app_.clear_paths(); };
 }
 
-void VisualizationSystem::handle_event()
+void VisualizationSystem::paintEvent(QPaintEvent * /*event*/)
 {
-    const sf::Vector2i mouse_position = sf::Mouse::getPosition(main_window_);
+    QPainter painter(this);
 
-    while (std::optional<sf::Event> event = main_window_.pollEvent())
+    painter.fillRect(rect(), QColor(240, 240, 240));
+
+    auto map_data = app_.get_current_map_data();
+    if (!map_data)
+        return;
+
+    grid_.sync_with_map_data(*map_data);
+
+    int cell_size = grid_.get_cell_size();
+    for (int y = 0; y < grid_.get_height(); ++y)
     {
-        if (event->is<sf::Event::Closed>())
+        for (int x = 0; x < grid_.get_width(); ++x)
         {
-            main_window_.close();
-        }
-
-        if (auto key_pressed = event->getIf<sf::Event::KeyPressed>())
-        {
-            handle_key_press(*key_pressed);
-        }
-        else if (auto mouse_button_pressed = event->getIf<sf::Event::MouseButtonPressed>())
-        {
-            handle_mouse_button_press(*mouse_button_pressed, mouse_position);
-        }
-        else if (auto mouse_moved = event->getIf<sf::Event::MouseMoved>())
-        {
-            handle_mouse_move(*mouse_moved, mouse_position);
+            const Cell &cell = grid_.get_cell(x, y);
+            QColor color = cell_type_to_color(cell.type);
+            painter.fillRect(x * cell_size, y * cell_size, cell_size, cell_size, color);
         }
     }
+
+    // Draw thin grid lines
+    painter.setPen(QPen(QColor(200, 200, 200), 1));
+    for (int x = 0; x <= grid_.get_width(); ++x)
+        painter.drawLine(x * cell_size, 0, x * cell_size, grid_.get_height() * cell_size);
+    for (int y = 0; y <= grid_.get_height(); ++y)
+        painter.drawLine(0, y * cell_size, grid_.get_width() * cell_size, y * cell_size);
+
+    // Draw solver name
+    painter.setPen(QColor(0, 0, 0));
+    QFont font("monospace", 12);
+    painter.setFont(font);
+    QString solver_text = QString::fromStdString(
+        std::string(app_.get_current_solver_name()));
+    painter.drawText(10, 20, solver_text);
 }
 
-void VisualizationSystem::handle_key_press(const sf::Event::KeyPressed &key_event)
+void VisualizationSystem::keyPressEvent(QKeyEvent *event)
 {
-    if (key_bindings_.count(key_event.code))
+    Qt::Key key = static_cast<Qt::Key>(event->key());
+
+    if (event->modifiers() & Qt::ShiftModifier)
     {
-        key_bindings_[key_event.code]();
+        // Shift+key mappings
+        auto it = key_bindings_.find(key);
+        if (it != key_bindings_.end())
+            it->second();
+        return;
     }
+
+    auto it = key_bindings_.find(key);
+    if (it != key_bindings_.end())
+        it->second();
 }
 
-void VisualizationSystem::handle_mouse_button_press(const sf::Event::MouseButtonPressed &mouse_event,
-                                                    const sf::Vector2i &mouse_position)
+void VisualizationSystem::mousePressEvent(QMouseEvent *event)
 {
-    // if (mouse_event.button == sf::Mouse::Button::Left && is_point_inside_window_bounds(mouse_position) &&
-    //     sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
-    // {
-    //     Coordinate start_point = get_grid_cell_from_mouse_position(mouse_position);
-    //     // app_.add_start_point(start_point); // TODO: Implement in PathSyncApp
-    //     app_.get_map_data().set_cell_type(start_point.first, start_point.second, CellType::START);
-    // }
-    // else if (mouse_event.button == sf::Mouse::Button::Left && is_point_inside_window_bounds(mouse_position) &&
-    //          sf::Keyboard::isKeyPressed(sf::Keyboard::Key::E))
-    // {
-    //     Coordinate end_point = get_grid_cell_from_mouse_position(mouse_position);
-    //     // app_.add_end_point(end_point); // TODO: Implement in PathSyncApp
-    //     app_.get_map_data().set_cell_type(end_point.first, end_point.second, CellType::END);
-    // }
-    // else if (mouse_event.button == sf::Mouse::Button::Left && is_point_inside_window_bounds(mouse_position))
-    // {
-    //     Coordinate wall_pos = get_grid_cell_from_mouse_position(mouse_position);
-    //     app_.get_map_data().set_cell_type(wall_pos.first, wall_pos.second, CellType::WALL);
-    // }
-    // else if (mouse_event.button == sf::Mouse::Button::Right)
-    // {
-    //     Coordinate default_pos = get_grid_cell_from_mouse_position(mouse_position);
-    //     app_.get_map_data().set_cell_type(default_pos.first, default_pos.second, CellType::DEFAULT);
-    // }
+    if (event->button() != Qt::LeftButton)
+        return;
+
+    auto map_data = app_.get_current_map_data();
+    if (!map_data)
+        return;
+
+    QPoint pos = event->pos();
+    if (!is_point_inside_grid(pos))
+        return;
+
+    Coordinate coord = get_grid_cell_from_mouse_position(pos);
+
+    CellType current = map_data->get_cell_type(coord);
+    CellType new_type = (current == CellType::WALL) ? CellType::DEFAULT : CellType::WALL;
+    map_data->set_cell_type(coord, new_type);
 }
 
-void VisualizationSystem::handle_mouse_move(const sf::Event::MouseMoved &mouse_event,
-                                            const sf::Vector2i &mouse_position)
+void VisualizationSystem::mouseMoveEvent(QMouseEvent *event)
 {
-    // if (is_point_inside_window_bounds(mouse_position) && sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
-    // {
-    //     Coordinate wall_pos = get_grid_cell_from_mouse_position(mouse_position);
-    //     app_.get_map_data().set_cell_type(wall_pos.first, wall_pos.second, CellType::WALL);
-    // }
-    // else if (is_point_inside_window_bounds(mouse_position) && sf::Mouse::isButtonPressed(sf::Mouse::Button::Right))
-    // {
-    //     Coordinate default_pos = get_grid_cell_from_mouse_position(mouse_position);
-    //     app_.get_map_data().set_cell_type(default_pos.first, default_pos.second, CellType::DEFAULT);
-    // }
+    if (!(event->buttons() & Qt::LeftButton))
+        return;
+
+    auto map_data = app_.get_current_map_data();
+    if (!map_data)
+        return;
+
+    QPoint pos = event->pos();
+    if (!is_point_inside_grid(pos))
+        return;
+
+    Coordinate coord = get_grid_cell_from_mouse_position(pos);
+    map_data->set_cell_type(coord, CellType::WALL);
 }
 
-void VisualizationSystem::update()
+Coordinate VisualizationSystem::get_grid_cell_from_mouse_position(const QPoint &pos) const
 {
-    main_window_.clear();
-    grid_.sync_with_map_data(*app_.get_current_map_data());
-    main_window_.draw(grid_);
-    main_window_.display();
+    int cell_size = grid_.get_cell_size();
+    return Coordinate(pos.x() / cell_size, pos.y() / cell_size);
 }
 
-void VisualizationSystem::run()
+bool VisualizationSystem::is_point_inside_grid(const QPoint &point) const
 {
-    path_sync::Logger::get().info(help_stream_.str().c_str());
-
-    while (main_window_.isOpen())
-    {
-        handle_event();
-        update();
-    }
-}
-
-bool VisualizationSystem::is_point_inside_window_bounds(const sf::Vector2i &point)
-{
-    if ((point.x < 0 || point.x > system_config_->WIDTH) || (point.y < 0 || point.y > system_config_->HEIGHT))
-        return false;
-
-    return true;
-}
-
-Coordinate VisualizationSystem::get_grid_cell_from_mouse_position(const sf::Vector2i &mouse_position)
-{
-    Coordinate grid_cell = {mouse_position.x / system_config_->CELL_SIZE, mouse_position.y / system_config_->CELL_SIZE};
-    return grid_cell;
+    int cell_size = grid_.get_cell_size();
+    int max_x = grid_.get_width() * cell_size;
+    int max_y = grid_.get_height() * cell_size;
+    return point.x() >= 0 && point.x() < max_x &&
+           point.y() >= 0 && point.y() < max_y;
 }
 
 } // namespace path_sync

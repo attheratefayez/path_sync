@@ -1,20 +1,17 @@
-/**
- * @file visualization_system.hpp
- * @brief Header file for Visualization System of Path Sync Project.
- *
- */
-
 #ifndef __MOMAPF_VISUALIZATION_SYSTEM_HPP__
 #define __MOMAPF_VISUALIZATION_SYSTEM_HPP__
+
+#include <QColor>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QPaintEvent>
+#include <QTimer>
+#include <QWidget>
 
 #include <functional>
 #include <map>
 #include <memory>
-
-#include <SFML/Graphics.hpp>
-#include <SFML/System.hpp>
-#include <SFML/Window.hpp>
-#include <SFML/Window/Event.hpp>
+#include <sstream>
 
 #include "PathSyncApp.hpp"
 #include "path_sync_ui/grid.hpp"
@@ -23,59 +20,35 @@
 namespace path_sync
 {
 
-/**
- * @class VisualizationSystem
- * @brief Singleton class that controls the visualization and view of the app.
- *
- */
-class VisualizationSystem
+class VisualizationSystem : public QWidget
 {
-  public:
-    explicit VisualizationSystem(PathSyncApp& app, std::unique_ptr<VisualizationSystemConfig> system_config);
-    /**
-     * @brief Handles the events.
-     */
-    void handle_event();
+    Q_OBJECT
 
-    /**
-     * @brief Handles updates in the windows.
-     * Mainly clears the SFML window and redraws everything.
-     * Also handles updates of ImGui.
-     */
-    void update();
+public:
+    explicit VisualizationSystem(PathSyncApp& app, QWidget *parent = nullptr);
+    ~VisualizationSystem() override = default;
 
-    /**
-     * @brief Handles the main_loop of current SFML window.
-     *
-     * It calls handle_event() and then update(). Upon closing, It shuts down
-     * Imgui.
-     */
-    void run();
+protected:
+    void paintEvent(QPaintEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
 
-  private:
+private:
     PathSyncApp& app_;
     std::unique_ptr<VisualizationSystemConfig> system_config_;
-    sf::RenderWindow main_window_;
-
     Grid grid_;
-
+    QTimer *timer_;
     std::stringstream help_stream_;
-
-    std::map<sf::Keyboard::Key, std::function<void()>> key_bindings_;
+    std::map<Qt::Key, std::function<void()>> key_bindings_;
 
     VisualizationSystem(VisualizationSystem const &) = delete;
     VisualizationSystem &operator=(VisualizationSystem const &) = delete;
 
     void setup_keybindings();
-    void handle_key_press(const sf::Event::KeyPressed &key_event);
-    void handle_mouse_button_press(const sf::Event::MouseButtonPressed &mouse_event,
-                                     const sf::Vector2i &mouse_position);
-    void handle_mouse_move(const sf::Event::MouseMoved &mouse_event, const sf::Vector2i &mouse_position);
+    Coordinate get_grid_cell_from_mouse_position(const QPoint &pos) const;
+    bool is_point_inside_grid(const QPoint &point) const;
+};
 
-    bool is_point_inside_window_bounds(const sf::Vector2i &point);
-    Coordinate get_grid_cell_from_mouse_position(const sf::Vector2i &mouse_position);
-
-}; // end of class VisualizationSystem
 } // namespace path_sync
-
 #endif
