@@ -155,10 +155,8 @@ void PathSyncApp::toggle_agent_mode()
     for (auto &elem : current_scene_.second)
         current_map_data_->set_cell_type(elem, path_sync::CellType::DEFAULT);
 
-    if (num_agents_ == 1)
-        num_agents_ = 2;
-    else
-        num_agents_ = 1;
+    int max_agents = std::min(10, map_manager_.get_total_scenes());
+    num_agents_ = (num_agents_ % max_agents) + 1;
 
     map_manager_.reset_scene_index();
     current_scene_ = map_manager_.get_next_scene(num_agents_);

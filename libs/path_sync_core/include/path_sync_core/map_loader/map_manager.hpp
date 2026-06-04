@@ -32,6 +32,7 @@ public:
 
     void reset();
     void reset_scene_index();
+    int get_total_scenes() const;
 
 private:
     std::vector<std::string> available_maps_;

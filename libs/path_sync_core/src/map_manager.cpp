@@ -152,6 +152,11 @@ void MapManager::reset_scene_index()
     current_scene_.second.clear();
 }
 
+int MapManager::get_total_scenes() const
+{
+    return total_scenes_;
+}
+
 void MapManager::_get_available_maps()
 {
     std::string map_directory = std::string(PROJECT_ROOT) + "/maps/";
