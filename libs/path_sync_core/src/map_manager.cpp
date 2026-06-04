@@ -145,6 +145,13 @@ void MapManager::reset()
     *this = MapManager();
 }
 
+void MapManager::reset_scene_index()
+{
+    current_scene_idx_ = 0;
+    current_scene_.first.clear();
+    current_scene_.second.clear();
+}
+
 void MapManager::_get_available_maps()
 {
     std::string map_directory = std::string(PROJECT_ROOT) + "/maps/";

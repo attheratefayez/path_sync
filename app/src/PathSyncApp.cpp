@@ -147,6 +147,28 @@ void PathSyncApp::change_solver()
     path_finder_.change_solver();
 }
 
+void PathSyncApp::toggle_agent_mode()
+{
+    for (auto &elem : current_scene_.first)
+        current_map_data_->set_cell_type(elem, path_sync::CellType::DEFAULT);
+
+    for (auto &elem : current_scene_.second)
+        current_map_data_->set_cell_type(elem, path_sync::CellType::DEFAULT);
+
+    if (num_agents_ == 1)
+        num_agents_ = 2;
+    else
+        num_agents_ = 1;
+
+    map_manager_.reset_scene_index();
+    current_scene_ = map_manager_.get_next_scene(num_agents_);
+    update_map_data_with_current_scene_();
+
+    std::stringstream ss;
+    ss << "Switched to " << num_agents_ << "-agent mode.";
+    path_sync::Logger::get().info(ss.str().c_str());
+}
+
 std::shared_ptr<path_sync::MapData const> PathSyncApp::get_current_map_data() const
 {
     return current_map_data_;

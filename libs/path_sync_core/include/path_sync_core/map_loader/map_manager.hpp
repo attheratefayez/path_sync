@@ -31,7 +31,7 @@ public:
     std::pair<std::vector<Coordinate>, std::vector<Coordinate>> get_prev_scene(int n_agent);
 
     void reset();
-
+    void reset_scene_index();
 
 private:
     std::vector<std::string> available_maps_;

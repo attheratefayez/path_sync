@@ -35,6 +35,7 @@ VisualizationSystem::VisualizationSystem(PathSyncApp &app, std::unique_ptr<Visua
     help_stream_ << "\tMouse-Left  + Drag :   Draw Wall.\n";
     help_stream_ << "\tMouse-Right + Drag :   Erase Wall.\n";
     help_stream_ << "\tc                  :   Change Solver.\n";
+    help_stream_ << "\ta                  :   Toggle Agent Mode.\n";
     help_stream_ << "\tSpace              :   Find Solution.\n";
     help_stream_ << "\t[                  :   Previous Scene.\n";
     help_stream_ << "\t]                  :   Next Scene.\n";
@@ -50,6 +51,11 @@ void VisualizationSystem::setup_keybindings()
     key_bindings_[sf::Keyboard::Key::C] = [this]() {
         path_sync::Logger::get().info("Changing Solver...");
         app_.change_solver();
+    };
+
+    key_bindings_[sf::Keyboard::Key::A] = [this]() {
+        path_sync::Logger::get().info("Toggling Agent Mode...");
+        app_.toggle_agent_mode();
     };
 
     key_bindings_[sf::Keyboard::Key::Space] = [this]() {
