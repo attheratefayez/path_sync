@@ -1,6 +1,6 @@
 # PathSync
 
-A C++20 pathfinding visualization tool for single-agent and multi-agent pathfinding algorithms on grid-based maps. Supports multiple solvers with performance metrics and real-time visualization via SFML.
+A C++20 pathfinding visualization tool for single-agent and multi-agent pathfinding algorithms on grid-based maps. Supports multiple solvers with performance metrics and real-time visualization via Qt6.
 
 ## Algorithms
 
@@ -21,7 +21,7 @@ A C++20 pathfinding visualization tool for single-agent and multi-agent pathfind
 
 | Dependency | Version | Install |
 |---|---|---|
-| SFML | 3.0.0+ | Pre-built in `libs/path_sync_ui/lib/SFML/` |
+| Qt6 | 6.5+ | `sudo apt install qt6-base-dev` |
 | yaml-cpp | - | `sudo apt install libyaml-cpp-dev` |
 | Doxygen | - | `sudo apt install doxygen` (docs only) |
 | GoogleTest | - | Fetched automatically by CMake (tests only) |
@@ -58,7 +58,7 @@ Run tests:
 │   │   │   ├── logger.hpp        # Singleton logger
 │   │   │   └── path_sync_types.hpp
 │   │   └── src/
-│   └── path_sync_ui/             # SFML visualization
+│   └── path_sync_ui/             # Qt6 visualization
 │       ├── include/path_sync_ui/
 │       └── src/
 ├── maps/                         # Grid map files
@@ -69,19 +69,33 @@ Run tests:
 
 ## Usage
 
-### Controls (SFML window)
+### Controls
 
+**Toolbar buttons:**
+| Button | Action |
+|---|---|
+| `Solve` | Solve current scene |
+| `Clear` | Clear path overlay |
+| `Reset` | Reset grid to original map |
+| `< Scene` | Previous scene |
+| `Scene >` | Next scene |
+| `Next Map` | Cycle to next map |
+| `Solver` dropdown | Select solver directly |
+
+**Keyboard shortcuts:**
 | Key | Action |
 |---|---|
 | `Space` | Solve current scene |
 | `C` | Cycle solvers |
+| `A` | Cycle agent count (1–10) |
 | `Shift+M` | Next map |
 | `Shift+P` | Clear paths |
 | `Shift+R` | Reset grid |
 | `]` | Next scene |
 | `[` | Previous scene |
-| `A` | Cycle agent count (1–10) |
 | `Shift+H` | Help overlay |
+| Mouse click | Toggle wall cell |
+| Mouse drag | Draw walls |
 
 ## Map Format
 
