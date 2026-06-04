@@ -1,6 +1,4 @@
-# adding this to stop cmake bitching about DOWNLOAD_EXTRACT_TIMESTAMP 
-# when using URL in FetchContent
-cmake_policy(SET CMP0135 NEW) 
+cmake_policy(SET CMP0135 NEW)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -16,24 +14,25 @@ set(test_src_files
     ./path_sync_core_test/map_data_test.cpp
     ./path_sync_core_test/map_manager_test.cpp
     ./path_sync_core_test/solver_test.cpp
-
+    ./path_sync_ui_test/cell_test.cpp
+    ./path_sync_ui_test/color_test.cpp
+    ./path_sync_ui_test/grid_test.cpp
 )
-
 
 enable_testing()
 add_executable(path_sync_test
     ${test_src_files}
-    )
-
-target_link_directories(path_sync_test
-    PUBLIC ${CMAKE_SOURCE_DIR}/libs/path_sync_ui/lib/SFML/
 )
+
+target_include_directories(path_sync_test PUBLIC
+    ${CMAKE_SOURCE_DIR}/libs/path_sync_ui/include
+)
+
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
 target_link_libraries(path_sync_test
     GTest::gtest_main
-    sfml-graphics
-    sfml-window
-    sfml-system
+    Qt6::Widgets
     yaml-cpp
     path_sync_core
 )
