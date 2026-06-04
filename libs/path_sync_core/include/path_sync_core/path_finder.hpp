@@ -34,6 +34,8 @@ public:
     {
         if (current_sa_solver_)
             return current_sa_solver_->get_solver_name();
+        if (current_ma_solver_)
+            return current_ma_solver_->get_solver_name();
         return "No Solver Selected";
     }
 

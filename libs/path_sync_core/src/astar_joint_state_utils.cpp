@@ -127,13 +127,9 @@ path_sync::mapf_type::JointState Utils::apply_actions(const path_sync::mapf_type
     return new_state;
 }
 
-path_sync::Coordinate Utils::apply_single_action(path_sync::Coordinate agent, path_sync::Coordinate action)
+path_sync::Coordinate Utils::apply_single_action(path_sync::Coordinate /*agent*/, path_sync::Coordinate action)
 {
-    path_sync::Coordinate new_pos;
-    new_pos.first = agent.first + action.first;
-    new_pos.second = agent.second + action.second;
-
-    return new_pos;
+    return action;
 }
 
 bool Utils::check_validity_of_state(const path_sync::mapf_type::JointState &current_state, const path_sync::mapf_type::JointState &new_state)

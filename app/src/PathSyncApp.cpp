@@ -128,6 +128,11 @@ bool PathSyncApp::solve_current_map()
     return true;
 }
 
+void PathSyncApp::change_solver()
+{
+    path_finder_.change_solver();
+}
+
 std::shared_ptr<path_sync::MapData const> PathSyncApp::get_current_map_data() const
 {
     return current_map_data_;

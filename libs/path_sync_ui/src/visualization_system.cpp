@@ -48,7 +48,7 @@ void VisualizationSystem::setup_keybindings()
 {
     key_bindings_[sf::Keyboard::Key::C] = [this]() {
         path_sync::Logger::get().info("Changing Solver...");
-        // app_.change_solver(); // TODO: Implement in PathSyncApp
+        app_.change_solver();
     };
 
     key_bindings_[sf::Keyboard::Key::Space] = [this]() {

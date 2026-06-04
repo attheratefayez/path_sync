@@ -30,14 +30,25 @@ PathFinder::PathFinder()
 
 void PathFinder::change_solver()
 {
-    if (sa_solvers_.empty())
+    std::size_t total_solvers = sa_solvers_.size() + ma_solvers_.size();
+    if (total_solvers == 0)
     {
-        path_sync::Logger::get().warn("No single-agent solvers available to change.");
+        path_sync::Logger::get().warn("No solvers available to change.");
         return;
     }
 
-    current_solver_index_ = (++current_solver_index_) % sa_solvers_.size();
-    current_sa_solver_ = sa_solvers_[current_solver_index_];
+    current_solver_index_ = (++current_solver_index_) % total_solvers;
+
+    if (current_solver_index_ < sa_solvers_.size())
+    {
+        current_sa_solver_ = sa_solvers_[current_solver_index_];
+        current_ma_solver_ = nullptr;
+    }
+    else
+    {
+        current_ma_solver_ = ma_solvers_[current_solver_index_ - sa_solvers_.size()];
+        current_sa_solver_ = nullptr;
+    }
 }
 
 std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> PathFinder::find_path(
@@ -84,26 +95,29 @@ std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> Path
         return path;
     }
 
-    // TODO: add logic to handle multi-agent case
+    // Multi-agent case
+    if (!current_ma_solver_)
+    {
+        if (ma_solvers_.empty())
+        {
+            path_sync::Logger::get().warn("No multi-agent solvers available.");
+            return std::vector<Coordinate>();
+        }
+        current_ma_solver_ = ma_solvers_[0];
+    }
 
-    // else
-    // {
-    //     current_solver_ = solver_map_[SolverType::MultiAgentSolver][0];
-    //     std::optional<std::vector<std::vector<Coordinate>>> paths =
-    //         current_solver_->solve(map_data, start_points, end_points, performance_met_);
-    //
-    //     if (!paths.has_value())
-    //     {
-    //         ss << "No possible Solution...";
-    //         path_sync::Logger::get()->info(ss.str().c_str());
-    //         ss.str(std::string());
-    //         return std::vector<Coordinate>();
-    //     }
-    //
-    //     return paths.value();
-    // }
+    performance_met_.solver_name = current_ma_solver_->get_solver_name();
+    auto paths = current_ma_solver_->solve(map_data, start_points, end_points, performance_met_);
 
-    return std::vector<Coordinate>();
+    if (!paths.has_value())
+    {
+        ss << "No possible Solution...";
+        path_sync::Logger::get().info(ss.str().c_str());
+        ss.str(std::string());
+        return std::vector<Coordinate>();
+    }
+
+    return paths.value();
 }
 
 std::vector<Coordinate> PathFinder::__construct_path(std::map<Coordinate, Coordinate> &node_map,

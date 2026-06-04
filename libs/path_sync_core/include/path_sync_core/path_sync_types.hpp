@@ -68,7 +68,9 @@ struct JointState
 
     bool operator<(const JointState &right) const
     {
-        return time < right.time;
+        if (time != right.time)
+            return time < right.time;
+        return positions < right.positions;
     }
 };
 
@@ -84,7 +86,7 @@ struct Node
 
     bool operator>(const Node &other) const
     {
-        return _g_score > other._g_score;
+        return (_g_score + _h_score) > (other._g_score + other._h_score);
     }
 
     JointState _state;
