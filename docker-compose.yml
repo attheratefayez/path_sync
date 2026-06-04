@@ -1,0 +1,24 @@
+services:
+  cpp_dev_service:
+    build:
+      context: .
+      network: host
+    container_name: cpp-dev
+    working_dir: /workspace
+    network_mode: host
+    # user: cpp_dev
+    environment:
+      - XDG_RUNTIME_DIR=/tmp/runtime-humble_turtle
+      - WAYLAND_DISPLAY=${WAYLAND_DISPLAY}
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - .:/workspace
+      - /dev:/dev
+      - ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}:/tmp/runtime-humble_turtle/${WAYLAND_DISPLAY}
+    stdin_open: true
+    tty: true
+    # 'sleep infinity' keeps the container alive for shell access.
+    # To run the GUI: replace with "xvfb-run /workspace/build/path_sync"
+    command: sleep infinity
+    # environment:
+    #   - DISPLAY=:99
