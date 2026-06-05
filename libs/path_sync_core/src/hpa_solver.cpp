@@ -28,7 +28,8 @@ int manhattan_distance(ps_coord a, ps_coord b)
 }
 
 std::vector<ps_coord> local_a_star(const path_sync::MapData &map, ps_coord start, ps_coord goal,
-                                   const std::set<ps_coord> &blocked)
+                                   const std::set<ps_coord> &blocked,
+                                   path_sync::PerformanceMetrics &performance_met)
 {
     int w = map.get_width();
     int h = map.get_height();
@@ -56,6 +57,9 @@ std::vector<ps_coord> local_a_star(const path_sync::MapData &map, ps_coord start
     {
         ps_coord current = open.top();
         open.pop();
+
+        if (performance_met.cancel_flag && *performance_met.cancel_flag)
+            return {};
 
         if (current == goal)
         {
@@ -120,7 +124,8 @@ int HPA_Solver::get_cluster_id(int x, int y, int w, int h) const
 }
 
 std::vector<std::vector<int>> HPA_Solver::build_abstract_graph(
-    const MapData &map_data, std::vector<AbstractNode> &nodes) const
+    const MapData &map_data, std::vector<AbstractNode> &nodes,
+    PerformanceMetrics &performance_met) const
 {
     int w = map_data.get_width();
     int h = map_data.get_height();
@@ -229,6 +234,9 @@ std::vector<std::vector<int>> HPA_Solver::build_abstract_graph(
 
     for (auto &[cid, ids] : cluster_nodes)
     {
+        if (performance_met.cancel_flag && *performance_met.cancel_flag)
+            break;
+
         for (size_t i = 0; i < ids.size(); i++)
         {
             for (size_t j = i + 1; j < ids.size(); j++)
@@ -236,7 +244,7 @@ std::vector<std::vector<int>> HPA_Solver::build_abstract_graph(
                 auto p1 = nodes[ids[i]].pos;
                 auto p2 = nodes[ids[j]].pos;
                 std::set<ps_coord> blocked;
-                auto path = local_a_star(map_data, p1, p2, blocked);
+                auto path = local_a_star(map_data, p1, p2, blocked, performance_met);
                 if (!path.empty())
                 {
                     adj[ids[i]].push_back(ids[j]);
@@ -253,20 +261,24 @@ std::vector<Coordinate> HPA_Solver::refine_path(
     const MapData &map_data,
     const std::vector<int> &abstract_path,
     const std::vector<AbstractNode> &nodes,
-    Coordinate start, Coordinate goal) const
+    Coordinate start, Coordinate goal,
+    PerformanceMetrics &performance_met) const
 {
     std::vector<Coordinate> full_path;
 
     std::set<ps_coord> blocked;
     for (size_t i = 0; i + 1 < abstract_path.size(); i++)
     {
+        if (performance_met.cancel_flag && *performance_met.cancel_flag)
+            return {};
+
         int from_id = abstract_path[i];
         int to_id = abstract_path[i + 1];
 
         Coordinate a = nodes[from_id].pos;
         Coordinate b = nodes[to_id].pos;
 
-        auto seg = local_a_star(map_data, a, b, blocked);
+        auto seg = local_a_star(map_data, a, b, blocked, performance_met);
         if (seg.empty())
             return {};
 
@@ -305,7 +317,7 @@ std::map<Coordinate, Coordinate> HPA_Solver::solve(const path_sync::MapData &map
     if (w <= cluster_size_ || h <= cluster_size_)
     {
         std::set<ps_coord> blocked;
-        auto path = local_a_star(map_data, start, goal, blocked);
+        auto path = local_a_star(map_data, start, goal, blocked, performance_met);
         if (path.empty())
             return {};
 
@@ -322,7 +334,7 @@ std::map<Coordinate, Coordinate> HPA_Solver::solve(const path_sync::MapData &map
 
     // Build abstract graph
     std::vector<AbstractNode> abstract_nodes;
-    auto abstract_adj = build_abstract_graph(map_data, abstract_nodes);
+    auto abstract_adj = build_abstract_graph(map_data, abstract_nodes, performance_met);
 
     // Add start and goal as abstract nodes
     Coordinate start_coord = start;
@@ -341,10 +353,13 @@ std::map<Coordinate, Coordinate> HPA_Solver::solve(const path_sync::MapData &map
 
     for (int i = 0; i < static_cast<int>(abstract_nodes.size()) - 2; i++)
     {
+        if (performance_met.cancel_flag && *performance_met.cancel_flag)
+            break;
+
         if (abstract_nodes[i].cluster_id == sc)
         {
             std::set<ps_coord> blocked;
-            auto path_to_start = local_a_star(map_data, abstract_nodes[i].pos, start_coord, blocked);
+            auto path_to_start = local_a_star(map_data, abstract_nodes[i].pos, start_coord, blocked, performance_met);
             if (!path_to_start.empty())
             {
                 abstract_adj[start_id].push_back(i);
@@ -354,7 +369,7 @@ std::map<Coordinate, Coordinate> HPA_Solver::solve(const path_sync::MapData &map
         if (abstract_nodes[i].cluster_id == gc)
         {
             std::set<ps_coord> blocked;
-            auto path_to_goal = local_a_star(map_data, abstract_nodes[i].pos, goal_coord, blocked);
+            auto path_to_goal = local_a_star(map_data, abstract_nodes[i].pos, goal_coord, blocked, performance_met);
             if (!path_to_goal.empty())
             {
                 abstract_adj[goal_id].push_back(i);
@@ -367,7 +382,7 @@ std::map<Coordinate, Coordinate> HPA_Solver::solve(const path_sync::MapData &map
     if (sc == gc)
     {
         std::set<ps_coord> blocked;
-        auto direct_path = local_a_star(map_data, start_coord, goal_coord, blocked);
+        auto direct_path = local_a_star(map_data, start_coord, goal_coord, blocked, performance_met);
         if (!direct_path.empty())
         {
             abstract_adj[start_id].push_back(goal_id);
@@ -427,7 +442,7 @@ std::map<Coordinate, Coordinate> HPA_Solver::solve(const path_sync::MapData &map
     std::reverse(abstract_path.begin(), abstract_path.end());
 
     // Refine
-    auto full_path = refine_path(map_data, abstract_path, abstract_nodes, start, goal);
+    auto full_path = refine_path(map_data, abstract_path, abstract_nodes, start, goal, performance_met);
 
     if (full_path.empty())
         return {};

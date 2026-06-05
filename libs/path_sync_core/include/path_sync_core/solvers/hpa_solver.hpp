@@ -33,15 +33,18 @@ class HPA_Solver : public ISolver
 
     int get_cluster_id(int x, int y, int w, int h) const;
     std::vector<std::vector<int>> build_abstract_graph(
-        const MapData &map_data, std::vector<AbstractNode> &nodes) const;
+        const MapData &map_data, std::vector<AbstractNode> &nodes,
+        PerformanceMetrics &performance_met) const;
     std::vector<Coordinate> refine_path(
         const MapData &map_data,
         const std::vector<int> &abstract_path,
         const std::vector<AbstractNode> &nodes,
-        Coordinate start, Coordinate goal) const;
+        Coordinate start, Coordinate goal,
+        PerformanceMetrics &performance_met) const;
 
   public:
     std::string_view get_solver_name() const override;
+    bool is_optimal() const override { return false; }
 
     std::map<Coordinate, Coordinate> solve(const path_sync::MapData &map_data, Coordinate start, Coordinate goal,
                                            PerformanceMetrics &performance_met) override;
