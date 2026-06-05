@@ -308,6 +308,7 @@ VisualizationSystem::VisualizationSystem(PathSyncApp& app, QWidget *parent)
     , grid_widget_(nullptr)
     , solver_combo_(nullptr)
     , status_label_(nullptr)
+    , scene_timer_(new QTimer(this))
 {
     setWindowTitle("Path Sync");
     resize(1200, 900);
@@ -357,8 +358,10 @@ void VisualizationSystem::setup_ui()
     auto *solve_btn = solve_btn_;
     auto *clear_btn = new QPushButton("Clear");
     auto *reset_btn = new QPushButton("Reset");
-    auto *prev_btn  = new QPushButton("◀ Scene");
-    auto *next_btn  = new QPushButton("Scene ▶");
+    prev_btn_ = new QPushButton("◀ Scene");
+    next_btn_ = new QPushButton("Scene ▶");
+    auto *prev_btn  = prev_btn_;
+    auto *next_btn  = next_btn_;
     auto *prev_map_btn = new QPushButton("◀ Map");
     auto *map_btn      = new QPushButton("Map ▶");
     auto *agent_btn    = new QPushButton("Agent");
@@ -369,8 +372,21 @@ void VisualizationSystem::setup_ui()
     connect(solve_btn, &QPushButton::clicked, this, &VisualizationSystem::on_solve_clicked);
     connect(clear_btn, &QPushButton::clicked, this, &VisualizationSystem::on_clear_clicked);
     connect(reset_btn, &QPushButton::clicked, this, &VisualizationSystem::on_reset_clicked);
-    connect(prev_btn,  &QPushButton::clicked, this, &VisualizationSystem::on_prev_scene);
-    connect(next_btn,  &QPushButton::clicked, this, &VisualizationSystem::on_next_scene);
+    connect(prev_btn,  &QPushButton::pressed, this, [this]() {
+        scene_dir_forward_ = false;
+        if (on_prev_scene()) scene_timer_->start();
+    });
+    connect(next_btn,  &QPushButton::pressed, this, [this]() {
+        scene_dir_forward_ = true;
+        if (on_next_scene()) scene_timer_->start();
+    });
+    connect(prev_btn,  &QPushButton::released, this, [this]() { scene_timer_->stop(); });
+    connect(next_btn,  &QPushButton::released, this, [this]() { scene_timer_->stop(); });
+    scene_timer_->setInterval(180);
+    connect(scene_timer_, &QTimer::timeout, this, [this]() {
+        bool ok = scene_dir_forward_ ? on_next_scene() : on_prev_scene();
+        if (!ok) scene_timer_->stop();
+    });
     connect(prev_map_btn, &QPushButton::clicked, this, &VisualizationSystem::on_prev_map);
     connect(map_btn,      &QPushButton::clicked, this, &VisualizationSystem::on_next_map);
     connect(agent_btn, &QPushButton::clicked, this, &VisualizationSystem::on_toggle_agent_mode);
@@ -526,8 +542,22 @@ void VisualizationSystem::solve_async()
 void VisualizationSystem::on_solve_clicked()      { solve_async();                           }
 void VisualizationSystem::on_clear_clicked()      { app_.clear_paths();                      }
 void VisualizationSystem::on_reset_clicked()      { app_.reset_grid();                       }
-void VisualizationSystem::on_prev_scene()         { app_.request_previous_scene(); app_.clear_paths(); grid_widget_->center_view(); update_status(); }
-void VisualizationSystem::on_next_scene()         { app_.request_next_scene();     app_.clear_paths(); grid_widget_->center_view(); update_status(); }
+bool VisualizationSystem::on_prev_scene()
+{
+    if (!app_.request_previous_scene()) return false;
+    app_.clear_paths();
+    grid_widget_->center_view();
+    update_status();
+    return true;
+}
+bool VisualizationSystem::on_next_scene()
+{
+    if (!app_.request_next_scene()) return false;
+    app_.clear_paths();
+    grid_widget_->center_view();
+    update_status();
+    return true;
+}
 void VisualizationSystem::on_prev_map()           { app_.request_previous_map();  grid_widget_->reset_view();  update_status(); }
 void VisualizationSystem::on_next_map()           { app_.request_next_map();       grid_widget_->reset_view();  update_status(); }
 void VisualizationSystem::on_toggle_agent_mode()  { app_.toggle_agent_mode(); populate_solver_combo(); update_status(); }
@@ -538,7 +568,9 @@ void VisualizationSystem::update_status()
     if (!map_data)
         return;
     std::string text;
-    text += "Solver: ";
+    text += "Agent: ";
+    text += std::to_string(app_.get_num_agents());
+    text += "  │  Solver: ";
     text += app_.get_current_solver_name();
     text += "  │  Map: ";
     text += app_.get_current_map_name();
