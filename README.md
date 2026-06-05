@@ -26,11 +26,17 @@ A C++20 pathfinding visualization tool for single-agent and multi-agent pathfind
 | Doxygen | - | `sudo apt install doxygen` (docs only) |
 | GoogleTest | - | Fetched automatically by CMake (tests only) |
 
+## Dependencies Installation
+
+```bash
+sudo apt install cmake libyaml-cpp-dev
+```
+
 ## Build
 
 ```bash
 cmake -B build -S .
-cmake --build build
+cmake --build build -j$(nproc)
 ```
 
 Run:
@@ -42,6 +48,18 @@ Run tests:
 ```bash
 ./build/path_sync_test
 ```
+
+### Docker (headless)
+
+```bash
+docker compose up -d
+docker exec cpp-dev cmake -B /workspace/build -S /workspace -DCMAKE_BUILD_TYPE=Release
+docker exec cpp-dev cmake --build /workspace/build -j$(nproc)
+docker exec cpp-dev /workspace/build/test/path_sync_test
+```
+
+> **Note:** The GUI requires an X11 server. Use `xvfb-run` inside the container for headless testing:
+> `docker exec cpp-dev xvfb-run /workspace/build/path_sync`
 
 ## Project Structure
 
