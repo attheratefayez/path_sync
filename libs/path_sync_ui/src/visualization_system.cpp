@@ -10,6 +10,8 @@
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <algorithm>
+#include <filesystem>
+#include <fstream>
 #include <functional>
 
 #include <QtConcurrent/QtConcurrent>
@@ -592,6 +594,25 @@ void VisualizationSystem::on_solver_combo_changed(int index)
     update_status();
 }
 
+// ── CSV logging ─────────────────────────────────────────────────────
+
+namespace {
+
+void write_csv_log(const PerformanceMetrics &pm)
+{
+    std::string dir = std::string(PROJECT_ROOT) + "/log";
+    std::filesystem::create_directories(dir);
+    std::string path = dir + "/results.csv";
+    bool exists = std::filesystem::exists(path);
+    std::ofstream ofs(path, std::ios::app);
+    if (!ofs) return;
+    if (!exists)
+        ofs << PerformanceMetrics::csv_header() << "\n";
+    ofs << pm.csv_line() << "\n";
+}
+
+} // anonymous namespace
+
 void VisualizationSystem::solve_async()
 {
     if (solving_)
@@ -620,6 +641,7 @@ void VisualizationSystem::solve_async()
         }
 
         perf_buffer_.push_front(app_.get_performance_metrics());
+        write_csv_log(perf_buffer_.front());
         while (perf_buffer_.size() > 5)
             perf_buffer_.pop_back();
         update_perf_sidebar();
@@ -683,7 +705,6 @@ void VisualizationSystem::on_next_map()
     reset_perf_buffer();
     update_status();
 }
-void VisualizationSystem::on_toggle_agent_mode()  { app_.toggle_agent_mode(); populate_solver_combo(); update_status(); }
 
 void VisualizationSystem::update_status()
 {
@@ -722,11 +743,6 @@ void VisualizationSystem::update_status()
     grid_widget_->update();
 }
 
-void VisualizationSystem::focus_grid()
-{
-    grid_widget_->setFocus();
-}
-
 void VisualizationSystem::reset_perf_buffer()
 {
     perf_buffer_.clear();
@@ -749,6 +765,8 @@ void VisualizationSystem::update_perf_sidebar()
         text += "Solver:  " + pm.solver_name + "\n";
         text += "Map:     " + pm.map_name + "\n";
         text += "Scene:   " + std::to_string(pm.scene_id) + "\n";
+        text += "Agents:  " + std::to_string(pm.num_agents) + "\n";
+        text += "Time:    " + PerformanceMetrics::fmt_timestamp(pm.timestamp) + "\n";
         text += "Status:  " + std::string(pm.success ? "OK" : "FAIL") + "\n";
         text += "Runtime: " + std::to_string(pm.runtime.count()) + " us\n";
 

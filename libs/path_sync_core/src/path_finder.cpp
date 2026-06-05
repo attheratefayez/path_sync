@@ -136,6 +136,8 @@ std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> Path
     std::stringstream ss;
 
     performance_met_.map_name = map_data.get_map_info().map_name;
+    performance_met_.num_agents = static_cast<int>(start_points.size());
+    performance_met_.timestamp = std::time(nullptr);
 
     if (start_points.size() != end_points.size())
     {

@@ -4,6 +4,8 @@
 
 #include <algorithm>
 #include <ctime>
+#include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <memory>
@@ -203,6 +205,19 @@ bool PathSyncApp::solve_current_map()
         (void)path_finder_.find_path(*current_map_data_, current_scene_.first, current_scene_.second);
         current_scene_ = map_manager_.get_next_scene(1);
 
+        // CSV log
+        std::string csv_dir = std::string(PROJECT_ROOT) + "/log";
+        std::filesystem::create_directories(csv_dir);
+        std::string csv_path = csv_dir + "/results.csv";
+        bool csv_exists = std::filesystem::exists(csv_path);
+        std::ofstream csv_ofs(csv_path, std::ios::app);
+        if (csv_ofs)
+        {
+            if (!csv_exists)
+                csv_ofs << PerformanceMetrics::csv_header() << "\n";
+            csv_ofs << path_finder_.get_performance_metrics().csv_line() << "\n";
+        }
+
         path_sync::Logger::get().info(path_finder_.get_performance_data().str().c_str(), log_file);
     }
 
@@ -313,22 +328,6 @@ int PathSyncApp::get_num_agents() const { return num_agents_; }
 PerformanceMetrics PathSyncApp::get_performance_metrics() const
 {
     return path_finder_.get_performance_metrics();
-}
-
-void PathSyncApp::clear_scene()
-{
-    for (int y = 0; y < current_map_data_->get_height(); ++y)
-    {
-        for (int x = 0; x < current_map_data_->get_width(); ++x)
-        {
-            CellType current_type = current_map_data_->get_cell_type(Coordinate(x, y));
-            if (current_type == path_sync::CellType::START || current_type == path_sync::CellType::END)
-            {
-                current_map_data_->set_cell_type(Coordinate(x, y), CellType::DEFAULT);
-            }
-        }
-    }
-    path_sync::Logger::get().info("Scene cleared.");
 }
 
 void PathSyncApp::clear_paths()

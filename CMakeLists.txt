@@ -12,7 +12,6 @@ project(path_sync
 
 add_subdirectory(libs/path_sync_core)
 add_subdirectory(libs/path_sync_ui)
-add_subdirectory(app)
 add_subdirectory(test)
 
 add_executable(path_sync 

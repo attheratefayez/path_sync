@@ -42,9 +42,7 @@ private slots:
     bool on_next_scene();
     void on_prev_map();
     void on_next_map();
-    void on_toggle_agent_mode();
     void update_status();
-    void focus_grid();
     void solve_async();
 
 private:

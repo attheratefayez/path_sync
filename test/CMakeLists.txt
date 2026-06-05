@@ -14,6 +14,7 @@ set(test_src_files
     ./path_sync_core_test/map_data_test.cpp
     ./path_sync_core_test/map_manager_test.cpp
     ./path_sync_core_test/solver_test.cpp
+    ./path_sync_core_test/performance_metrics_test.cpp
     ./path_sync_ui_test/cell_test.cpp
     ./path_sync_ui_test/color_test.cpp
     ./path_sync_ui_test/grid_test.cpp

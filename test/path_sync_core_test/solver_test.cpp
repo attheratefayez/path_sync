@@ -470,3 +470,169 @@ TEST_F(SolverTest, ExtractPathsBuildsCorrectPaths)
     EXPECT_EQ(paths[1][0], (ps::Coordinate{2, 0}));
     EXPECT_EQ(paths[1][2], (ps::Coordinate{0, 2}));
 }
+
+// --- PathFinder Cancel / Solver Selection ---
+
+TEST_F(SolverTest, PathFinderCancelPreventsSolve)
+{
+    auto info = make_map(100, 100, std::vector<std::string>(100, std::string(100, '.')));
+    ps::MapData map(info);
+    ps::PathFinder finder;
+
+    finder.cancel();
+    EXPECT_TRUE(finder.is_cancelled());
+
+    std::vector<ps::Coordinate> starts = {{0, 0}};
+    std::vector<ps::Coordinate> ends = {{99, 99}};
+
+    auto result = finder.find_path(map, starts, ends);
+    // Should return empty due to cancellation
+    ASSERT_TRUE(std::holds_alternative<std::vector<ps::Coordinate>>(result));
+    EXPECT_TRUE(std::get<std::vector<ps::Coordinate>>(result).empty());
+
+    // Reset should allow next solve
+    finder.reset_cancel();
+    EXPECT_FALSE(finder.is_cancelled());
+}
+
+TEST_F(SolverTest, PathFinderSelectSaSolver)
+{
+    ps::PathFinder finder;
+    auto names = finder.get_sa_solver_names();
+    ASSERT_GT(names.size(), 1);
+
+    // Select the second solver
+    finder.select_sa_solver_by_index(1);
+    EXPECT_EQ(finder.get_current_solver_name(), names[1]);
+}
+
+TEST_F(SolverTest, PathFinderSelectMaSolver)
+{
+    ps::PathFinder finder;
+    auto names = finder.get_ma_solver_names();
+    ASSERT_GE(names.size(), 1);
+
+    finder.select_ma_solver_by_index(0);
+    std::string_view selected = finder.get_current_solver_name();
+    EXPECT_FALSE(selected.empty());
+    EXPECT_NE(selected, "No Solver Selected");
+}
+
+TEST_F(SolverTest, PathFinderSelectSolverCombined)
+{
+    ps::PathFinder finder;
+    auto sa_names = finder.get_sa_solver_names();
+    auto ma_names = finder.get_ma_solver_names();
+    auto all = finder.get_all_solver_names();
+
+    EXPECT_EQ(all.size(), sa_names.size() + ma_names.size());
+
+    // Select first SA solver via combined index
+    finder.select_solver_by_index(0);
+    EXPECT_EQ(finder.get_current_solver_name(), sa_names[0]);
+
+    // Select first MA solver via combined index
+    finder.select_solver_by_index(sa_names.size());
+    EXPECT_EQ(finder.get_current_solver_name(), ma_names[0]);
+}
+
+TEST_F(SolverTest, PathFinderPerformanceMetricsPopulated)
+{
+    auto info = make_map(3, 3, {"...", "...", "..."});
+    ps::MapData map(info);
+    ps::PathFinder finder;
+
+    std::vector<ps::Coordinate> starts = {{0, 0}};
+    std::vector<ps::Coordinate> ends = {{2, 2}};
+
+    (void)finder.find_path(map, starts, ends);
+
+    auto metrics = finder.get_performance_metrics();
+    EXPECT_EQ(metrics.map_name, "test_map");
+    EXPECT_EQ(metrics.num_agents, 1);
+    EXPECT_TRUE(metrics.success);
+    EXPECT_GT(metrics.runtime.count(), 0);
+    EXPECT_GT(metrics.path_length, 0);
+    EXPECT_GT(metrics.timestamp, 0);
+}
+
+// --- HPA Solver Additional Tests ---
+TEST_F(SolverTest, HpaFindsPathThroughObstacles)
+{
+    auto info = make_map(6, 6,
+        {"......",
+         "......",
+         ".##...",
+         ".##...",
+         "......",
+         "......"});
+    ps::MapData map(info);
+    ps::solvers::sapf::HPA_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    auto result = solver.solve(map, {0, 0}, {5, 5}, perf);
+
+    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(perf.success);
+}
+
+// --- D* Lite Additional Test ---
+TEST_F(SolverTest, DStarLiteFindsPathThroughObstacles)
+{
+    auto info = make_map(5, 5,
+        {".....",
+         ".##..",
+         ".#...",
+         ".#.#.",
+         "....."});
+    ps::MapData map(info);
+    ps::solvers::sapf::DStar_Lite_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    auto result = solver.solve(map, {0, 0}, {4, 4}, perf);
+
+    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(perf.success);
+}
+
+// --- EPEA* Additional Test ---
+TEST_F(SolverTest, EpeaStarFindsPathThroughObstacles)
+{
+    auto info = make_map(5, 5,
+        {".....",
+         ".##..",
+         ".#...",
+         ".#.#.",
+         "....."});
+    ps::MapData map(info);
+    ps::solvers::sapf::EPEA_Star_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    auto result = solver.solve(map, {0, 0}, {4, 4}, perf);
+
+    EXPECT_FALSE(result.empty());
+    EXPECT_TRUE(perf.success);
+}
+
+// --- M* Additional Test ---
+TEST_F(SolverTest, MStarAvoidsCollisionOnNarrowCorridor)
+{
+    // Two agents crossing in a narrow corridor must avoid each other
+    auto info = make_map(3, 3,
+        {"...",
+         "...",
+         "..."});
+    ps::MapData map(info);
+    ps::solvers::mapf::MStar_Solver solver;
+    ps::PerformanceMetrics perf;
+
+    std::vector<ps::Coordinate> starts = {{0, 0}, {2, 2}};
+    std::vector<ps::Coordinate> goals = {{2, 2}, {0, 0}};
+
+    auto result = solver.solve(map, starts, goals, perf);
+
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result->size(), 2);
+    EXPECT_EQ(result->at(0).back(), goals[0]);
+    EXPECT_EQ(result->at(1).back(), goals[1]);
+}

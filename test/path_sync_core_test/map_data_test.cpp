@@ -31,6 +31,21 @@ TEST_F(MapDataTest, SetterGetterTest)
 
     arena2_map_data.set_cell_type({150, 150}, path_sync::CellType::DEFAULT);
     EXPECT_EQ(arena2_map_data.get_cell_type({150, 150}), path_sync::CellType::DEFAULT);
+}
 
+TEST_F(MapDataTest, OutOfBoundsReturnsWall)
+{
+    int w = arena2_map_data.get_width();
+    int h = arena2_map_data.get_height();
 
+    EXPECT_EQ(arena2_map_data.get_cell_type({-1, 0}), path_sync::CellType::WALL);
+    EXPECT_EQ(arena2_map_data.get_cell_type({0, -1}), path_sync::CellType::WALL);
+    EXPECT_EQ(arena2_map_data.get_cell_type({w, 0}), path_sync::CellType::WALL);
+    EXPECT_EQ(arena2_map_data.get_cell_type({0, h}), path_sync::CellType::WALL);
+}
+
+TEST_F(MapDataTest, SetCellOutOfBoundsNoCrash)
+{
+    EXPECT_NO_THROW(arena2_map_data.set_cell_type({-5, -5}, path_sync::CellType::START));
+    EXPECT_NO_THROW(arena2_map_data.set_cell_type({9999, 9999}, path_sync::CellType::PATH));
 }

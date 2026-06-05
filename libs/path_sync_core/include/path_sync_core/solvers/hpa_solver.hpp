@@ -25,12 +25,6 @@ class HPA_Solver : public ISolver
         int cluster_id;
     };
 
-    struct AbstractEdge
-    {
-        int target_id;
-        int cost;
-    };
-
     int get_cluster_id(int x, int y, int w, int h) const;
     std::vector<std::vector<int>> build_abstract_graph(
         const MapData &map_data, std::vector<AbstractNode> &nodes,

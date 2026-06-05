@@ -27,9 +27,6 @@ class PathSyncApp
     bool request_scene(int scene_index);
     bool solve_current_scene();
     bool solve_current_map();
-
-    // Thread-safe: works on a copy, locks internal mutex.
-    // Returns the solved map with PATH cells applied, or nullptr on failure.
     std::shared_ptr<path_sync::MapData> solve_async_on_copy(
         const std::vector<Coordinate>& starts,
         const std::vector<Coordinate>& ends);
@@ -51,7 +48,6 @@ class PathSyncApp
     void reset_cancel() { path_finder_.reset_cancel(); }
     bool is_solve_cancelled() const { return path_finder_.is_cancelled(); }
 
-    void clear_scene();
     void clear_paths();
     void reset_grid();
 

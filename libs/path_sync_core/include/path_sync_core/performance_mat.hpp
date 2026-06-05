@@ -4,6 +4,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <ctime>
 #include <sstream>
 #include <string>
 
@@ -16,6 +17,8 @@ struct PerformanceMetrics
     std::string solver_name;
     std::string map_name;
     int scene_id = -1;
+    int num_agents = 0;
+    std::time_t timestamp = 0;
 
     // Success
     bool success = false;
@@ -51,6 +54,7 @@ struct PerformanceMetrics
         std::stringstream ss;
         ss << solver_name << " " << map_name << " "
            << (success ? "OK" : "FAIL") << " "
+           << "agents: " << num_agents << " "
            << "rt: " << runtime.count() << "us "
            << "len: " << path_length << " "
            << "explored: " << num_of_nodes_explored << " "
@@ -65,9 +69,19 @@ struct PerformanceMetrics
 
     static std::string csv_header()
     {
-        return "solver_name,map_name,scene_id,success,runtime_us,path_length,optimal_path_length,"
+        return "solver_name,map_name,scene_id,num_agents,success,runtime_us,path_length,optimal_path_length,"
                "suboptimality_ratio,nodes_explored,nodes_expanded,nodes_reopened,peak_open_size,"
-               "sum_of_costs,makespan";
+               "sum_of_costs,makespan,timestamp";
+    }
+
+    static std::string fmt_timestamp(std::time_t t)
+    {
+        if (t == 0) return "";
+        std::tm tm{};
+        localtime_r(&t, &tm);
+        char buf[32];
+        std::strftime(buf, sizeof buf, "%Y-%m-%d %H:%M:%S", &tm);
+        return buf;
     }
 
     std::string csv_line() const
@@ -76,6 +90,7 @@ struct PerformanceMetrics
         ss << solver_name << ","
            << map_name << ","
            << scene_id << ","
+           << num_agents << ","
            << (success ? 1 : 0) << ","
            << runtime.count() << ","
            << path_length << ","
@@ -86,7 +101,8 @@ struct PerformanceMetrics
            << num_of_nodes_reopened << ","
            << peak_open_size << ","
            << sum_of_costs << ","
-           << makespan;
+           << makespan << ","
+           << fmt_timestamp(timestamp);
         return ss.str();
     }
 };
