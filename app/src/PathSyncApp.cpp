@@ -132,7 +132,11 @@ std::shared_ptr<path_sync::MapData> PathSyncApp::solve_async_on_copy(
             std::vector<Coordinate>(current_sa_solution_.begin() + 1, current_sa_solution_.end() - 1);
 
         for (Coordinate const &elem : current_sa_solution_)
-            copy->set_cell_type(elem, path_sync::CellType::PATH);
+        {
+            auto t = copy->get_cell_type(elem);
+            if (t != path_sync::CellType::START && t != path_sync::CellType::END)
+                copy->set_cell_type(elem, path_sync::CellType::PATH);
+        }
     }
     else
     {
@@ -146,7 +150,11 @@ std::shared_ptr<path_sync::MapData> PathSyncApp::solve_async_on_copy(
             path = std::vector<Coordinate>(path.begin() + 1, path.end() - 1);
 
             for (auto &elem : path)
-                copy->set_cell_type(elem, path_sync::CellType::PATH);
+            {
+                auto t = copy->get_cell_type(elem);
+                if (t != path_sync::CellType::START && t != path_sync::CellType::END)
+                    copy->set_cell_type(elem, path_sync::CellType::PATH);
+            }
         }
     }
 
@@ -359,6 +367,12 @@ void PathSyncApp::clear_paths()
             }
         }
     }
+
+    for (auto &elem : current_scene_.first)
+        current_map_data_->set_cell_type(elem, path_sync::CellType::START);
+    for (auto &elem : current_scene_.second)
+        current_map_data_->set_cell_type(elem, path_sync::CellType::END);
+
     path_sync::Logger::get().info("Paths cleared.");
 }
 
