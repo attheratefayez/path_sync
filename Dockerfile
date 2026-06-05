@@ -8,6 +8,7 @@ RUN apt-get update && \
       gdb \
       git \
       libyaml-cpp-dev \
+      locales \
       qt6-base-dev \
       libxrandr-dev \
       libxcursor-dev \
@@ -26,6 +27,8 @@ RUN apt-get update && \
       libxcb-icccm4-dev \
       libxcb-util-dev \
       xvfb \
-   && rm -rf /var/lib/apt/lists/*
+   && rm -rf /var/lib/apt/lists/* \
+   && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
+   && locale-gen
 
-ENV LD_LIBRARY_PATH=/workspace/libs/path_sync_ui/lib/SFML
+ENV LANG=en_US.UTF-8

@@ -8,6 +8,7 @@ services:
     network_mode: host
     # user: cpp_dev
     environment:
+      - LANG=en_US.UTF-8
       - XDG_RUNTIME_DIR=/tmp/runtime-humble_turtle
       - WAYLAND_DISPLAY=${WAYLAND_DISPLAY}
       - DISPLAY=${DISPLAY}
