@@ -40,6 +40,14 @@ bool PathSyncApp::request_next_map()
     return bool(current_map_data_->get_height());
 }
 
+bool PathSyncApp::request_previous_map()
+{
+    current_map_data_ = std::make_shared<path_sync::MapData>(map_manager_.get_prev_map_data());
+    current_scene_ = map_manager_.get_next_scene(num_agents_);
+    update_map_data_with_current_scene_();
+    return bool(current_map_data_->get_height());
+}
+
 bool PathSyncApp::request_next_scene()
 {
     for (auto &elem : current_scene_.first)
@@ -172,7 +180,7 @@ bool PathSyncApp::solve_current_map()
 
 void PathSyncApp::change_solver()
 {
-    path_finder_.change_solver();
+    path_finder_.change_solver(num_agents_ > 1);
 }
 
 void PathSyncApp::select_solver_by_index(std::size_t index)
@@ -180,9 +188,29 @@ void PathSyncApp::select_solver_by_index(std::size_t index)
     path_finder_.select_solver_by_index(index);
 }
 
+void PathSyncApp::select_solver_by_index(std::size_t index, bool multi_agent)
+{
+    if (multi_agent)
+        path_finder_.select_ma_solver_by_index(index);
+    else
+        path_finder_.select_sa_solver_by_index(index);
+}
+
 std::vector<std::string> PathSyncApp::get_solver_names() const
 {
     return path_finder_.get_all_solver_names();
+}
+
+std::vector<std::string> PathSyncApp::get_solver_names(bool multi_agent) const
+{
+    if (multi_agent)
+        return path_finder_.get_ma_solver_names();
+    return path_finder_.get_sa_solver_names();
+}
+
+bool PathSyncApp::get_is_multi_agent() const
+{
+    return num_agents_ > 1;
 }
 
 void PathSyncApp::toggle_agent_mode()

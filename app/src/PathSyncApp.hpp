@@ -19,6 +19,7 @@ class PathSyncApp
     PathSyncApp();
 
     bool request_next_map();
+    bool request_previous_map();
     bool request_next_scene();
     bool request_previous_scene();
     bool solve_current_scene();
@@ -35,7 +36,10 @@ class PathSyncApp
     void set_map_data(std::shared_ptr<path_sync::MapData> data);
     void change_solver();
     void select_solver_by_index(std::size_t index);
+    void select_solver_by_index(std::size_t index, bool multi_agent);
     std::vector<std::string> get_solver_names() const;
+    std::vector<std::string> get_solver_names(bool multi_agent) const;
+    bool get_is_multi_agent() const;
     void toggle_agent_mode();
 
     std::shared_ptr<path_sync::MapData> get_current_map_data() const;
