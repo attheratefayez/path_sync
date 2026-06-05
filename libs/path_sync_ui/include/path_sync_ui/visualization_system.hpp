@@ -51,6 +51,7 @@ private:
     QPushButton *next_btn_;
     QComboBox *solver_combo_;
     QLabel *status_label_;
+    QLabel *solve_status_label_;
     QTimer *scene_timer_;
     bool scene_dir_forward_ = true;
     bool solving_ = false;

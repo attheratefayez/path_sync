@@ -311,6 +311,7 @@ VisualizationSystem::VisualizationSystem(PathSyncApp& app, QWidget *parent)
     , grid_widget_(nullptr)
     , solver_combo_(nullptr)
     , status_label_(nullptr)
+    , solve_status_label_(nullptr)
     , scene_timer_(new QTimer(this))
 {
     setWindowTitle("Path Sync");
@@ -476,11 +477,23 @@ void VisualizationSystem::setup_ui()
     });
 
     // ── status bar ──────────────────────────────────────────────────────
+    auto *status_bar = new QWidget;
+    status_bar->setStyleSheet("background: #1e1e1e;");
+    status_bar->setFixedHeight(24);
+    auto *sb_lay = new QHBoxLayout(status_bar);
+    sb_lay->setContentsMargins(8, 0, 8, 0);
+
     status_label_ = new QLabel;
-    status_label_->setStyleSheet("QLabel { background: #1e1e1e; color: #aaa;"
-                                 "  padding: 3px 8px; font-family: monospace; }");
-    status_label_->setFixedHeight(24);
-    root->addWidget(status_label_);
+    status_label_->setStyleSheet("QLabel { color: #aaa; font-family: monospace; }");
+    sb_lay->addWidget(status_label_);
+
+    sb_lay->addStretch();
+
+    solve_status_label_ = new QLabel;
+    solve_status_label_->setStyleSheet("QLabel { color: #aaa; font-family: monospace; }");
+    sb_lay->addWidget(solve_status_label_);
+
+    root->addWidget(status_bar);
 
     auto *timer = new QTimer(this);
     connect(timer, &QTimer::timeout, grid_widget_, [this]() { grid_widget_->update(); });
@@ -516,7 +529,7 @@ void VisualizationSystem::solve_async()
     solving_ = true;
     solve_btn_->setEnabled(false);
     solve_btn_->setText("Solving...");
-    status_label_->setText("Solving...");
+    solve_status_label_->setText("Solving...");
 
     auto starts = app_.get_current_scene().first;
     auto ends   = app_.get_current_scene().second;
@@ -527,11 +540,12 @@ void VisualizationSystem::solve_async()
         if (result) {
             app_.set_map_data(std::move(result));
             grid_widget_->sync_and_update();
-            status_label_->setText("Solved");
+            solve_status_label_->setText("Solved");
             show_performance_dialog();
         } else {
-            status_label_->setText("No path found");
+            solve_status_label_->setText("No path found");
         }
+        QTimer::singleShot(3000, this, [this]() { solve_status_label_->clear(); });
         solving_ = false;
         solve_btn_->setEnabled(true);
         solve_btn_->setText("Solve");
