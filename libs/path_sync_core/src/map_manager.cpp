@@ -174,14 +174,80 @@ void MapManager::reset_scene_index()
     current_scene_.second.clear();
 }
 
+[[nodiscard]] std::pair<std::vector<Coordinate>, std::vector<Coordinate>> MapManager::set_scene_index(int idx, int n_agent)
+{
+    if (current_map_.get_map_scenes().get_scene_data().empty())
+    {
+        throw std::runtime_error("No scene available. Map is not initialied. Call get_next_map_data() to load a map.");
+    }
+
+    if (idx < 0 || idx + n_agent > total_scenes_)
+        return std::pair<std::vector<Coordinate>, std::vector<Coordinate>>();
+
+    current_scene_idx_ = idx;
+
+    std::vector<std::pair<path_sync::Coordinate, path_sync::Coordinate>> temp(
+        current_map_.get_map_scenes().get_scene_data().begin() + current_scene_idx_,
+        current_map_.get_map_scenes().get_scene_data().begin() + current_scene_idx_ + n_agent);
+
+    current_scene_.first.clear();
+    current_scene_.second.clear();
+    current_scene_.first.reserve(n_agent);
+    current_scene_.second.reserve(n_agent);
+
+    for (auto start_end_pair : temp)
+    {
+        current_scene_.first.push_back(start_end_pair.first);
+        current_scene_.second.push_back(start_end_pair.second);
+    }
+
+    current_scene_idx_ += n_agent;
+
+    std::stringstream ss;
+    ss << "Scene: " << current_scene_idx_ + 1 << " Total Scenes: " << total_scenes_ << std::endl;
+    path_sync::Logger::get().info(ss.str().c_str());
+
+    return current_scene_;
+}
+
 int MapManager::get_current_scene_index() const
 {
     return current_scene_idx_;
 }
 
+int MapManager::get_current_map_index() const
+{
+    return current_map_idx_;
+}
+
 int MapManager::get_total_scenes() const
 {
     return total_scenes_;
+}
+
+int MapManager::get_total_maps() const
+{
+    return static_cast<int>(available_maps_.size());
+}
+
+[[nodiscard]] MapData MapManager::set_map_index(int idx)
+{
+    if (idx < 0 || idx >= static_cast<int>(available_maps_.size()))
+        return MapData();
+
+    current_map_idx_ = idx;
+
+    current_map_ = std::move(Map(available_maps_[current_map_idx_]));
+
+    current_map_data_ = MapData(current_map_.get_map_info());
+
+    current_scene_.first.clear();
+    current_scene_.second.clear();
+    current_scene_idx_ = 0;
+
+    total_scenes_ = current_map_.get_map_scenes().get_scene_data().size();
+
+    return current_map_data_;
 }
 
 void MapManager::_get_available_maps()

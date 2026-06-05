@@ -72,16 +72,14 @@ Run tests:
 ### Controls
 
 **Toolbar buttons:**
-| Button | Action |
+| Widget | Action |
 |---|---|
 | `Solve` | Solve current scene |
 | `Cancel` | Cancel a running solver |
 | `Clear` | Clear path overlay |
 | `Reset` | Reset grid to original map |
-| `< Scene` | Previous scene (hold to repeat, auto-accelerates) |
-| `Scene >` | Next scene (hold to repeat, auto-accelerates) |
-| `< Map` | Previous map |
-| `Map >` | Next map |
+| `Current Scene` spin box | Jump to / step through scenes |
+| `Map` spin box | Jump to / cycle maps |
 | `Agent` | Cycle agent count (1–10) |
 | `Solver` dropdown | Select solver directly (shows optimal/suboptimal) |
 

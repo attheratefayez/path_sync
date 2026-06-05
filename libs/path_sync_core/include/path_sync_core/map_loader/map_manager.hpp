@@ -34,7 +34,11 @@ public:
     void reset();
     void reset_scene_index();
     int get_current_scene_index() const;
+    int get_current_map_index() const;
     int get_total_scenes() const;
+    int get_total_maps() const;
+    std::pair<std::vector<Coordinate>, std::vector<Coordinate>> set_scene_index(int idx, int n_agent);
+    MapData set_map_index(int idx);
 
 private:
     std::vector<std::string> available_maps_;

@@ -3,6 +3,7 @@
 
 #include <QComboBox>
 #include <QLabel>
+#include <QSpinBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QTimer>
@@ -51,16 +52,13 @@ private:
     GridWidget *grid_widget_;
     QPushButton *solve_btn_;
     QPushButton *cancel_btn_;
-    QPushButton *prev_btn_;
-    QPushButton *next_btn_;
     QComboBox *solver_combo_;
+    QSpinBox *scene_spin_;
+    QSpinBox *map_spin_;
     QLabel *status_label_;
     QLabel *solve_status_label_;
     QWidget *sidebar_;
     QPlainTextEdit *perf_text_;
-    QTimer *scene_timer_;
-    double scene_timer_interval_ = 350.0;
-    bool scene_dir_forward_ = true;
     bool solving_ = false;
     std::stringstream help_stream_;
     std::deque<PerformanceMetrics> perf_buffer_;

@@ -54,6 +54,17 @@ bool PathSyncApp::request_previous_map()
     return true;
 }
 
+bool PathSyncApp::request_map(int map_idx)
+{
+    auto md = map_manager_.set_map_index(map_idx);
+    if (md.get_height() == 0)
+        return false;
+    current_map_data_ = std::make_shared<path_sync::MapData>(std::move(md));
+    current_scene_ = map_manager_.get_next_scene(num_agents_);
+    update_map_data_with_current_scene_();
+    return true;
+}
+
 bool PathSyncApp::request_next_scene()
 {
     for (auto &elem : current_scene_.first)
@@ -66,6 +77,22 @@ bool PathSyncApp::request_next_scene()
     update_map_data_with_current_scene_();
 
     return bool(current_scene_.first.size());
+}
+
+bool PathSyncApp::request_scene(int scene_index)
+{
+    for (auto &elem : current_scene_.first)
+        current_map_data_->set_cell_type(elem, path_sync::CellType::DEFAULT);
+
+    for (auto &elem : current_scene_.second)
+        current_map_data_->set_cell_type(elem, path_sync::CellType::DEFAULT);
+
+    current_scene_ = map_manager_.set_scene_index(scene_index, num_agents_);
+    if (current_scene_.first.empty())
+        return false;
+
+    update_map_data_with_current_scene_();
+    return true;
 }
 
 bool PathSyncApp::request_previous_scene()
@@ -264,6 +291,16 @@ int PathSyncApp::get_scene_index() const
 int PathSyncApp::get_total_scenes() const
 {
     return map_manager_.get_total_scenes();
+}
+
+int PathSyncApp::get_map_index() const
+{
+    return map_manager_.get_current_map_index();
+}
+
+int PathSyncApp::get_total_maps() const
+{
+    return map_manager_.get_total_maps();
 }
 
 std::string PathSyncApp::get_current_map_name() const

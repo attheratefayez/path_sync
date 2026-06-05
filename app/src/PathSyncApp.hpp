@@ -21,8 +21,10 @@ class PathSyncApp
 
     bool request_next_map();
     bool request_previous_map();
+    bool request_map(int map_idx);
     bool request_next_scene();
     bool request_previous_scene();
+    bool request_scene(int scene_index);
     bool solve_current_scene();
     bool solve_current_map();
 
@@ -57,6 +59,8 @@ class PathSyncApp
     bool is_solver_optimal(std::size_t index, bool multi_agent) const;
     int get_scene_index() const;
     int get_total_scenes() const;
+    int get_map_index() const;
+    int get_total_maps() const;
     std::string get_current_map_name() const;
     int get_num_agents() const;
     PerformanceMetrics get_performance_metrics() const;

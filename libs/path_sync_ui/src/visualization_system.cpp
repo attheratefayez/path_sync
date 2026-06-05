@@ -312,7 +312,6 @@ VisualizationSystem::VisualizationSystem(PathSyncApp& app, QWidget *parent)
     , solve_status_label_(nullptr)
     , sidebar_(nullptr)
     , perf_text_(nullptr)
-    , scene_timer_(new QTimer(this))
 {
     setWindowTitle("Path Sync");
     resize(1200, 900);
@@ -456,13 +455,63 @@ void VisualizationSystem::setup_ui()
     cancel_btn->setEnabled(false);
     auto *clear_btn = new QPushButton("Clear");
     auto *reset_btn = new QPushButton("Reset");
-    prev_btn_ = new QPushButton("◀ Scene");
-    next_btn_ = new QPushButton("Scene ▶");
-    auto *prev_btn  = prev_btn_;
-    auto *next_btn  = next_btn_;
-    auto *prev_map_btn = new QPushButton("◀ Map");
-    auto *map_btn      = new QPushButton("Map ▶");
-    auto *agent_btn    = new QPushButton("Agent");
+
+    auto *scene_label = new QLabel("Current Scene: ");
+    int max_block = (app_.get_total_scenes() + app_.get_num_agents() - 1) / app_.get_num_agents();
+    scene_spin_ = new QSpinBox;
+    scene_spin_->setMinimum(1);
+    scene_spin_->setMaximum(max_block);
+    scene_spin_->setMaximumWidth(80);
+    scene_spin_->setAlignment(Qt::AlignCenter);
+    scene_spin_->setSuffix(" / " + QString::number(max_block));
+    scene_spin_->setStyleSheet(
+        "QSpinBox { background: #3c3c3c; color: #eee; border: 1px solid #555;"
+        "  padding: 4px 4px; border-radius: 3px; min-height: 24px; }"
+        "QSpinBox::up-button, QSpinBox::down-button {"
+        "  background: #4a4a4a; border: 1px solid #555;"
+        "  border-radius: 2px; margin: 1px; }");
+
+    QObject::connect(scene_spin_, QOverload<int>::of(&QSpinBox::valueChanged),
+                     this, [this](int value) {
+                         int idx = (value - 1) * app_.get_num_agents();
+                         if (!app_.request_scene(idx))
+                         {
+                             update_status();
+                             return;
+                         }
+                         app_.clear_paths();
+                         grid_widget_->center_view();
+                         reset_perf_buffer();
+                         update_status();
+                     });
+
+    auto *map_label = new QLabel("  Map: ");
+    int total_maps = app_.get_total_maps();
+    map_spin_ = new QSpinBox;
+    map_spin_->setMinimum(1);
+    map_spin_->setMaximum(total_maps);
+    map_spin_->setMaximumWidth(80);
+    map_spin_->setAlignment(Qt::AlignCenter);
+    map_spin_->setSuffix(" / " + QString::number(total_maps));
+    map_spin_->setStyleSheet(
+        "QSpinBox { background: #3c3c3c; color: #eee; border: 1px solid #555;"
+        "  padding: 4px 4px; border-radius: 3px; min-height: 24px; }"
+        "QSpinBox::up-button, QSpinBox::down-button {"
+        "  background: #4a4a4a; border: 1px solid #555;"
+        "  border-radius: 2px; margin: 1px; }");
+
+    QObject::connect(map_spin_, QOverload<int>::of(&QSpinBox::valueChanged),
+                     this, [this](int value) {
+                         if (!app_.request_map(value - 1))
+                         {
+                             update_status();
+                             return;
+                         }
+                         app_.clear_paths();
+                         grid_widget_->center_view();
+                         reset_perf_buffer();
+                         update_status();
+                     });
 
     solver_combo_ = new QComboBox;
     solver_combo_->setMinimumWidth(160);
@@ -475,29 +524,6 @@ void VisualizationSystem::setup_ui()
     });
     connect(clear_btn, &QPushButton::clicked, this, &VisualizationSystem::on_clear_clicked);
     connect(reset_btn, &QPushButton::clicked, this, &VisualizationSystem::on_reset_clicked);
-    connect(prev_btn,  &QPushButton::pressed, this, [this]() {
-        scene_dir_forward_ = false;
-        scene_timer_interval_ = 350.0;
-        scene_timer_->setInterval(static_cast<int>(scene_timer_interval_));
-        if (on_prev_scene()) scene_timer_->start();
-    });
-    connect(next_btn,  &QPushButton::pressed, this, [this]() {
-        scene_dir_forward_ = true;
-        scene_timer_interval_ = 350.0;
-        scene_timer_->setInterval(static_cast<int>(scene_timer_interval_));
-        if (on_next_scene()) scene_timer_->start();
-    });
-    connect(prev_btn,  &QPushButton::released, this, [this]() { scene_timer_->stop(); });
-    connect(next_btn,  &QPushButton::released, this, [this]() { scene_timer_->stop(); });
-    connect(scene_timer_, &QTimer::timeout, this, [this]() {
-        scene_timer_interval_ = std::max(scene_timer_interval_ * 0.85, 70.0);
-        scene_timer_->setInterval(static_cast<int>(scene_timer_interval_));
-        bool ok = scene_dir_forward_ ? on_next_scene() : on_prev_scene();
-        if (!ok) scene_timer_->stop();
-    });
-    connect(prev_map_btn, &QPushButton::clicked, this, &VisualizationSystem::on_prev_map);
-    connect(map_btn,      &QPushButton::clicked, this, &VisualizationSystem::on_next_map);
-    connect(agent_btn, &QPushButton::clicked, this, &VisualizationSystem::on_toggle_agent_mode);
     connect(solver_combo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &VisualizationSystem::on_solver_combo_changed);
 
@@ -505,11 +531,10 @@ void VisualizationSystem::setup_ui()
     tb_lay->addWidget(cancel_btn);
     tb_lay->addWidget(clear_btn);
     tb_lay->addWidget(reset_btn);
-    tb_lay->addWidget(prev_btn);
-    tb_lay->addWidget(next_btn);
-    tb_lay->addWidget(prev_map_btn);
-    tb_lay->addWidget(map_btn);
-    tb_lay->addWidget(agent_btn);
+    tb_lay->addWidget(scene_label);
+    tb_lay->addWidget(scene_spin_);
+    tb_lay->addWidget(map_label);
+    tb_lay->addWidget(map_spin_);
     tb_lay->addSpacing(12);
     tb_lay->addWidget(new QLabel("Solver:"));
     tb_lay->addWidget(solver_combo_);
@@ -673,10 +698,27 @@ void VisualizationSystem::update_status()
     text += "  │  Map: ";
     text += app_.get_current_map_name();
     text += "  │  Scene: ";
-    text += std::to_string(app_.get_scene_index() + 1);
+    int idx = app_.get_scene_index();
+    int n_agent = app_.get_num_agents();
+    int scene_id = std::max(0, idx - n_agent);
+    int scene_num = scene_id / n_agent + 1;
+    int total_scenes = app_.get_total_scenes();
+    text += std::to_string(scene_num);
     text += " / ";
-    text += std::to_string(app_.get_total_scenes());
+    text += std::to_string(total_scenes);
     status_label_->setText(QString::fromStdString(text));
+
+    int max_block = (total_scenes + n_agent - 1) / n_agent;
+    scene_spin_->blockSignals(true);
+    scene_spin_->setMaximum(max_block);
+    scene_spin_->setSuffix(" / " + QString::number(max_block));
+    scene_spin_->setValue(scene_num);
+    scene_spin_->blockSignals(false);
+
+    map_spin_->blockSignals(true);
+    map_spin_->setValue(app_.get_map_index() + 1);
+    map_spin_->blockSignals(false);
+
     grid_widget_->update();
 }
 
