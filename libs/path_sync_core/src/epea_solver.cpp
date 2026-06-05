@@ -173,3 +173,16 @@ std::map<Coordinate, Coordinate> EPEA_Star_Solver::solve(const path_sync::MapDat
 } // namespace sapf
 } // namespace solvers
 } // namespace path_sync
+
+#ifdef PATH_SYNC_BUILD_AS_PLUGIN
+extern "C"
+{
+
+const char *plugin_name() { return "EPEA_Star_Solver"; }
+bool plugin_is_optimal() { return true; }
+bool plugin_is_multi_agent() { return false; }
+void *plugin_create() { return new path_sync::solvers::sapf::EPEA_Star_Solver(); }
+void plugin_destroy(void *p) { delete static_cast<path_sync::solvers::sapf::EPEA_Star_Solver *>(p); }
+
+}
+#endif

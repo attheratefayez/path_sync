@@ -5,16 +5,8 @@
 #include <variant>
 
 #include "path_sync_core/performance_mat.hpp"
+#include "path_sync_core/plugin_loader.hpp"
 #include "path_sync_core/solver_interface.hpp"
-#include "path_sync_core/solvers/astar_joint_state.hpp"
-#include "path_sync_core/solvers/astar_solver.hpp"
-#include "path_sync_core/solvers/bfs_solver.hpp"
-#include "path_sync_core/solvers/jps_solver.hpp"
-#include "path_sync_core/solvers/theta_star_solver.hpp"
-#include "path_sync_core/solvers/hpa_solver.hpp"
-#include "path_sync_core/solvers/dstar_lite_solver.hpp"
-#include "path_sync_core/solvers/epea_solver.hpp"
-#include "path_sync_core/solvers/mstar_solver.hpp"
 
 namespace path_sync
 {
@@ -31,12 +23,6 @@ public:
     std::vector<std::string> get_ma_solver_names() const;
     void select_sa_solver_by_index(std::size_t index);
     void select_ma_solver_by_index(std::size_t index);
-
-    // TODO: implement logic to run the solve for a selected algorithm, or to test env
-    // for all algorithms. Like,
-    // find_path(map_data, starts, ends, run_on = "astar_solver")
-    // find_path(map_data, starts, ends, run_on = "bfs_solver")
-    // find_path(map_data, starts, ends, run_on = "test_all")
 
     void cancel() { cancel_flag_.store(true); }
     void reset_cancel() { cancel_flag_.store(false); }
@@ -93,15 +79,7 @@ private:
     std::vector<ISolver *> sa_solvers_;
     std::vector<IMASolver *> ma_solvers_;
 
-    path_sync::solvers::sapf::Astar_Solver astar_solver_;
-    path_sync::solvers::sapf::BFS_Solver bfs_solver_;
-    path_sync::solvers::sapf::JPS_Solver jps_solver_;
-    path_sync::solvers::sapf::Theta_Star_Solver theta_star_solver_;
-    path_sync::solvers::sapf::HPA_Solver hpa_solver_;
-    path_sync::solvers::sapf::DStar_Lite_Solver dstar_lite_solver_;
-    path_sync::solvers::sapf::EPEA_Star_Solver epea_star_solver_;
-    path_sync::solvers::mapf::Astar_Joint_State_Solver astar_joint_state_solver;
-    path_sync::solvers::mapf::MStar_Solver mstar_solver_;
+    PluginLoader plugin_loader_;
 
     std::vector<Coordinate> __construct_path(std::map<Coordinate, Coordinate> &node_map, const Coordinate &start,
                                              const Coordinate &end);

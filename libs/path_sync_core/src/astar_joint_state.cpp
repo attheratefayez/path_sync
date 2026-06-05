@@ -93,3 +93,16 @@ std::optional<std::vector<std::vector<path_sync::Coordinate>>> mapf_astar::solve
     performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
     return std::nullopt;
 }
+
+#ifdef PATH_SYNC_BUILD_AS_PLUGIN
+extern "C"
+{
+
+const char *plugin_name() { return "Astar_Joint_State_Solver"; }
+bool plugin_is_optimal() { return true; }
+bool plugin_is_multi_agent() { return true; }
+void *plugin_create() { return new path_sync::solvers::mapf::Astar_Joint_State_Solver(); }
+void plugin_destroy(void *p) { delete static_cast<path_sync::solvers::mapf::Astar_Joint_State_Solver *>(p); }
+
+}
+#endif
