@@ -147,14 +147,8 @@ std::shared_ptr<path_sync::MapData> PathSyncApp::solve_async_on_copy(
 
         for (auto &path : current_ma_solution_)
         {
+            if (path.size() < 2) continue;
             path = std::vector<Coordinate>(path.begin() + 1, path.end() - 1);
-
-            for (auto &elem : path)
-            {
-                auto t = copy->get_cell_type(elem);
-                if (t != path_sync::CellType::START && t != path_sync::CellType::END)
-                    copy->set_cell_type(elem, path_sync::CellType::PATH);
-            }
         }
     }
 
@@ -367,6 +361,9 @@ void PathSyncApp::clear_paths()
             }
         }
     }
+
+    current_sa_solution_.clear();
+    current_ma_solution_.clear();
 
     for (auto &elem : current_scene_.first)
         current_map_data_->set_cell_type(elem, path_sync::CellType::START);

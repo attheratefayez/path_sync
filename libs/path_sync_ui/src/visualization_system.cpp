@@ -104,6 +104,37 @@ protected:
             p.drawLine(QPointF(pan_x_, ly), QPointF(pan_x_ + gw, ly));
         }
 
+        // ── multi-agent path overlay ──────────────────────────────────
+        static const QColor kAgentColors[] = {
+            QColor(230,  25,  75, 180),  // red
+            QColor( 60, 180,  75, 180),  // green
+            QColor( 67,  99, 216, 180),  // blue
+            QColor(245, 130,  49, 180),  // orange
+            QColor(145,  30, 180, 180),  // purple
+            QColor( 66, 212, 244, 180),  // cyan
+            QColor(240,  50, 230, 180),  // magenta
+            QColor(191, 239,  69, 180),  // lime
+            QColor(250, 190, 212, 180),  // pink
+            QColor( 70, 153, 144, 180),  // teal
+        };
+
+        const auto &ma = app_.get_current_ma_solution();
+        if (!ma.empty())
+        {
+            double inset = cell * 0.12;
+            for (std::size_t ai = 0; ai < ma.size(); ++ai)
+            {
+                const auto &color = kAgentColors[ai % 10];
+                for (const auto &pt : ma[ai])
+                {
+                    double px = pan_x_ + static_cast<int>(pt.first) * cell + inset;
+                    double py = pan_y_ + static_cast<int>(pt.second) * cell + inset;
+                    double sz = cell - 2.0 * inset;
+                    p.fillRect(QRectF(px, py, sz, sz), color);
+                }
+            }
+        }
+
         // viewport border
         p.setPen(QPen(QColor(102, 102, 102), 2));
         p.drawRect(rect().adjusted(1, 1, -1, -1));

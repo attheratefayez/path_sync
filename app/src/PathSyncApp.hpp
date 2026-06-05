@@ -61,6 +61,10 @@ class PathSyncApp
     std::string get_current_map_name() const;
     int get_num_agents() const;
     PerformanceMetrics get_performance_metrics() const;
+    const std::vector<std::vector<Coordinate>> &get_current_ma_solution() const
+    {
+        return current_ma_solution_;
+    }
    
     std::stringstream get_performance_data() const
     {
