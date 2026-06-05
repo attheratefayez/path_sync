@@ -36,6 +36,7 @@ private slots:
     void on_reset_clicked();
     void on_prev_scene();
     void on_next_scene();
+    void on_prev_map();
     void on_next_map();
     void on_toggle_agent_mode();
     void update_status();
@@ -45,8 +46,10 @@ private slots:
 private:
     PathSyncApp& app_;
     GridWidget *grid_widget_;
+    QPushButton *solve_btn_;
     QComboBox *solver_combo_;
     QLabel *status_label_;
+    bool solving_ = false;
     std::stringstream help_stream_;
 
     VisualizationSystem(VisualizationSystem const &) = delete;

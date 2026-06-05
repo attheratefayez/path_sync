@@ -353,13 +353,15 @@ void VisualizationSystem::setup_ui()
     tb_lay->setContentsMargins(8, 4, 8, 4);
     tb_lay->setSpacing(6);
 
-    auto *solve_btn = new QPushButton("Solve");
+    solve_btn_ = new QPushButton("Solve");
+    auto *solve_btn = solve_btn_;
     auto *clear_btn = new QPushButton("Clear");
     auto *reset_btn = new QPushButton("Reset");
     auto *prev_btn  = new QPushButton("◀ Scene");
     auto *next_btn  = new QPushButton("Scene ▶");
-    auto *map_btn   = new QPushButton("Next Map");
-    auto *agent_btn = new QPushButton("Agent");
+    auto *prev_map_btn = new QPushButton("◀ Map");
+    auto *map_btn      = new QPushButton("Map ▶");
+    auto *agent_btn    = new QPushButton("Agent");
 
     solver_combo_ = new QComboBox;
     solver_combo_->setMinimumWidth(160);
@@ -380,6 +382,7 @@ void VisualizationSystem::setup_ui()
     tb_lay->addWidget(reset_btn);
     tb_lay->addWidget(prev_btn);
     tb_lay->addWidget(next_btn);
+    tb_lay->addWidget(prev_map_btn);
     tb_lay->addWidget(map_btn);
     tb_lay->addWidget(agent_btn);
     tb_lay->addSpacing(12);
@@ -390,13 +393,15 @@ void VisualizationSystem::setup_ui()
     root->addWidget(tb);
 
     // ── fixed-size viewport, centred ───────────────────────────────────
-    auto *vp_container = new QWidget;
-    vp_container->setStyleSheet("background: #303030;");
+    auto *vp_container = new QFrame;
+    vp_container->setFrameShape(QFrame::NoFrame);
+    vp_container->setStyleSheet("QFrame { background: #303030; }");
     auto *vp_lay = new QHBoxLayout(vp_container);
+    vp_lay->setContentsMargins(0, 0, 0, 0);
     vp_lay->setAlignment(Qt::AlignCenter);
 
     grid_widget_ = new GridWidget(app_, this);
-    grid_widget_->setFixedSize(1000, 720);
+    grid_widget_->setFixedSize(1600, 800);
     grid_widget_->set_solve_callback([this]() { solve_async(); });
     vp_lay->addWidget(grid_widget_);
 
@@ -503,7 +508,13 @@ void VisualizationSystem::solve_async()
         if (result) {
             app_.set_map_data(std::move(result));
             grid_widget_->sync_and_update();
+            status_label_->setText("Solved");
+        } else {
+            status_label_->setText("No path found");
         }
+        solving_ = false;
+        solve_btn_->setEnabled(true);
+        solve_btn_->setText("Solve");
         watcher->deleteLater();
     });
 
@@ -515,10 +526,11 @@ void VisualizationSystem::solve_async()
 void VisualizationSystem::on_solve_clicked()      { solve_async();                           }
 void VisualizationSystem::on_clear_clicked()      { app_.clear_paths();                      }
 void VisualizationSystem::on_reset_clicked()      { app_.reset_grid();                       }
-void VisualizationSystem::on_prev_scene()         { app_.request_previous_scene(); app_.clear_paths(); grid_widget_->recenter(); update_status(); }
-void VisualizationSystem::on_next_scene()         { app_.request_next_scene();     app_.clear_paths(); grid_widget_->recenter(); update_status(); }
-void VisualizationSystem::on_next_map()           { app_.request_next_map();       grid_widget_->recenter(); update_status(); }
-void VisualizationSystem::on_toggle_agent_mode()  { app_.toggle_agent_mode();                update_status(); }
+void VisualizationSystem::on_prev_scene()         { app_.request_previous_scene(); app_.clear_paths(); grid_widget_->center_view(); update_status(); }
+void VisualizationSystem::on_next_scene()         { app_.request_next_scene();     app_.clear_paths(); grid_widget_->center_view(); update_status(); }
+void VisualizationSystem::on_prev_map()           { app_.request_previous_map();  grid_widget_->reset_view();  update_status(); }
+void VisualizationSystem::on_next_map()           { app_.request_next_map();       grid_widget_->reset_view();  update_status(); }
+void VisualizationSystem::on_toggle_agent_mode()  { app_.toggle_agent_mode(); populate_solver_combo(); update_status(); }
 
 void VisualizationSystem::update_status()
 {
