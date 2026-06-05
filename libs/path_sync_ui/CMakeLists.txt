@@ -16,10 +16,11 @@ target_include_directories(path_sync_ui PUBLIC
     ${CMAKE_SOURCE_DIR}/app/src
 )
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent)
 
 target_link_libraries(path_sync_ui PUBLIC
     Qt6::Widgets
+    Qt6::Concurrent
     path_sync_core
     yaml-cpp
 )
