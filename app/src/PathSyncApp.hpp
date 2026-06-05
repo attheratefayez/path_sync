@@ -41,6 +41,7 @@ class PathSyncApp
     std::vector<std::string> get_solver_names(bool multi_agent) const;
     bool get_is_multi_agent() const;
     void toggle_agent_mode();
+    void set_num_agents(int n);
 
     std::shared_ptr<path_sync::MapData> get_current_map_data() const;
 

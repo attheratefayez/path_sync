@@ -281,6 +281,22 @@ void PathSyncApp::toggle_agent_mode()
     path_sync::Logger::get().info(ss.str().c_str());
 }
 
+void PathSyncApp::set_num_agents(int n)
+{
+    for (auto &elem : current_scene_.first)
+        current_map_data_->set_cell_type(elem, path_sync::CellType::DEFAULT);
+
+    for (auto &elem : current_scene_.second)
+        current_map_data_->set_cell_type(elem, path_sync::CellType::DEFAULT);
+
+    int max_agents = std::min(10, map_manager_.get_total_scenes());
+    num_agents_ = std::clamp(n, 1, max_agents);
+
+    map_manager_.reset_scene_index();
+    current_scene_ = map_manager_.get_next_scene(num_agents_);
+    update_map_data_with_current_scene_();
+}
+
 std::shared_ptr<path_sync::MapData> PathSyncApp::get_current_map_data() const
 {
     return current_map_data_;

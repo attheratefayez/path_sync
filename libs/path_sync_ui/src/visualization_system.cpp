@@ -8,11 +8,11 @@
 #include <QFont>
 #include <QKeyEvent>
 #include <QMouseEvent>
+#include <QMouseEvent>
 #include <QWheelEvent>
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
-#include <functional>
 
 #include <QtConcurrent/QtConcurrent>
 #include <QFutureWatcher>
@@ -33,7 +33,6 @@ public:
         : QWidget(parent), app_(app), grid_()
     {
         setFocusPolicy(Qt::StrongFocus);
-        setup_keybindings();
     }
 
     void sync_and_update()
@@ -64,34 +63,6 @@ public:
         pan_y_ = (height() - mh) / 2.0;
         update();
     }
-
-    void set_solve_callback(std::function<void()> cb) { solve_callback_ = std::move(cb); }
-
-    void setup_keybindings()
-    {
-        key_bindings_[Qt::Key_Space] = [this]() {
-            if (solve_callback_) solve_callback_();
-        };
-        key_bindings_[Qt::Key_H]     = [this]() {
-            Logger::get().info(
-                "Key Bindings:\n"
-                "C       - Cycle solver\n"
-                "A       - Toggle agent mode\n"
-                "Space   - Solve\n"
-                "H       - This help\n"
-                "M       - Next map\n"
-                "P       - Clear paths\n"
-                "R       - Reset grid\n"
-                "[ / ]   - Prev / Next scene\n"
-                "Click   - Toggle wall\n"
-                "Drag    - Draw walls\n"
-                "MClick  - Pan\n"
-                "Wheel   - Zoom");
-        };
-    }
-
-    Qt::Key last_key() const { return last_key_; }
-    void set_last_key(Qt::Key k) { last_key_ = k; }
 
 protected:
     void paintEvent(QPaintEvent *) override
@@ -140,26 +111,7 @@ protected:
 
     void keyPressEvent(QKeyEvent *event) override
     {
-        bool shifted = event->modifiers() & Qt::ShiftModifier;
-        Qt::Key key = static_cast<Qt::Key>(event->key());
-
-        if (!shifted && (key == Qt::Key_C || key == Qt::Key_A ||
-                         key == Qt::Key_M || key == Qt::Key_BracketLeft ||
-                         key == Qt::Key_BracketRight))
-        {
-            last_key_ = key;
-            emit key_forwarded(key);
-            return;
-        }
-        if (shifted && (key == Qt::Key_A || key == Qt::Key_M || key == Qt::Key_P || key == Qt::Key_R))
-        {
-            last_key_ = key;
-            emit key_forwarded(static_cast<Qt::Key>(key | 0x1000));
-            return;
-        }
-
-        handle_key(key, shifted);
-        update();
+        QWidget::keyPressEvent(event);
     }
 
     void wheelEvent(QWheelEvent *event) override
@@ -212,16 +164,9 @@ protected:
             dragging_ = false;
     }
 
-signals:
-    void key_forwarded(Qt::Key key);
-
 private:
     PathSyncApp &app_;
     Grid grid_;
-    std::map<Qt::Key, std::function<void()>> key_bindings_;
-    Qt::Key last_key_ = Qt::Key_unknown;
-
-    std::function<void()> solve_callback_;
 
     double zoom_ = 1.0;
     double pan_x_ = 0.0;
@@ -230,26 +175,6 @@ private:
     QPoint drag_start_;
     double drag_origin_pan_x_ = 0.0;
     double drag_origin_pan_y_ = 0.0;
-
-    void handle_key(Qt::Key key, bool shifted)
-    {
-        if (shifted)
-        {
-            switch (key)
-            {
-            case Qt::Key_H: key_bindings_[Qt::Key_H](); return;
-            case Qt::Key_M: return;
-            case Qt::Key_P: app_.clear_paths();        return;
-            case Qt::Key_R: app_.reset_grid();         return;
-            default: break;
-            }
-            return;
-        }
-
-        auto it = key_bindings_.find(key);
-        if (it != key_bindings_.end())
-            it->second();
-    }
 
     Coordinate cell_at(const QPoint &pos) const
     {
@@ -321,22 +246,6 @@ VisualizationSystem::VisualizationSystem(PathSyncApp& app, QWidget *parent)
     setup_ui();
     populate_solver_combo();
     update_status();
-
-    help_stream_ << "Available Key Bindings:"
-                 << "\nC    - Cycle solver"
-                 << "\nA    - Toggle agent mode"
-                 << "\nSpace - Solve current scene"
-                 << "\nShift+H - Help overlay"
-                 << "\nShift+M - Next map"
-                 << "\nShift+P - Clear paths"
-                 << "\nShift+R - Reset grid"
-                 << "\n[    - Previous scene"
-                 << "\n]    - Next scene"
-                 << "\nCtrl+Wheel - Zoom"
-                 << "\nMClick+Drag - Pan"
-                 << "\nMouse click - Toggle wall";
-
-    Logger::get().info(help_stream_.str().c_str());
 }
 
 void VisualizationSystem::setup_ui()
@@ -354,7 +263,6 @@ void VisualizationSystem::setup_ui()
 
     grid_widget_ = new GridWidget(app_, this);
     grid_widget_->setFixedSize(1400, 720);
-    grid_widget_->set_solve_callback([this]() { solve_async(); });
 
     auto *vp_center = new QHBoxLayout;
     vp_center->addStretch();
@@ -385,56 +293,6 @@ void VisualizationSystem::setup_ui()
     vp_lay->addWidget(sidebar_);
 
     root->addWidget(vp_container, 1);
-
-    connect(grid_widget_, &GridWidget::key_forwarded, this, [this](Qt::Key key) {
-        int raw = static_cast<int>(key);
-        bool shifted = raw & 0x1000;
-        Qt::Key actual = shifted ? static_cast<Qt::Key>(raw & ~0x1000) : key;
-
-        switch (actual)
-        {
-        case Qt::Key_C:
-            app_.change_solver();
-            {
-                QString name = QString::fromStdString(
-                    std::string(app_.get_current_solver_name()));
-                int idx = solver_combo_->findData(name);
-                if (idx >= 0)
-                    solver_combo_->setCurrentIndex(idx);
-            }
-            break;
-        case Qt::Key_A:
-            app_.toggle_agent_mode();
-            populate_solver_combo();
-            break;
-        case Qt::Key_M:
-            on_next_map();
-            break;
-        case Qt::Key_BracketLeft:
-            app_.request_previous_scene();
-            app_.clear_paths();
-            grid_widget_->center_view();
-            reset_perf_buffer();
-            break;
-        case Qt::Key_BracketRight:
-            app_.request_next_scene();
-            app_.clear_paths();
-            grid_widget_->center_view();
-            reset_perf_buffer();
-            break;
-        default: break;
-        }
-
-        if (shifted)
-        {
-            if (actual == Qt::Key_M) { on_prev_map(); return; }
-            if (actual == Qt::Key_P) app_.clear_paths();
-            if (actual == Qt::Key_R) app_.reset_grid();
-        }
-
-        update_status();
-        grid_widget_->update();
-    });
 
     // ── toolbar (at bottom, above status bar) ──────────────────────────
     auto *tb = new QWidget;
@@ -515,6 +373,38 @@ void VisualizationSystem::setup_ui()
                          update_status();
                      });
 
+    auto *agent_label = new QLabel("  Agents:");
+    auto *agent_spin = new QSpinBox;
+    agent_spin->setMinimum(1);
+    agent_spin->setMaximum(std::min(10, app_.get_total_scenes()));
+    agent_spin->setValue(app_.get_num_agents());
+    agent_spin->setMaximumWidth(60);
+    agent_spin->setAlignment(Qt::AlignCenter);
+    agent_spin->setStyleSheet(
+        "QSpinBox { background: #3c3c3c; color: #eee; border: 1px solid #555;"
+        "  padding: 4px 4px; border-radius: 3px; min-height: 24px; }"
+        "QSpinBox::up-button, QSpinBox::down-button {"
+        "  background: #4a4a4a; border: 1px solid #555;"
+        "  border-radius: 2px; margin: 1px; }");
+
+    QObject::connect(agent_spin, QOverload<int>::of(&QSpinBox::valueChanged),
+                     this, [this, agent_spin](int value) {
+                         app_.set_num_agents(value);
+                         app_.clear_paths();
+                         grid_widget_->center_view();
+                         reset_perf_buffer();
+                         populate_solver_combo();
+
+                         int max_block = (app_.get_total_scenes() + value - 1) / value;
+                         scene_spin_->blockSignals(true);
+                         scene_spin_->setMaximum(max_block);
+                         scene_spin_->setSuffix(" / " + QString::number(max_block));
+                         scene_spin_->setValue(1);
+                         scene_spin_->blockSignals(false);
+
+                         update_status();
+                     });
+
     solver_combo_ = new QComboBox;
     solver_combo_->setMinimumWidth(160);
 
@@ -537,6 +427,8 @@ void VisualizationSystem::setup_ui()
     tb_lay->addWidget(scene_spin_);
     tb_lay->addWidget(map_label);
     tb_lay->addWidget(map_spin_);
+    tb_lay->addWidget(agent_label);
+    tb_lay->addWidget(agent_spin);
     tb_lay->addSpacing(12);
     tb_lay->addWidget(new QLabel("Solver:"));
     tb_lay->addWidget(solver_combo_);

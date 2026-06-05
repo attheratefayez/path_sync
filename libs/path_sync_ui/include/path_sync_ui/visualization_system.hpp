@@ -10,10 +10,7 @@
 #include <QWidget>
 
 #include <deque>
-#include <functional>
-#include <map>
 #include <memory>
-#include <sstream>
 
 #include "PathSyncApp.hpp"
 #include "path_sync_core/performance_mat.hpp"
@@ -58,7 +55,6 @@ private:
     QWidget *sidebar_;
     QPlainTextEdit *perf_text_;
     bool solving_ = false;
-    std::stringstream help_stream_;
     std::deque<PerformanceMetrics> perf_buffer_;
 
     VisualizationSystem(VisualizationSystem const &) = delete;
