@@ -8,12 +8,14 @@
 #include <QTimer>
 #include <QWidget>
 
+#include <deque>
 #include <functional>
 #include <map>
 #include <memory>
 #include <sstream>
 
 #include "PathSyncApp.hpp"
+#include "path_sync_core/performance_mat.hpp"
 #include "path_sync_ui/grid.hpp"
 #include "path_sync_ui/visualization_system_config.hpp"
 
@@ -61,6 +63,7 @@ private:
     bool scene_dir_forward_ = true;
     bool solving_ = false;
     std::stringstream help_stream_;
+    std::deque<PerformanceMetrics> perf_buffer_;
 
     VisualizationSystem(VisualizationSystem const &) = delete;
     VisualizationSystem &operator=(VisualizationSystem const &) = delete;
@@ -68,6 +71,7 @@ private:
     void setup_ui();
     void populate_solver_combo();
     void update_perf_sidebar();
+    void reset_perf_buffer();
 };
 
 } // namespace path_sync

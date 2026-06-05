@@ -397,7 +397,7 @@ void VisualizationSystem::setup_ui()
             {
                 QString name = QString::fromStdString(
                     std::string(app_.get_current_solver_name()));
-                int idx = solver_combo_->findText(name);
+                int idx = solver_combo_->findData(name);
                 if (idx >= 0)
                     solver_combo_->setCurrentIndex(idx);
             }
@@ -409,23 +409,26 @@ void VisualizationSystem::setup_ui()
         case Qt::Key_M:
             app_.request_next_map();
             grid_widget_->reset_view();
+            reset_perf_buffer();
             break;
         case Qt::Key_BracketLeft:
             app_.request_previous_scene();
             app_.clear_paths();
             grid_widget_->center_view();
+            reset_perf_buffer();
             break;
         case Qt::Key_BracketRight:
             app_.request_next_scene();
             app_.clear_paths();
             grid_widget_->center_view();
+            reset_perf_buffer();
             break;
         default: break;
         }
 
         if (shifted)
         {
-            if (actual == Qt::Key_M) { app_.request_previous_map(); grid_widget_->reset_view(); }
+            if (actual == Qt::Key_M) { app_.request_previous_map(); grid_widget_->reset_view(); reset_perf_buffer(); }
             if (actual == Qt::Key_P) app_.clear_paths();
             if (actual == Qt::Key_R) app_.reset_grid();
         }
@@ -545,8 +548,13 @@ void VisualizationSystem::populate_solver_combo()
     solver_combo_->blockSignals(true);
     solver_combo_->clear();
     bool multi = app_.get_is_multi_agent();
-    for (const auto &name : app_.get_solver_names(multi))
-        solver_combo_->addItem(QString::fromStdString(name));
+    const auto &names = app_.get_solver_names(multi);
+    for (std::size_t i = 0; i < names.size(); i++)
+    {
+        QString display = QString::fromStdString(names[i])
+            + (app_.is_solver_optimal(i, multi) ? "  [optimal]" : "  [suboptimal]");
+        solver_combo_->addItem(display, QString::fromStdString(names[i]));
+    }
     solver_combo_->blockSignals(false);
     if (solver_combo_->count() > 0)
         solver_combo_->setCurrentIndex(0);
@@ -584,10 +592,15 @@ void VisualizationSystem::solve_async()
             app_.set_map_data(std::move(result));
             grid_widget_->sync_and_update();
             solve_status_label_->setText("Solved");
-            update_perf_sidebar();
         } else {
             solve_status_label_->setText("No path found");
         }
+
+        perf_buffer_.push_front(app_.get_performance_metrics());
+        while (perf_buffer_.size() > 5)
+            perf_buffer_.pop_back();
+        update_perf_sidebar();
+
         QTimer::singleShot(3000, this, [this]() { solve_status_label_->clear(); });
         solving_ = false;
         solve_btn_->setEnabled(true);
@@ -610,6 +623,7 @@ bool VisualizationSystem::on_prev_scene()
     if (!app_.request_previous_scene()) return false;
     app_.clear_paths();
     grid_widget_->center_view();
+    reset_perf_buffer();
     update_status();
     return true;
 }
@@ -618,11 +632,24 @@ bool VisualizationSystem::on_next_scene()
     if (!app_.request_next_scene()) return false;
     app_.clear_paths();
     grid_widget_->center_view();
+    reset_perf_buffer();
     update_status();
     return true;
 }
-void VisualizationSystem::on_prev_map()           { app_.request_previous_map();  grid_widget_->reset_view();  update_status(); }
-void VisualizationSystem::on_next_map()           { app_.request_next_map();       grid_widget_->reset_view();  update_status(); }
+void VisualizationSystem::on_prev_map()
+{
+    app_.request_previous_map();
+    grid_widget_->reset_view();
+    reset_perf_buffer();
+    update_status();
+}
+void VisualizationSystem::on_next_map()
+{
+    app_.request_next_map();
+    grid_widget_->reset_view();
+    reset_perf_buffer();
+    update_status();
+}
 void VisualizationSystem::on_toggle_agent_mode()  { app_.toggle_agent_mode(); populate_solver_combo(); update_status(); }
 
 void VisualizationSystem::update_status()
@@ -650,38 +677,66 @@ void VisualizationSystem::focus_grid()
     grid_widget_->setFocus();
 }
 
+void VisualizationSystem::reset_perf_buffer()
+{
+    perf_buffer_.clear();
+    perf_text_->setPlainText("No data available right now.");
+}
+
 void VisualizationSystem::update_perf_sidebar()
 {
-    auto pm = app_.get_performance_metrics();
+    if (perf_buffer_.empty())
+    {
+        perf_text_->setPlainText("No data available right now.");
+        return;
+    }
+
+    auto fmt_entry = [](const PerformanceMetrics &pm, int idx, int total) -> std::string
+    {
+        std::string text;
+        std::string label = idx == 0 ? " (most recent)" : "";
+        text += "\n═══ Run #" + std::to_string(total - idx) + label + " ═══\n";
+        text += "Solver:  " + pm.solver_name + "\n";
+        text += "Map:     " + pm.map_name + "\n";
+        text += "Scene:   " + std::to_string(pm.scene_id) + "\n";
+        text += "Status:  " + std::string(pm.success ? "OK" : "FAIL") + "\n";
+        text += "Runtime: " + std::to_string(pm.runtime.count()) + " us\n";
+
+        auto sep = [&]() { text += "──────────────────────────\n"; };
+
+        sep();
+        text += "Search Effort\n";
+        text += "  Explored:  " + std::to_string(pm.num_of_nodes_explored) + "\n";
+        text += "  Expanded:  " + std::to_string(pm.num_of_nodes_expanded) + "\n";
+        text += "  Reopened:  " + std::to_string(pm.num_of_nodes_reopened) + "\n";
+        text += "  Peak Open: " + std::to_string(pm.peak_open_size) + "\n";
+
+        sep();
+        text += "Path Quality\n";
+        text += "  Length:    " + std::to_string(pm.path_length) + "\n";
+        if (pm.optimal_path_length > 0)
+            text += "  Optimal:   " + std::to_string(pm.optimal_path_length) + "\n";
+
+        if (pm.sum_of_costs > 0)
+        {
+            sep();
+            text += "Multi-Agent\n";
+            text += "  Sum of Costs: " + std::to_string(pm.sum_of_costs) + "\n";
+            text += "  Makespan:     " + std::to_string(pm.makespan) + "\n";
+        }
+
+        return text;
+    };
 
     std::string text;
-    text += "Solver:  " + pm.solver_name + "\n";
-    text += "Map:     " + pm.map_name + "\n";
-    text += "Status:  " + std::string(pm.success ? "OK" : "FAIL") + "\n";
-    text += "Runtime: " + std::to_string(pm.runtime.count()) + " us\n";
-
-    auto sep = [&]() { text += "──────────────────────────\n"; };
-
-    sep();
-    text += "Search Effort\n";
-    text += "  Explored:  " + std::to_string(pm.num_of_nodes_explored) + "\n";
-    text += "  Expanded:  " + std::to_string(pm.num_of_nodes_expanded) + "\n";
-    text += "  Reopened:  " + std::to_string(pm.num_of_nodes_reopened) + "\n";
-    text += "  Peak Open: " + std::to_string(pm.peak_open_size) + "\n";
-
-    sep();
-    text += "Path Quality\n";
-    text += "  Length:    " + std::to_string(pm.path_length) + "\n";
-    if (pm.optimal_path_length > 0)
-        text += "  Optimal:   " + std::to_string(pm.optimal_path_length) + "\n";
-
-    if (pm.sum_of_costs > 0)
+    int total = static_cast<int>(perf_buffer_.size());
+    for (int i = 0; i < total; i++)
     {
-        sep();
-        text += "Multi-Agent\n";
-        text += "  Sum of Costs: " + std::to_string(pm.sum_of_costs) + "\n";
-        text += "  Makespan:     " + std::to_string(pm.makespan) + "\n";
+        if (i > 0)
+            text += "\n════════════════════════════════\n\n";
+        text += fmt_entry(perf_buffer_[i], i, total);
     }
+    text += "\n";
 
     perf_text_->setPlainText(QString::fromStdString(text));
 }
