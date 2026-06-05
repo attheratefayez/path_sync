@@ -55,8 +55,10 @@ Run tests:
 │   │   ├── include/path_sync_core/
 │   │   │   ├── map_loader/       # Map & scene parsing
 │   │   │   ├── solvers/          # A*, BFS, JPS, Theta*, HPA*, D* Lite, EPEA*, Joint-State A*, M*
-│   │   │   ├── logger.hpp        # Singleton logger
-│   │   │   └── path_sync_types.hpp
+│   │   │   ├── logger.hpp              # Singleton logger
+│   │   │   ├── path_sync_types.hpp
+│   │   │   ├── plugin_loader.hpp       # Dynamic plugin system
+│   │   │   └── performance_mat.hpp     # Performance metrics struct
 │   │   └── src/
 │   └── path_sync_ui/             # Qt6 visualization
 │       ├── include/path_sync_ui/
@@ -64,6 +66,8 @@ Run tests:
 ├── maps/                         # Grid map files
 ├── config/                       # YAML configuration
 ├── log/                          # Solver performance logs
+├── plugins/                      # External solver .so plugins
+│   └── demo_solver/              # Example plugin template
 └── test/                         # GoogleTest unit tests
 ```
 
@@ -84,19 +88,13 @@ Run tests:
 | `Solver` dropdown | Select solver directly (shows optimal/suboptimal) |
 
 **Keyboard shortcuts:**
-| Key | Action |
+None. All operations are available via the toolbar.
+
+**Mouse controls:**
+| Action | Input |
 |---|---|
-| `Space` | Solve current scene |
-| `C` | Cycle solvers |
-| `A` | Cycle agent count (1–10) |
-| `Shift+M` | Next map |
-| `Shift+P` | Clear paths |
-| `Shift+R` | Reset grid |
-| `]` | Next scene |
-| `[` | Previous scene |
-| `Shift+H` | Help overlay |
-| Mouse click | Toggle wall cell |
-| Mouse drag | Draw walls |
+| Toggle wall cell | Left-click |
+| Draw walls | Left-click drag |
 
 ### Performance Sidebar
 A permanent sidebar (320 px, right of the viewport) displays the last 5 solver runs with timing, search effort, and path quality metrics. The buffer resets automatically when the map or scene changes.
@@ -104,6 +102,14 @@ A permanent sidebar (320 px, right of the viewport) displays the last 5 solver r
 ## Map Format
 
 Maps use the standard [Moving AI](https://movingai.com/benchmarks/) grid format (`.map` + `.map.scen`).
+
+## Extending
+
+PathSync loads solver algorithms dynamically via a plugin system. Add your own single-agent or multi-agent solver as a `.so` shared library — no core source changes needed.
+
+See **[HOW_TO_ADD_SOLVER.md](HOW_TO_ADD_SOLVER.md)** for a step-by-step guide with code examples.
+
+The [`plugins/demo_solver/`](plugins/demo_solver/) directory contains a complete working plugin (Greedy Best-First Search) that you can use as a template.
 
 ## License
 
