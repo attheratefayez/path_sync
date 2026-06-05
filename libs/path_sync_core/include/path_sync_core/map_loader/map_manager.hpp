@@ -26,6 +26,7 @@ public:
 
     MapData get_current_map_data();
     MapData get_next_map_data();
+    MapData get_prev_map_data();
     std::pair<std::vector<Coordinate>, std::vector<Coordinate>> get_current_scene() const;
     std::pair<std::vector<Coordinate>, std::vector<Coordinate>> get_next_scene(int n_agent);
     std::pair<std::vector<Coordinate>, std::vector<Coordinate>> get_prev_scene(int n_agent);

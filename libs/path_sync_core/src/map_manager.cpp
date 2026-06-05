@@ -30,6 +30,28 @@ MapManager::MapManager()
     return current_map_data_;
 }
 
+[[nodiscard]] path_sync::MapData MapManager::get_prev_map_data()
+{
+    if (current_map_idx_ - 1 >= 0)
+    {
+        --current_map_idx_;
+
+        current_map_ = std::move(Map(available_maps_[current_map_idx_]));
+
+        current_map_data_ = MapData(current_map_.get_map_info());
+
+        current_scene_.first.clear();
+        current_scene_.second.clear();
+        current_scene_idx_ = 0;
+
+        total_scenes_ = current_map_.get_map_scenes().get_scene_data().size();
+
+        return current_map_data_;
+    }
+
+    return MapData();
+}
+
 [[nodiscard]] path_sync::MapData MapManager::get_next_map_data()
 {
     if (current_map_idx_ + 1 < available_maps_.size())
