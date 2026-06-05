@@ -344,79 +344,6 @@ void VisualizationSystem::setup_ui()
     root->setContentsMargins(0, 0, 0, 0);
     root->setSpacing(0);
 
-    // ── toolbar ────────────────────────────────────────────────────────
-    auto *tb = new QWidget;
-    tb->setStyleSheet("QWidget { background: #2b2b2b; }"
-                      "QPushButton { background: #3c3c3c; color: #eee; border: 1px solid #555;"
-                      "  padding: 4px 12px; border-radius: 3px; min-height: 24px; }"
-                      "QPushButton:hover { background: #4a4a4a; }"
-                      "QLabel { color: #ccc; }"
-                      "QComboBox { background: #3c3c3c; color: #eee; border: 1px solid #555;"
-                      "  padding: 3px 6px; border-radius: 3px; min-height: 24px; }");
-
-    auto *tb_lay = new QHBoxLayout(tb);
-    tb_lay->setContentsMargins(8, 4, 8, 4);
-    tb_lay->setSpacing(6);
-
-    solve_btn_ = new QPushButton("Solve");
-    auto *solve_btn = solve_btn_;
-    auto *clear_btn = new QPushButton("Clear");
-    auto *reset_btn = new QPushButton("Reset");
-    prev_btn_ = new QPushButton("◀ Scene");
-    next_btn_ = new QPushButton("Scene ▶");
-    auto *prev_btn  = prev_btn_;
-    auto *next_btn  = next_btn_;
-    auto *prev_map_btn = new QPushButton("◀ Map");
-    auto *map_btn      = new QPushButton("Map ▶");
-    auto *agent_btn    = new QPushButton("Agent");
-
-    solver_combo_ = new QComboBox;
-    solver_combo_->setMinimumWidth(160);
-
-    connect(solve_btn, &QPushButton::clicked, this, &VisualizationSystem::on_solve_clicked);
-    connect(clear_btn, &QPushButton::clicked, this, &VisualizationSystem::on_clear_clicked);
-    connect(reset_btn, &QPushButton::clicked, this, &VisualizationSystem::on_reset_clicked);
-    connect(prev_btn,  &QPushButton::pressed, this, [this]() {
-        scene_dir_forward_ = false;
-        scene_timer_interval_ = 350.0;
-        scene_timer_->setInterval(static_cast<int>(scene_timer_interval_));
-        if (on_prev_scene()) scene_timer_->start();
-    });
-    connect(next_btn,  &QPushButton::pressed, this, [this]() {
-        scene_dir_forward_ = true;
-        scene_timer_interval_ = 350.0;
-        scene_timer_->setInterval(static_cast<int>(scene_timer_interval_));
-        if (on_next_scene()) scene_timer_->start();
-    });
-    connect(prev_btn,  &QPushButton::released, this, [this]() { scene_timer_->stop(); });
-    connect(next_btn,  &QPushButton::released, this, [this]() { scene_timer_->stop(); });
-    connect(scene_timer_, &QTimer::timeout, this, [this]() {
-        scene_timer_interval_ = std::max(scene_timer_interval_ * 0.85, 70.0);
-        scene_timer_->setInterval(static_cast<int>(scene_timer_interval_));
-        bool ok = scene_dir_forward_ ? on_next_scene() : on_prev_scene();
-        if (!ok) scene_timer_->stop();
-    });
-    connect(prev_map_btn, &QPushButton::clicked, this, &VisualizationSystem::on_prev_map);
-    connect(map_btn,      &QPushButton::clicked, this, &VisualizationSystem::on_next_map);
-    connect(agent_btn, &QPushButton::clicked, this, &VisualizationSystem::on_toggle_agent_mode);
-    connect(solver_combo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &VisualizationSystem::on_solver_combo_changed);
-
-    tb_lay->addWidget(solve_btn);
-    tb_lay->addWidget(clear_btn);
-    tb_lay->addWidget(reset_btn);
-    tb_lay->addWidget(prev_btn);
-    tb_lay->addWidget(next_btn);
-    tb_lay->addWidget(prev_map_btn);
-    tb_lay->addWidget(map_btn);
-    tb_lay->addWidget(agent_btn);
-    tb_lay->addSpacing(12);
-    tb_lay->addWidget(new QLabel("Solver:"));
-    tb_lay->addWidget(solver_combo_);
-    tb_lay->addStretch();
-
-    root->addWidget(tb);
-
     // ── fixed-size viewport, centred ───────────────────────────────────
     auto *vp_container = new QFrame;
     vp_container->setFrameShape(QFrame::NoFrame);
@@ -425,7 +352,7 @@ void VisualizationSystem::setup_ui()
     vp_lay->setContentsMargins(0, 0, 0, 0);
 
     grid_widget_ = new GridWidget(app_, this);
-    grid_widget_->setFixedSize(1600, 800);
+    grid_widget_->setFixedSize(1400, 720);
     grid_widget_->set_solve_callback([this]() { solve_async(); });
 
     auto *vp_center = new QHBoxLayout;
@@ -507,6 +434,88 @@ void VisualizationSystem::setup_ui()
         grid_widget_->update();
     });
 
+    // ── toolbar (at bottom, above status bar) ──────────────────────────
+    auto *tb = new QWidget;
+    tb->setStyleSheet("QWidget { background: #2b2b2b; }"
+                      "QPushButton { background: #3c3c3c; color: #eee; border: 1px solid #555;"
+                      "  padding: 4px 12px; border-radius: 3px; min-height: 24px; }"
+                      "QPushButton:hover { background: #4a4a4a; }"
+                      "QLabel { color: #ccc; }"
+                      "QComboBox { background: #3c3c3c; color: #eee; border: 1px solid #555;"
+                      "  padding: 3px 6px; border-radius: 3px; min-height: 24px; }");
+
+    auto *tb_lay = new QHBoxLayout(tb);
+    tb_lay->setContentsMargins(8, 4, 8, 4);
+    tb_lay->setSpacing(6);
+
+    solve_btn_ = new QPushButton("Solve");
+    auto *solve_btn = solve_btn_;
+    cancel_btn_ = new QPushButton("Cancel");
+    auto *cancel_btn = cancel_btn_;
+    cancel_btn->setEnabled(false);
+    auto *clear_btn = new QPushButton("Clear");
+    auto *reset_btn = new QPushButton("Reset");
+    prev_btn_ = new QPushButton("◀ Scene");
+    next_btn_ = new QPushButton("Scene ▶");
+    auto *prev_btn  = prev_btn_;
+    auto *next_btn  = next_btn_;
+    auto *prev_map_btn = new QPushButton("◀ Map");
+    auto *map_btn      = new QPushButton("Map ▶");
+    auto *agent_btn    = new QPushButton("Agent");
+
+    solver_combo_ = new QComboBox;
+    solver_combo_->setMinimumWidth(160);
+
+    connect(solve_btn, &QPushButton::clicked, this, &VisualizationSystem::on_solve_clicked);
+    connect(cancel_btn, &QPushButton::clicked, this, [this]() {
+        app_.cancel_solve();
+        cancel_btn_->setEnabled(false);
+        cancel_btn_->setText("Cancelling...");
+    });
+    connect(clear_btn, &QPushButton::clicked, this, &VisualizationSystem::on_clear_clicked);
+    connect(reset_btn, &QPushButton::clicked, this, &VisualizationSystem::on_reset_clicked);
+    connect(prev_btn,  &QPushButton::pressed, this, [this]() {
+        scene_dir_forward_ = false;
+        scene_timer_interval_ = 350.0;
+        scene_timer_->setInterval(static_cast<int>(scene_timer_interval_));
+        if (on_prev_scene()) scene_timer_->start();
+    });
+    connect(next_btn,  &QPushButton::pressed, this, [this]() {
+        scene_dir_forward_ = true;
+        scene_timer_interval_ = 350.0;
+        scene_timer_->setInterval(static_cast<int>(scene_timer_interval_));
+        if (on_next_scene()) scene_timer_->start();
+    });
+    connect(prev_btn,  &QPushButton::released, this, [this]() { scene_timer_->stop(); });
+    connect(next_btn,  &QPushButton::released, this, [this]() { scene_timer_->stop(); });
+    connect(scene_timer_, &QTimer::timeout, this, [this]() {
+        scene_timer_interval_ = std::max(scene_timer_interval_ * 0.85, 70.0);
+        scene_timer_->setInterval(static_cast<int>(scene_timer_interval_));
+        bool ok = scene_dir_forward_ ? on_next_scene() : on_prev_scene();
+        if (!ok) scene_timer_->stop();
+    });
+    connect(prev_map_btn, &QPushButton::clicked, this, &VisualizationSystem::on_prev_map);
+    connect(map_btn,      &QPushButton::clicked, this, &VisualizationSystem::on_next_map);
+    connect(agent_btn, &QPushButton::clicked, this, &VisualizationSystem::on_toggle_agent_mode);
+    connect(solver_combo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, &VisualizationSystem::on_solver_combo_changed);
+
+    tb_lay->addWidget(solve_btn);
+    tb_lay->addWidget(cancel_btn);
+    tb_lay->addWidget(clear_btn);
+    tb_lay->addWidget(reset_btn);
+    tb_lay->addWidget(prev_btn);
+    tb_lay->addWidget(next_btn);
+    tb_lay->addWidget(prev_map_btn);
+    tb_lay->addWidget(map_btn);
+    tb_lay->addWidget(agent_btn);
+    tb_lay->addSpacing(12);
+    tb_lay->addWidget(new QLabel("Solver:"));
+    tb_lay->addWidget(solver_combo_);
+    tb_lay->addStretch();
+
+    root->addWidget(tb);
+
     // ── status bar ──────────────────────────────────────────────────────
     auto *status_bar = new QWidget;
     status_bar->setStyleSheet("background: #1e1e1e;");
@@ -557,8 +566,11 @@ void VisualizationSystem::solve_async()
     if (solving_)
         return;
 
+    app_.reset_cancel();
     solving_ = true;
     solve_btn_->setEnabled(false);
+    cancel_btn_->setEnabled(true);
+    cancel_btn_->setText("Cancel");
     solve_btn_->setText("Solving...");
     solve_status_label_->setText("Solving...");
 
@@ -580,6 +592,8 @@ void VisualizationSystem::solve_async()
         solving_ = false;
         solve_btn_->setEnabled(true);
         solve_btn_->setText("Solve");
+        cancel_btn_->setEnabled(false);
+        cancel_btn_->setText("Cancel");
         watcher->deleteLater();
     });
 
