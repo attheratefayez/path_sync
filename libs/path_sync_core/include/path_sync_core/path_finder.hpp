@@ -24,9 +24,13 @@ class PathFinder
 public:
     PathFinder();
 
-    void change_solver();
+    void change_solver(bool multi_agent = false);
     void select_solver_by_index(std::size_t index);
     std::vector<std::string> get_all_solver_names() const;
+    std::vector<std::string> get_sa_solver_names() const;
+    std::vector<std::string> get_ma_solver_names() const;
+    void select_sa_solver_by_index(std::size_t index);
+    void select_ma_solver_by_index(std::size_t index);
 
     // TODO: implement logic to run the solve for a selected algorithm, or to test env
     // for all algorithms. Like,

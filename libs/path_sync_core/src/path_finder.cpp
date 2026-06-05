@@ -34,26 +34,35 @@ PathFinder::PathFinder()
     }
 }
 
-void PathFinder::change_solver()
+void PathFinder::change_solver(bool multi_agent)
 {
-    std::size_t total_solvers = sa_solvers_.size() + ma_solvers_.size();
-    if (total_solvers == 0)
+    if (multi_agent)
     {
-        path_sync::Logger::get().warn("No solvers available to change.");
-        return;
-    }
-
-    current_solver_index_ = (++current_solver_index_) % total_solvers;
-
-    if (current_solver_index_ < sa_solvers_.size())
-    {
-        current_sa_solver_ = sa_solvers_[current_solver_index_];
-        current_ma_solver_ = nullptr;
+        if (ma_solvers_.empty())
+        {
+            path_sync::Logger::get().warn("No multi-agent solvers available to change.");
+            return;
+        }
+        auto it = std::find(ma_solvers_.begin(), ma_solvers_.end(), current_ma_solver_);
+        std::size_t idx = (it != ma_solvers_.end())
+            ? ((it - ma_solvers_.begin()) + 1) % ma_solvers_.size()
+            : 0;
+        current_ma_solver_ = ma_solvers_[idx];
+        current_sa_solver_ = nullptr;
     }
     else
     {
-        current_ma_solver_ = ma_solvers_[current_solver_index_ - sa_solvers_.size()];
-        current_sa_solver_ = nullptr;
+        if (sa_solvers_.empty())
+        {
+            path_sync::Logger::get().warn("No single-agent solvers available to change.");
+            return;
+        }
+        auto it = std::find(sa_solvers_.begin(), sa_solvers_.end(), current_sa_solver_);
+        std::size_t idx = (it != sa_solvers_.end())
+            ? ((it - sa_solvers_.begin()) + 1) % sa_solvers_.size()
+            : 0;
+        current_sa_solver_ = sa_solvers_[idx];
+        current_ma_solver_ = nullptr;
     }
 }
 
@@ -73,6 +82,38 @@ void PathFinder::select_solver_by_index(std::size_t index)
         current_ma_solver_ = ma_solvers_[current_solver_index_ - sa_solvers_.size()];
         current_sa_solver_ = nullptr;
     }
+}
+
+void PathFinder::select_sa_solver_by_index(std::size_t index)
+{
+    if (index >= sa_solvers_.size())
+        return;
+    current_sa_solver_ = sa_solvers_[index];
+    current_ma_solver_ = nullptr;
+}
+
+void PathFinder::select_ma_solver_by_index(std::size_t index)
+{
+    if (index >= ma_solvers_.size())
+        return;
+    current_ma_solver_ = ma_solvers_[index];
+    current_sa_solver_ = nullptr;
+}
+
+std::vector<std::string> PathFinder::get_sa_solver_names() const
+{
+    std::vector<std::string> names;
+    for (auto *s : sa_solvers_)
+        names.push_back(std::string(s->get_solver_name()));
+    return names;
+}
+
+std::vector<std::string> PathFinder::get_ma_solver_names() const
+{
+    std::vector<std::string> names;
+    for (auto *s : ma_solvers_)
+        names.push_back(std::string(s->get_solver_name()));
+    return names;
 }
 
 std::vector<std::string> PathFinder::get_all_solver_names() const
