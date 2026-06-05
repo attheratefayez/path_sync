@@ -413,14 +413,6 @@ void VisualizationSystem::setup_ui()
     tb_lay->addSpacing(12);
     tb_lay->addWidget(new QLabel("Solver:"));
     tb_lay->addWidget(solver_combo_);
-    perf_btn_ = new QPushButton("Perf ▸");
-    perf_btn_->setCheckable(true);
-    perf_btn_->setChecked(false);
-    connect(perf_btn_, &QPushButton::toggled, this, [this](bool visible) {
-        sidebar_->setVisible(visible);
-        perf_btn_->setText(visible ? "Perf ▾" : "Perf ▸");
-    });
-    tb_lay->addWidget(perf_btn_);
     tb_lay->addStretch();
 
     root->addWidget(tb);
@@ -442,21 +434,21 @@ void VisualizationSystem::setup_ui()
     vp_center->addStretch();
     vp_lay->addLayout(vp_center);
 
-    // ── collapsible performance sidebar ──────────────────────────────────
+    // ── performance sidebar ────────────────────────────────────────────
     sidebar_ = new QWidget;
-    sidebar_->setVisible(false);
     sidebar_->setFixedWidth(320);
     sidebar_->setStyleSheet("QWidget { background: #252525; }");
     auto *sb_side_lay = new QVBoxLayout(sidebar_);
     sb_side_lay->setContentsMargins(6, 6, 6, 6);
 
-    auto *perf_title = new QLabel("Performance");
+    auto *perf_title = new QLabel("Performance data");
     perf_title->setStyleSheet("QLabel { color: #0a0; font-weight: bold;"
                               "  font-size: 13px; padding-bottom: 4px; }");
     sb_side_lay->addWidget(perf_title);
 
     perf_text_ = new QPlainTextEdit;
     perf_text_->setReadOnly(true);
+    perf_text_->setPlainText("No data available right now.");
     perf_text_->setStyleSheet("QPlainTextEdit { background: #1e1e1e; color: #ccc;"
                               "  border: 1px solid #444; padding: 6px;"
                               "  font-family: monospace; font-size: 12px; }");
@@ -581,9 +573,6 @@ void VisualizationSystem::solve_async()
             grid_widget_->sync_and_update();
             solve_status_label_->setText("Solved");
             update_perf_sidebar();
-            sidebar_->setVisible(true);
-            perf_btn_->setChecked(true);
-            perf_btn_->setText("Perf ▾");
         } else {
             solve_status_label_->setText("No path found");
         }

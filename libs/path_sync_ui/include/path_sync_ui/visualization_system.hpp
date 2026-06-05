@@ -48,7 +48,6 @@ private:
     PathSyncApp& app_;
     GridWidget *grid_widget_;
     QPushButton *solve_btn_;
-    QPushButton *perf_btn_;
     QPushButton *prev_btn_;
     QPushButton *next_btn_;
     QComboBox *solver_combo_;
