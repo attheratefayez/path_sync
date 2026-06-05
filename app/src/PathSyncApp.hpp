@@ -1,6 +1,7 @@
 #ifndef __PATH_SYNC_APP_HPP__
 #define __PATH_SYNC_APP_HPP__
 
+#include <mutex>
 #include <vector>
 #include <memory>
 
@@ -22,6 +23,16 @@ class PathSyncApp
     bool request_previous_scene();
     bool solve_current_scene();
     bool solve_current_map();
+
+    // Thread-safe: works on a copy, locks internal mutex.
+    // Returns the solved map with PATH cells applied, or nullptr on failure.
+    std::shared_ptr<path_sync::MapData> solve_async_on_copy(
+        const std::vector<Coordinate>& starts,
+        const std::vector<Coordinate>& ends);
+
+    std::pair<std::vector<Coordinate>, std::vector<Coordinate>> get_current_scene() const;
+
+    void set_map_data(std::shared_ptr<path_sync::MapData> data);
     void change_solver();
     void select_solver_by_index(std::size_t index);
     std::vector<std::string> get_solver_names() const;
@@ -51,6 +62,7 @@ class PathSyncApp
     std::vector<std::vector<Coordinate>> current_ma_solution_;
 
     path_sync::PathFinder path_finder_;
+    mutable std::mutex solve_mutex_;
 
     int num_agents_;
 

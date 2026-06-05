@@ -68,41 +68,66 @@ bool PathSyncApp::request_previous_scene()
     return bool(current_scene_.first.size());
 }
 
-bool PathSyncApp::solve_current_scene()
+std::shared_ptr<path_sync::MapData> PathSyncApp::solve_async_on_copy(
+    const std::vector<Coordinate>& starts,
+    const std::vector<Coordinate>& ends)
 {
-    path_finder_.set_scene_id(std::max(0, map_manager_.get_current_scene_index() - num_agents_));
-    auto current_solution_ = path_finder_.find_path(*current_map_data_, current_scene_.first, current_scene_.second);
+    auto copy = std::make_shared<path_sync::MapData>(*current_map_data_);
+    int scene_id = std::max(0, map_manager_.get_current_scene_index() - num_agents_);
 
-    if (std::holds_alternative<std::vector<Coordinate>>(current_solution_))
+    std::lock_guard<std::mutex> lock(solve_mutex_);
+    path_finder_.set_scene_id(scene_id);
+    auto result = path_finder_.find_path(*copy, starts, ends);
+
+    if (std::holds_alternative<std::vector<Coordinate>>(result))
     {
-        current_sa_solution_ = std::get<std::vector<Coordinate>>(current_solution_);
+        current_sa_solution_ = std::get<std::vector<Coordinate>>(std::move(result));
         if (current_sa_solution_.empty())
-            return false;
+            return nullptr;
 
         current_sa_solution_ =
             std::vector<Coordinate>(current_sa_solution_.begin() + 1, current_sa_solution_.end() - 1);
 
         for (Coordinate const &elem : current_sa_solution_)
-            current_map_data_->set_cell_type(elem, path_sync::CellType::PATH);
+            copy->set_cell_type(elem, path_sync::CellType::PATH);
     }
     else
     {
-        current_ma_solution_ = std::get<std::vector<std::vector<Coordinate>>>(current_solution_);
+        current_ma_solution_ = std::get<std::vector<std::vector<Coordinate>>>(std::move(result));
         if (std::any_of(current_ma_solution_.begin(), current_ma_solution_.end(),
                         [](std::vector<Coordinate> &elem) { return elem.empty(); }))
-            return false;
+            return nullptr;
 
         for (auto &path : current_ma_solution_)
         {
             path = std::vector<Coordinate>(path.begin() + 1, path.end() - 1);
 
             for (auto &elem : path)
-                current_map_data_->set_cell_type(elem, path_sync::CellType::PATH);
+                copy->set_cell_type(elem, path_sync::CellType::PATH);
         }
     }
 
+    return copy;
+}
+
+bool PathSyncApp::solve_current_scene()
+{
+    auto result = solve_async_on_copy(current_scene_.first, current_scene_.second);
+    if (!result)
+        return false;
+    current_map_data_ = std::move(result);
     Logger::get().info(path_finder_.get_performance_data().str().c_str());
     return true;
+}
+
+std::pair<std::vector<Coordinate>, std::vector<Coordinate>> PathSyncApp::get_current_scene() const
+{
+    return current_scene_;
+}
+
+void PathSyncApp::set_map_data(std::shared_ptr<path_sync::MapData> data)
+{
+    current_map_data_ = std::move(data);
 }
 
 bool PathSyncApp::solve_current_map()
