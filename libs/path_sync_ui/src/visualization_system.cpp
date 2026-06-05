@@ -151,7 +151,7 @@ protected:
             emit key_forwarded(key);
             return;
         }
-        if (shifted && (key == Qt::Key_M || key == Qt::Key_P || key == Qt::Key_R))
+        if (shifted && (key == Qt::Key_A || key == Qt::Key_M || key == Qt::Key_P || key == Qt::Key_R))
         {
             last_key_ = key;
             emit key_forwarded(static_cast<Qt::Key>(key | 0x1000));
