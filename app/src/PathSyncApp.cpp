@@ -260,6 +260,11 @@ std::string PathSyncApp::get_current_map_name() const
 
 int PathSyncApp::get_num_agents() const { return num_agents_; }
 
+PerformanceMetrics PathSyncApp::get_performance_metrics() const
+{
+    return path_finder_.get_performance_metrics();
+}
+
 void PathSyncApp::clear_scene()
 {
     for (int y = 0; y < current_map_data_->get_height(); ++y)

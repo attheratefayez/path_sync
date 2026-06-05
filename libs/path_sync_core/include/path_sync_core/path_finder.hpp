@@ -55,6 +55,11 @@ public:
         return performance_met_.report();
     }
 
+    PerformanceMetrics get_performance_metrics() const
+    {
+        return performance_met_;
+    }
+
     void set_scene_id(int id)
     {
         performance_met_.scene_id = id;

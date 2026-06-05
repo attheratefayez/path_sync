@@ -9,6 +9,7 @@
 #include "path_sync_core/map_loader/map_manager.hpp"
 #include "path_sync_core/path_finder.hpp"
 #include "path_sync_core/path_sync_types.hpp"
+#include "path_sync_core/performance_mat.hpp"
 
 namespace path_sync
 {
@@ -53,6 +54,7 @@ class PathSyncApp
     int get_total_scenes() const;
     std::string get_current_map_name() const;
     int get_num_agents() const;
+    PerformanceMetrics get_performance_metrics() const;
    
     std::stringstream get_performance_data() const
     {
