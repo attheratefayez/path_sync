@@ -34,18 +34,24 @@ PathSyncApp::PathSyncApp()
 
 bool PathSyncApp::request_next_map()
 {
-    current_map_data_ = std::make_shared<path_sync::MapData>(map_manager_.get_next_map_data());
+    auto md = map_manager_.get_next_map_data();
+    if (md.get_height() == 0)
+        return false;
+    current_map_data_ = std::make_shared<path_sync::MapData>(std::move(md));
     current_scene_ = map_manager_.get_next_scene(num_agents_);
     update_map_data_with_current_scene_();
-    return bool(current_map_data_->get_height());
+    return true;
 }
 
 bool PathSyncApp::request_previous_map()
 {
-    current_map_data_ = std::make_shared<path_sync::MapData>(map_manager_.get_prev_map_data());
+    auto md = map_manager_.get_prev_map_data();
+    if (md.get_height() == 0)
+        return false;
+    current_map_data_ = std::make_shared<path_sync::MapData>(std::move(md));
     current_scene_ = map_manager_.get_next_scene(num_agents_);
     update_map_data_with_current_scene_();
-    return bool(current_map_data_->get_height());
+    return true;
 }
 
 bool PathSyncApp::request_next_scene()

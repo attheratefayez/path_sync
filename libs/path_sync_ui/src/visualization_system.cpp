@@ -236,7 +236,7 @@ private:
             switch (key)
             {
             case Qt::Key_H: key_bindings_[Qt::Key_H](); return;
-            case Qt::Key_M: app_.request_next_map(); return;
+            case Qt::Key_M: return;
             case Qt::Key_P: app_.clear_paths();        return;
             case Qt::Key_R: app_.reset_grid();         return;
             default: break;
@@ -407,9 +407,7 @@ void VisualizationSystem::setup_ui()
             populate_solver_combo();
             break;
         case Qt::Key_M:
-            app_.request_next_map();
-            grid_widget_->reset_view();
-            reset_perf_buffer();
+            on_next_map();
             break;
         case Qt::Key_BracketLeft:
             app_.request_previous_scene();
@@ -428,7 +426,7 @@ void VisualizationSystem::setup_ui()
 
         if (shifted)
         {
-            if (actual == Qt::Key_M) { app_.request_previous_map(); grid_widget_->reset_view(); reset_perf_buffer(); }
+            if (actual == Qt::Key_M) { on_prev_map(); return; }
             if (actual == Qt::Key_P) app_.clear_paths();
             if (actual == Qt::Key_R) app_.reset_grid();
         }
@@ -638,14 +636,24 @@ bool VisualizationSystem::on_next_scene()
 }
 void VisualizationSystem::on_prev_map()
 {
-    app_.request_previous_map();
+    if (!app_.request_previous_map())
+    {
+        solve_status_label_->setText("No previous map");
+        QTimer::singleShot(3000, this, [this]() { solve_status_label_->clear(); });
+        return;
+    }
     grid_widget_->reset_view();
     reset_perf_buffer();
     update_status();
 }
 void VisualizationSystem::on_next_map()
 {
-    app_.request_next_map();
+    if (!app_.request_next_map())
+    {
+        solve_status_label_->setText("No next map");
+        QTimer::singleShot(3000, this, [this]() { solve_status_label_->clear(); });
+        return;
+    }
     grid_widget_->reset_view();
     reset_perf_buffer();
     update_status();
