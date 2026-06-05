@@ -20,13 +20,6 @@ bool is_traversable(const path_sync::MapData &map, int x, int y)
     return map.get_cell_type({x, y}) != path_sync::CellType::WALL;
 }
 
-int octile_distance(ps_coord a, ps_coord b)
-{
-    int dx = std::abs(a.first - b.first);
-    int dy = std::abs(a.second - b.second);
-    return (dx + dy) + (std::max(dx, dy) - std::min(dx, dy));
-}
-
 float euclidean_distance(ps_coord a, ps_coord b)
 {
     int dx = a.first - b.first;
@@ -107,8 +100,8 @@ std::map<Coordinate, Coordinate> Theta_Star_Solver::solve(const path_sync::MapDa
 
     auto cmp = [&](ps_coord a, ps_coord b)
     {
-        float fa = g_score[a] + octile_distance(a, goal);
-        float fb = g_score[b] + octile_distance(b, goal);
+        float fa = g_score[a] + euclidean_distance(a, goal);
+        float fb = g_score[b] + euclidean_distance(b, goal);
         if (fa != fb) return fa > fb;
         return a < b;
     };
