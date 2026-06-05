@@ -65,7 +65,8 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
     // 8-directional movement
     const int ndx[] = {0, 1, 1, 1, 0, -1, -1, -1};
     const int ndy[] = {-1, -1, 0, 1, 1, 1, 0, -1};
-    const float move_cost[] = {1.0f, 1.414f, 1.0f, 1.414f, 1.0f, 1.414f, 1.0f, 1.414f};
+    const float sqrt2 = std::sqrt(2.0f);
+    const float move_cost[] = {1.0f, sqrt2, 1.0f, sqrt2, 1.0f, sqrt2, 1.0f, sqrt2};
 
     auto get_neighbors = [&](ps_coord c) -> std::vector<std::pair<ps_coord, float>>
     {
@@ -173,6 +174,7 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
             ps_coord u = u_entry.pos;
             U.erase(U.begin());
             in_U.erase(u);
+            performance_met.num_of_nodes_expanded++;
 
             Key k_new = calc_key(u);
 
@@ -182,11 +184,11 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
                 in_U.insert(u);
                 if (U.size() > performance_met.peak_open_size)
                     performance_met.peak_open_size = U.size();
-                performance_met.num_of_nodes_reopened++;
             }
             else if (g[u] > rhs[u])
             {
                 g[u] = rhs[u];
+                performance_met.num_of_nodes_explored++;
                 for (auto &[pred, cost] : get_neighbors(u))
                 {
                     // Ensure g and rhs are initialized
@@ -201,6 +203,7 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
             {
                 float g_old = g[u];
                 g[u] = std::numeric_limits<float>::infinity();
+                performance_met.num_of_nodes_explored++;
 
                 for (auto &[pred, cost] : get_neighbors(u))
                 {
@@ -236,7 +239,6 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
 
     ps_coord current = start;
     came_from[start] = {-1, -1};
-    performance_met.num_of_nodes_explored = 0;
 
     while (current != goal)
     {
@@ -275,7 +277,6 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
 
         came_from[best] = current;
         current = best;
-        performance_met.num_of_nodes_explored++;
     }
 
     performance_met.success = !came_from.empty();
