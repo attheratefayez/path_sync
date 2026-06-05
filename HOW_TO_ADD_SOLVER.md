@@ -33,9 +33,6 @@ public:
         path_sync::PerformanceMetrics &performance_met) override
     {
         // Your algorithm here...
-        // Populate performance_met with:
-        //   .success, .runtime, .nodes_explored, .nodes_expanded,
-        //   .nodes_reopened, .peak_open_size
         // Return came_from map (empty if no path found)
     }
 };
@@ -43,7 +40,71 @@ public:
 
 > **Tip**: See [`plugins/demo_solver/demo_solver.cpp`](plugins/demo_solver/demo_solver.cpp) for a complete working example (Greedy Best-First Search).
 
-### 3. Add the plugin entry points (required)
+### 3. Populate performance metrics (required for data collection)
+
+PathSync records solver performance for research. Your solver **must** populate the `PerformanceMetrics` struct received via the `solve()` parameter. Fields are split into two categories:
+
+#### Fields your solver must set (inside `solve()`)
+
+| Field | Type | When to set |
+|---|---|---|
+| `success` | `bool` | `true` if a path was found |
+| `runtime` | `std::chrono::microseconds` | Elapsed wall-clock time |
+| `num_of_nodes_explored` | `std::size_t` | Total successor states generated |
+| `num_of_nodes_expanded` | `std::size_t` | Total states popped from the open set |
+| `num_of_nodes_reopened` | `std::size_t` | States reached again with a worse g-score |
+| `peak_open_size` | `std::size_t` | Maximum size of the open priority queue |
+| `path_length` | `std::size_t` | Length of the final path (in steps) |
+
+#### Fields populated externally (do NOT set in solver)
+
+| Field | Set by |
+|---|---|
+| `solver_name` | PathFinder |
+| `map_name` | PathFinder |
+| `scene_id` | PathFinder |
+| `num_agents` | PathFinder |
+| `timestamp` | PathFinder |
+| `optimal_path_length` | External comparison (benchmarking scripts) |
+| `sum_of_costs` | PathFinder (for multi-agent) |
+| `makespan` | PathFinder (for multi-agent) |
+| `cancel_flag` | PathFinder (non-owning pointer to atomic flag) |
+
+#### Complete example
+
+```cpp
+auto start_time = std::chrono::high_resolution_clock::now();
+// ... run algorithm ...
+auto end_time = std::chrono::high_resolution_clock::now();
+
+performance_met.success = found;
+performance_met.runtime = std::chrono::duration_cast<
+    std::chrono::microseconds>(end_time - start_time);
+performance_met.path_length = final_path.size();
+performance_met.num_of_nodes_explored = explored_count;
+performance_met.num_of_nodes_expanded = expanded_count;
+performance_met.num_of_nodes_reopened = reopened_count;
+performance_met.peak_open_size = peak_open;
+
+if (!found)
+    came_from.clear();  // signal failure
+return came_from;
+```
+
+The demo plugin at [`plugins/demo_solver/demo_solver.cpp`](plugins/demo_solver/demo_solver.cpp) shows this in full context.
+
+#### Multi-agent extra fields
+
+For `IMASolver`, also set `sum_of_costs` and `makespan` on the metrics struct if a solution was found:
+
+```cpp
+performance_met.sum_of_costs = soc;   // sum of (agent_i_path_length - 1)
+performance_met.makespan = makespan;  // max(agent_i_path_length - 1)
+```
+
+These are also computed externally by PathFinder, but setting them in the solver is good practice for when the solver is used as a standalone library.
+
+### 4. Add the plugin entry points (required)
 
 These `extern "C"` functions are the contract between PathSync and your plugin:
 
@@ -59,7 +120,7 @@ void     plugin_destroy(void *p)   { delete static_cast<MySolver*>(p); }
 }
 ```
 
-### 4. Create a CMakeLists.txt
+### 5. Create a CMakeLists.txt
 
 ```cmake
 cmake_minimum_required(VERSION 3.20)
@@ -82,7 +143,7 @@ set_target_properties(my_solver PROPERTIES
     INSTALL_RPATH "${PATH_SYNC_ROOT}/build/libs/path_sync_core")
 ```
 
-### 5. Build
+### 6. Build
 
 ```bash
 mkdir -p build && cd build
@@ -92,7 +153,7 @@ make
 
 This produces `libmy_solver.so` in the `plugins/` directory of the PathSync project.
 
-### 6. Verify
+### 7. Verify
 
 Start PathSync. Your solver should appear in the **Solver** dropdown menu under the corresponding section (single-agent or multi-agent).
 
@@ -132,7 +193,9 @@ class MyMASolver : public IMASolver {
         path_sync::PerformanceMetrics &performance_met) override
     {
         // Return nullopt if no solution
-        // Populate performance_met.sum_of_costs and .makespan if solved
+        // Populate metrics (see step 3) plus:
+        //   performance_met.sum_of_costs
+        //   performance_met.makespan
     }
 };
 
