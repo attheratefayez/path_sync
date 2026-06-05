@@ -1,5 +1,6 @@
 #include "path_sync_ui/visualization_system.hpp"
 
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QPainter>
@@ -41,16 +42,21 @@ public:
         update();
     }
 
-    void recenter()
+    void reset_view()
     {
         zoom_ = 1.0;
+        center_view();
+    }
+
+    void center_view()
+    {
         auto map_data = app_.get_current_map_data();
         if (!map_data)
             return;
         grid_.sync_with_map_data(*map_data);
-        double cell = static_cast<double>(grid_.get_cell_size());
-        double mw = grid_.get_width() * cell * zoom_;
-        double mh = grid_.get_height() * cell * zoom_;
+        double cell = static_cast<double>(grid_.get_cell_size()) * zoom_;
+        double mw = grid_.get_width() * cell;
+        double mh = grid_.get_height() * cell;
         pan_x_ = (width() - mw) / 2.0;
         pan_y_ = (height() - mh) / 2.0;
         update();
@@ -123,6 +129,10 @@ protected:
             double ly = pan_y_ + y * cell;
             p.drawLine(QPointF(pan_x_, ly), QPointF(pan_x_ + gw, ly));
         }
+
+        // viewport border
+        p.setPen(QPen(QColor(102, 102, 102), 2));
+        p.drawRect(rect().adjusted(1, 1, -1, -1));
     }
 
     void keyPressEvent(QKeyEvent *event) override
@@ -359,7 +369,8 @@ void VisualizationSystem::setup_ui()
     connect(reset_btn, &QPushButton::clicked, this, &VisualizationSystem::on_reset_clicked);
     connect(prev_btn,  &QPushButton::clicked, this, &VisualizationSystem::on_prev_scene);
     connect(next_btn,  &QPushButton::clicked, this, &VisualizationSystem::on_next_scene);
-    connect(map_btn,   &QPushButton::clicked, this, &VisualizationSystem::on_next_map);
+    connect(prev_map_btn, &QPushButton::clicked, this, &VisualizationSystem::on_prev_map);
+    connect(map_btn,      &QPushButton::clicked, this, &VisualizationSystem::on_next_map);
     connect(agent_btn, &QPushButton::clicked, this, &VisualizationSystem::on_toggle_agent_mode);
     connect(solver_combo_, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &VisualizationSystem::on_solver_combo_changed);
@@ -400,33 +411,42 @@ void VisualizationSystem::setup_ui()
         {
         case Qt::Key_C:
             app_.change_solver();
-            solver_combo_->setCurrentIndex((solver_combo_->currentIndex() + 1) %
-                                           solver_combo_->count());
+            {
+                QString name = QString::fromStdString(
+                    std::string(app_.get_current_solver_name()));
+                int idx = solver_combo_->findText(name);
+                if (idx >= 0)
+                    solver_combo_->setCurrentIndex(idx);
+            }
             break;
         case Qt::Key_A:
             app_.toggle_agent_mode();
+            populate_solver_combo();
             break;
         case Qt::Key_M:
             app_.request_next_map();
+            grid_widget_->reset_view();
             break;
         case Qt::Key_BracketLeft:
             app_.request_previous_scene();
             app_.clear_paths();
+            grid_widget_->center_view();
             break;
         case Qt::Key_BracketRight:
             app_.request_next_scene();
             app_.clear_paths();
+            grid_widget_->center_view();
             break;
         default: break;
         }
 
         if (shifted)
         {
+            if (actual == Qt::Key_M) { app_.request_previous_map(); grid_widget_->reset_view(); }
             if (actual == Qt::Key_P) app_.clear_paths();
             if (actual == Qt::Key_R) app_.reset_grid();
         }
 
-        grid_widget_->recenter();
         update_status();
         grid_widget_->update();
     });
@@ -447,22 +467,33 @@ void VisualizationSystem::populate_solver_combo()
 {
     solver_combo_->blockSignals(true);
     solver_combo_->clear();
-    for (const auto &name : app_.get_solver_names())
+    bool multi = app_.get_is_multi_agent();
+    for (const auto &name : app_.get_solver_names(multi))
         solver_combo_->addItem(QString::fromStdString(name));
     solver_combo_->blockSignals(false);
+    if (solver_combo_->count() > 0)
+        solver_combo_->setCurrentIndex(0);
 }
 
 void VisualizationSystem::on_solver_combo_changed(int index)
 {
     if (index < 0)
         return;
-    app_.select_solver_by_index(static_cast<std::size_t>(index));
+    app_.select_solver_by_index(static_cast<std::size_t>(index), app_.get_is_multi_agent());
     grid_widget_->update();
     update_status();
 }
 
 void VisualizationSystem::solve_async()
 {
+    if (solving_)
+        return;
+
+    solving_ = true;
+    solve_btn_->setEnabled(false);
+    solve_btn_->setText("Solving...");
+    status_label_->setText("Solving...");
+
     auto starts = app_.get_current_scene().first;
     auto ends   = app_.get_current_scene().second;
 
