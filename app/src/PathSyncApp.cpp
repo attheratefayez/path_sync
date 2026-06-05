@@ -258,6 +258,8 @@ std::string PathSyncApp::get_current_map_name() const
     return current_map_data_->get_map_info().map_name;
 }
 
+int PathSyncApp::get_num_agents() const { return num_agents_; }
+
 void PathSyncApp::clear_scene()
 {
     for (int y = 0; y < current_map_data_->get_height(); ++y)

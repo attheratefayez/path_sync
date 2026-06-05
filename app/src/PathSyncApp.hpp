@@ -52,6 +52,7 @@ class PathSyncApp
     int get_scene_index() const;
     int get_total_scenes() const;
     std::string get_current_map_name() const;
+    int get_num_agents() const;
    
     std::stringstream get_performance_data() const
     {
