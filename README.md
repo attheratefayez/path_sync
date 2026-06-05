@@ -5,17 +5,17 @@ A C++20 pathfinding visualization tool for single-agent and multi-agent pathfind
 ## Algorithms
 
 ### Single-Agent Solvers
-- **A\*** - Classic A\* with Manhattan distance heuristic (4-dir)
-- **BFS** - Breadth-First Search for unweighted grids (4-dir)
-- **JPS** - Jump Point Search with 8-directional movement and Chebyshev heuristic
-- **Theta\*** - Any-angle pathfinding with line-of-sight shortcutting (8-dir)
-- **HPA\*** - Hierarchical Pathfinding A\* using cluster decomposition (4-dir)
-- **D\* Lite** - Incremental replanning from goal-to-start (8-dir)
-- **EPEA\*** - Enhanced Partial Expansion A\* with delayed successor generation (4-dir)
+- **A\*** (optimal) — Classic A\* with Manhattan distance heuristic (4-dir)
+- **BFS** (optimal) — Breadth-First Search for unweighted grids (4-dir)
+- **JPS** (optimal) — Jump Point Search with 8-directional movement and Chebyshev heuristic
+- **D\* Lite** (optimal) — Incremental replanning from goal-to-start (8-dir)
+- **EPEA\*** (optimal) — Enhanced Partial Expansion A\* with delayed successor generation (4-dir)
+- **Theta\*** (suboptimal) — Any-angle pathfinding with line-of-sight shortcutting (8-dir)
+- **HPA\*** (suboptimal) — Hierarchical Pathfinding A\* using cluster decomposition (4-dir)
 
 ### Multi-Agent Solvers
-- **Joint-State A\*** - Multi-agent pathfinding in joint state space (WIP)
-- **M\*** - Subdimensional expansion with independent planning + conflict resolution (4-dir)
+- **Joint-State A\*** (optimal) — Multi-agent pathfinding in joint state space (WIP)
+- **M\*** (suboptimal) — Subdimensional expansion with independent planning + conflict resolution (4-dir)
 
 ## Dependencies
 
@@ -75,12 +75,15 @@ Run tests:
 | Button | Action |
 |---|---|
 | `Solve` | Solve current scene |
+| `Cancel` | Cancel a running solver |
 | `Clear` | Clear path overlay |
 | `Reset` | Reset grid to original map |
-| `< Scene` | Previous scene |
-| `Scene >` | Next scene |
-| `Next Map` | Cycle to next map |
-| `Solver` dropdown | Select solver directly |
+| `< Scene` | Previous scene (hold to repeat, auto-accelerates) |
+| `Scene >` | Next scene (hold to repeat, auto-accelerates) |
+| `< Map` | Previous map |
+| `Map >` | Next map |
+| `Agent` | Cycle agent count (1–10) |
+| `Solver` dropdown | Select solver directly (shows optimal/suboptimal) |
 
 **Keyboard shortcuts:**
 | Key | Action |
@@ -96,6 +99,9 @@ Run tests:
 | `Shift+H` | Help overlay |
 | Mouse click | Toggle wall cell |
 | Mouse drag | Draw walls |
+
+### Performance Sidebar
+A permanent sidebar (320 px, right of the viewport) displays the last 5 solver runs with timing, search effort, and path quality metrics. The buffer resets automatically when the map or scene changes.
 
 ## Map Format
 
