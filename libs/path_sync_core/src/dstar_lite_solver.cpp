@@ -160,6 +160,9 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
     {
         while (!U.empty())
         {
+            if (performance_met.cancel_flag && *performance_met.cancel_flag)
+                break;
+
             Key k_old = top_key();
             Key k_start = calc_key(start);
 
@@ -214,6 +217,13 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
 
     compute_shortest_path();
 
+    if (performance_met.cancel_flag && *performance_met.cancel_flag)
+    {
+        auto end_time = std::chrono::high_resolution_clock::now();
+        performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+        return {};
+    }
+
     // Reconstruct path using best-first from start to goal
     std::map<Coordinate, Coordinate> came_from;
 
@@ -230,6 +240,12 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
 
     while (current != goal)
     {
+        if (performance_met.cancel_flag && *performance_met.cancel_flag)
+        {
+            came_from.clear();
+            break;
+        }
+
         auto neighbors = get_neighbors(current);
         if (neighbors.empty())
         {

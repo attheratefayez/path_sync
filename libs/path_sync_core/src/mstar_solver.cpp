@@ -369,6 +369,8 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::joint_search(
         JointState current = open.top();
         open.pop();
 
+        if (performance_met.cancel_flag && *performance_met.cancel_flag) break;
+
         if (all_at_goal(current))
         {
             found = true;
@@ -553,6 +555,13 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::solve(
 
     while (true)
     {
+        if (performance_met.cancel_flag && *performance_met.cancel_flag)
+        {
+            auto end_time = std::chrono::high_resolution_clock::now();
+            performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+            return std::nullopt;
+        }
+
         auto conflict = find_first_conflict(paths);
         if (!conflict.has_value())
         {

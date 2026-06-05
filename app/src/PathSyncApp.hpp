@@ -45,6 +45,10 @@ class PathSyncApp
 
     std::shared_ptr<path_sync::MapData> get_current_map_data() const;
 
+    void cancel_solve() { path_finder_.cancel(); }
+    void reset_cancel() { path_finder_.reset_cancel(); }
+    bool is_solve_cancelled() const { return path_finder_.is_cancelled(); }
+
     void clear_scene();
     void clear_paths();
     void reset_grid();

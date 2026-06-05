@@ -43,6 +43,7 @@ std::optional<std::vector<std::vector<path_sync::Coordinate>>> mapf_astar::solve
     {
         mapf_type::NodePtr current = open_set.top();
         open_set.pop();
+        if (performance_met.cancel_flag && *performance_met.cancel_flag) break;
         performance_met.num_of_nodes_expanded++;
 
         if (current->_state.positions == goals)

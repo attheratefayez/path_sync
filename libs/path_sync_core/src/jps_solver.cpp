@@ -136,6 +136,7 @@ std::map<Coordinate, Coordinate> JPS_Solver::solve(const path_sync::MapData &map
     {
         ps_coord current = open.top();
         open.pop();
+        if (performance_met.cancel_flag && *performance_met.cancel_flag) break;
         performance_met.num_of_nodes_expanded++;
 
         // Try jumping in all 8 directions from the start, or prune from parent

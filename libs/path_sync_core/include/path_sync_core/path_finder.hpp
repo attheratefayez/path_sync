@@ -1,6 +1,7 @@
 #ifndef __PATH_SYNC_PATH_FINDER_HPP__
 #define __PATH_SYNC_PATH_FINDER_HPP__
 
+#include <atomic>
 #include <variant>
 
 #include "path_sync_core/performance_mat.hpp"
@@ -37,6 +38,10 @@ public:
     // find_path(map_data, starts, ends, run_on = "bfs_solver")
     // find_path(map_data, starts, ends, run_on = "test_all")
 
+    void cancel() { cancel_flag_.store(true); }
+    void reset_cancel() { cancel_flag_.store(false); }
+    bool is_cancelled() const { return cancel_flag_.load(); }
+
     [[nodiscard]] std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> find_path(
         const path_sync::MapData &map_data, const std::vector<Coordinate> &start_points,
         const std::vector<Coordinate> &end_points);
@@ -66,6 +71,7 @@ public:
     }
 
 private:
+    std::atomic<bool> cancel_flag_{false};
     PerformanceMetrics performance_met_;
 
     ISolver *current_sa_solver_;

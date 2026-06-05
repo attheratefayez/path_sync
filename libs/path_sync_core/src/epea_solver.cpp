@@ -97,6 +97,8 @@ std::map<Coordinate, Coordinate> EPEA_Star_Solver::solve(const path_sync::MapDat
         open.pop();
         ps_coord current = entry.pos;
 
+        if (performance_met.cancel_flag && *performance_met.cancel_flag) break;
+
         if (current == goal)
         {
             found = true;

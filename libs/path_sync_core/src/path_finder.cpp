@@ -12,11 +12,14 @@
 namespace path_sync
 {
 PathFinder::PathFinder()
-    : performance_met_{}
+    : cancel_flag_{false}
+    , performance_met_{}
     , current_sa_solver_(nullptr)
     , current_ma_solver_(nullptr)
     , current_solver_index_(0)
 {
+    performance_met_.cancel_flag = &cancel_flag_;
+
     sa_solvers_.push_back(&astar_solver_);
     sa_solvers_.push_back(&bfs_solver_);
     sa_solvers_.push_back(&jps_solver_);

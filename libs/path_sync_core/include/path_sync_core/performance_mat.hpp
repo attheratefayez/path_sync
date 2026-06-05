@@ -1,6 +1,7 @@
 #ifndef __PATH_SYNC_PERFORMANCE_MET_HPP__
 #define __PATH_SYNC_PERFORMANCE_MET_HPP__
 
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <sstream>
@@ -31,6 +32,9 @@ struct PerformanceMetrics
     std::size_t num_of_nodes_expanded = 0;
     std::size_t num_of_nodes_reopened = 0;
     std::size_t peak_open_size = 0;
+
+    // Cancel support (non-owning pointer)
+    std::atomic<bool> *cancel_flag = nullptr;
 
     // MAPF-specific
     std::size_t sum_of_costs = 0;

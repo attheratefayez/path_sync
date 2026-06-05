@@ -388,6 +388,8 @@ std::map<Coordinate, Coordinate> HPA_Solver::solve(const path_sync::MapData &map
 
     while (!abstract_open.empty() && !found)
     {
+        if (performance_met.cancel_flag && *performance_met.cancel_flag) break;
+
         auto [fg, cur] = abstract_open.top();
         abstract_open.pop();
 

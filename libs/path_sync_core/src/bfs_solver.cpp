@@ -50,6 +50,7 @@ std::map<Coordinate, Coordinate> BFS_Solver::solve(const path_sync::MapData& map
     while (!queue.empty() && !reachedEnd) {
         Coordinate visiting = queue.front();
         queue.pop_front();
+        if (performance_met.cancel_flag && *performance_met.cancel_flag) break;
         performance_met.num_of_nodes_expanded++;
 
         if (visited[visiting.second][visiting.first]) continue;
