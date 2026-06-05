@@ -50,12 +50,19 @@ private:
     QComboBox *solver_combo_;
     QSpinBox *scene_spin_;
     QSpinBox *map_spin_;
+    QSpinBox *agent_spin_;
+    QSpinBox *timeout_spin_;
     QLabel *status_label_;
     QLabel *solve_status_label_;
     QWidget *sidebar_;
     QPlainTextEdit *perf_text_;
     bool solving_ = false;
-    std::deque<PerformanceMetrics> perf_buffer_;
+    struct PerfEntry
+    {
+        PerformanceMetrics pm;
+        std::optional<MAPFMetrics> ma_met;
+    };
+    std::deque<PerfEntry> perf_buffer_;
 
     VisualizationSystem(VisualizationSystem const &) = delete;
     VisualizationSystem &operator=(VisualizationSystem const &) = delete;

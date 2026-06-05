@@ -48,6 +48,7 @@ class PathSyncApp
     void cancel_solve() { path_finder_.cancel(); }
     void reset_cancel() { path_finder_.reset_cancel(); }
     bool is_solve_cancelled() const { return path_finder_.is_cancelled(); }
+    void set_timeout_ms(int ms) { path_finder_.set_timeout_ms(ms); }
 
     void clear_paths();
     void reset_grid();
@@ -61,6 +62,10 @@ class PathSyncApp
     std::string get_current_map_name() const;
     int get_num_agents() const;
     PerformanceMetrics get_performance_metrics() const;
+    const std::optional<MAPFMetrics>& get_last_ma_metrics() const
+    {
+        return path_finder_.get_last_ma_metrics();
+    }
     const std::vector<std::vector<Coordinate>> &get_current_ma_solution() const
     {
         return current_ma_solution_;

@@ -51,6 +51,18 @@ public:
 
         while (!open.empty())
         {
+            if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out())
+            {
+                performance_met.success = false;
+                performance_met.num_of_nodes_explored = explored;
+                performance_met.num_of_nodes_expanded = expanded;
+                performance_met.num_of_nodes_reopened = reopened;
+                performance_met.peak_open_size = peak_open;
+                auto end_time = std::chrono::high_resolution_clock::now();
+                performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+                return {};
+            }
+
             auto current = open.top().second;
             open.pop();
             expanded++;

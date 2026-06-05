@@ -1,12 +1,16 @@
 #ifndef __PATH_SYNC_PERFORMANCE_MET_HPP__
 #define __PATH_SYNC_PERFORMANCE_MET_HPP__
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <ctime>
+#include <numeric>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace path_sync
 {
@@ -39,9 +43,21 @@ struct PerformanceMetrics
     // Cancel support (non-owning pointer)
     std::atomic<bool> *cancel_flag = nullptr;
 
+    // Timeout support
+    std::chrono::steady_clock::time_point deadline;
+    bool has_timeout = false;
+
+    bool timed_out() const
+    {
+        return has_timeout && std::chrono::steady_clock::now() >= deadline;
+    }
+
     // MAPF-specific
     std::size_t sum_of_costs = 0;
     std::size_t makespan = 0;
+
+    // Extended MAPF metrics (populated by multi-agent solvers)
+    struct MAPFMetrics *mapf_metrics = nullptr;
 
     float suboptimality_ratio() const
     {
@@ -103,6 +119,86 @@ struct PerformanceMetrics
            << sum_of_costs << ","
            << makespan << ","
            << fmt_timestamp(timestamp);
+        return ss.str();
+    }
+};
+
+// ── Extended metrics for multi-agent solves ──────────────────────────
+
+struct MAPFMetrics
+{
+    // Conflicts
+    std::size_t conflicts_detected = 0;
+    std::size_t conflicts_resolved = 0;
+
+    // Joint search
+    std::size_t joint_states_expanded = 0;
+    std::size_t joint_states_explored = 0;
+
+    // Replanning (MStar specific)
+    std::size_t num_replan_iterations = 0;
+    std::size_t num_joint_searches = 0;
+    std::size_t num_joint_search_failures = 0;
+    std::size_t final_joint_set_size = 0;
+
+    // Depth
+    std::size_t solution_depth = 0;
+    std::size_t max_timestep_reached = 0;
+
+    // Per-agent aggregates (computed from solution paths)
+    std::vector<std::size_t> individual_path_lengths;
+    std::size_t flow_time = 0;
+    double mean_path_length = 0.0;
+    std::size_t min_path_length = 0;
+    std::size_t max_path_length = 0;
+
+    void compute_aggregates()
+    {
+        if (individual_path_lengths.empty())
+            return;
+        flow_time = std::accumulate(individual_path_lengths.begin(), individual_path_lengths.end(), std::size_t{0});
+        min_path_length = *std::min_element(individual_path_lengths.begin(), individual_path_lengths.end());
+        max_path_length = *std::max_element(individual_path_lengths.begin(), individual_path_lengths.end());
+        mean_path_length = static_cast<double>(flow_time) / individual_path_lengths.size();
+    }
+
+    static std::string csv_header()
+    {
+        return "ma_solver_name,map_name,scene_id,num_agents,success,runtime_us,"
+               "sum_of_costs,makespan,flow_time,"
+               "mean_path_len,min_path_len,max_path_len,"
+               "joint_states_expanded,joint_states_explored,"
+               "conflicts_detected,conflicts_resolved,"
+               "replan_iterations,joint_searches,joint_search_failures,"
+               "final_joint_set_size,solution_depth,max_timestep,timestamp";
+    }
+
+    std::string csv_line(const PerformanceMetrics &base) const
+    {
+        std::stringstream ss;
+        ss << base.solver_name << ","
+           << base.map_name << ","
+           << base.scene_id << ","
+           << base.num_agents << ","
+           << (base.success ? 1 : 0) << ","
+           << base.runtime.count() << ","
+           << base.sum_of_costs << ","
+           << base.makespan << ","
+           << flow_time << ","
+           << mean_path_length << ","
+           << min_path_length << ","
+           << max_path_length << ","
+           << joint_states_expanded << ","
+           << joint_states_explored << ","
+           << conflicts_detected << ","
+           << conflicts_resolved << ","
+           << num_replan_iterations << ","
+           << num_joint_searches << ","
+           << num_joint_search_failures << ","
+           << final_joint_set_size << ","
+           << solution_depth << ","
+           << max_timestep_reached << ","
+           << PerformanceMetrics::fmt_timestamp(base.timestamp);
         return ss.str();
     }
 };

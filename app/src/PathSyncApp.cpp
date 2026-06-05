@@ -210,14 +210,32 @@ bool PathSyncApp::solve_current_map()
         // CSV log
         std::string csv_dir = std::string(PROJECT_ROOT) + "/log";
         std::filesystem::create_directories(csv_dir);
-        std::string csv_path = csv_dir + "/results.csv";
-        bool csv_exists = std::filesystem::exists(csv_path);
-        std::ofstream csv_ofs(csv_path, std::ios::app);
-        if (csv_ofs)
+
+        auto pm = path_finder_.get_performance_metrics();
+        auto &ma_met = path_finder_.get_last_ma_metrics();
+        if (pm.num_agents > 1 && ma_met.has_value())
         {
-            if (!csv_exists)
-                csv_ofs << PerformanceMetrics::csv_header() << "\n";
-            csv_ofs << path_finder_.get_performance_metrics().csv_line() << "\n";
+            std::string csv_path = csv_dir + "/results_ma.csv";
+            bool csv_exists = std::filesystem::exists(csv_path);
+            std::ofstream csv_ofs(csv_path, std::ios::app);
+            if (csv_ofs)
+            {
+                if (!csv_exists)
+                    csv_ofs << MAPFMetrics::csv_header() << "\n";
+                csv_ofs << ma_met->csv_line(pm) << "\n";
+            }
+        }
+        else
+        {
+            std::string csv_path = csv_dir + "/results_sa.csv";
+            bool csv_exists = std::filesystem::exists(csv_path);
+            std::ofstream csv_ofs(csv_path, std::ios::app);
+            if (csv_ofs)
+            {
+                if (!csv_exists)
+                    csv_ofs << PerformanceMetrics::csv_header() << "\n";
+                csv_ofs << pm.csv_line() << "\n";
+            }
         }
 
         path_sync::Logger::get().info(path_finder_.get_performance_data().str().c_str(), log_file);

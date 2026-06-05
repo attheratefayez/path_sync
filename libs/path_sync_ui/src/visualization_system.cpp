@@ -436,6 +436,21 @@ void VisualizationSystem::setup_ui()
                          update_status();
                      });
 
+    auto *timeout_label = new QLabel("  Time (s):");
+    timeout_spin_ = new QSpinBox;
+    timeout_spin_->setMinimum(5);
+    timeout_spin_->setMaximum(300);
+    timeout_spin_->setValue(30);
+    timeout_spin_->setSingleStep(5);
+    timeout_spin_->setMaximumWidth(70);
+    timeout_spin_->setAlignment(Qt::AlignCenter);
+    timeout_spin_->setStyleSheet(
+        "QSpinBox { background: #3c3c3c; color: #eee; border: 1px solid #555;"
+        "  padding: 4px 4px; border-radius: 3px; min-height: 24px; }"
+        "QSpinBox::up-button, QSpinBox::down-button {"
+        "  background: #4a4a4a; border: 1px solid #555;"
+        "  border-radius: 2px; margin: 1px; }");
+
     solver_combo_ = new QComboBox;
     solver_combo_->setMinimumWidth(160);
 
@@ -460,6 +475,8 @@ void VisualizationSystem::setup_ui()
     tb_lay->addWidget(map_spin_);
     tb_lay->addWidget(agent_label);
     tb_lay->addWidget(agent_spin);
+    tb_lay->addWidget(timeout_label);
+    tb_lay->addWidget(timeout_spin_);
     tb_lay->addSpacing(12);
     tb_lay->addWidget(new QLabel("Solver:"));
     tb_lay->addWidget(solver_combo_);
@@ -521,17 +538,31 @@ void VisualizationSystem::on_solver_combo_changed(int index)
 
 namespace {
 
-void write_csv_log(const PerformanceMetrics &pm)
+void write_csv_log(const PerformanceMetrics &pm, const std::optional<MAPFMetrics> &ma_met)
 {
     std::string dir = std::string(PROJECT_ROOT) + "/log";
     std::filesystem::create_directories(dir);
-    std::string path = dir + "/results.csv";
-    bool exists = std::filesystem::exists(path);
-    std::ofstream ofs(path, std::ios::app);
-    if (!ofs) return;
-    if (!exists)
-        ofs << PerformanceMetrics::csv_header() << "\n";
-    ofs << pm.csv_line() << "\n";
+
+    if (pm.num_agents > 1 && ma_met.has_value())
+    {
+        std::string path = dir + "/results_ma.csv";
+        bool exists = std::filesystem::exists(path);
+        std::ofstream ofs(path, std::ios::app);
+        if (!ofs) return;
+        if (!exists)
+            ofs << MAPFMetrics::csv_header() << "\n";
+        ofs << ma_met->csv_line(pm) << "\n";
+    }
+    else
+    {
+        std::string path = dir + "/results_sa.csv";
+        bool exists = std::filesystem::exists(path);
+        std::ofstream ofs(path, std::ios::app);
+        if (!ofs) return;
+        if (!exists)
+            ofs << PerformanceMetrics::csv_header() << "\n";
+        ofs << pm.csv_line() << "\n";
+    }
 }
 
 } // anonymous namespace
@@ -552,6 +583,8 @@ void VisualizationSystem::solve_async()
     auto starts = app_.get_current_scene().first;
     auto ends   = app_.get_current_scene().second;
 
+    app_.set_timeout_ms(timeout_spin_->value() * 1000);
+
     auto *watcher = new QFutureWatcher<std::shared_ptr<MapData>>(this);
     connect(watcher, &QFutureWatcher<std::shared_ptr<MapData>>::finished, this, [this, watcher]() {
         auto result = watcher->result();
@@ -563,8 +596,13 @@ void VisualizationSystem::solve_async()
             solve_status_label_->setText("No path found");
         }
 
-        perf_buffer_.push_front(app_.get_performance_metrics());
-        write_csv_log(perf_buffer_.front());
+        {
+            PerfEntry entry;
+            entry.pm = app_.get_performance_metrics();
+            entry.ma_met = app_.get_last_ma_metrics();
+            perf_buffer_.push_front(std::move(entry));
+        }
+        write_csv_log(perf_buffer_.front().pm, perf_buffer_.front().ma_met);
         while (perf_buffer_.size() > 5)
             perf_buffer_.pop_back();
         update_perf_sidebar();
@@ -680,8 +718,9 @@ void VisualizationSystem::update_perf_sidebar()
         return;
     }
 
-    auto fmt_entry = [](const PerformanceMetrics &pm, int idx, int total) -> std::string
+    auto fmt_entry = [](const PerfEntry &entry, int idx, int total) -> std::string
     {
+        const auto &pm = entry.pm;
         std::string text;
         std::string label = idx == 0 ? " (most recent)" : "";
         text += "\n═══ Run #" + std::to_string(total - idx) + label + " ═══\n";
@@ -708,12 +747,35 @@ void VisualizationSystem::update_perf_sidebar()
         if (pm.optimal_path_length > 0)
             text += "  Optimal:   " + std::to_string(pm.optimal_path_length) + "\n";
 
-        if (pm.sum_of_costs > 0)
+        if (entry.ma_met.has_value())
         {
+            const auto &m = *entry.ma_met;
             sep();
             text += "Multi-Agent\n";
-            text += "  Sum of Costs: " + std::to_string(pm.sum_of_costs) + "\n";
-            text += "  Makespan:     " + std::to_string(pm.makespan) + "\n";
+            text += "  Sum of Costs:  " + std::to_string(pm.sum_of_costs) + "\n";
+            text += "  Makespan:      " + std::to_string(pm.makespan) + "\n";
+            text += "  Flow Time:     " + std::to_string(m.flow_time) + "\n";
+            text += "  Mean Path:     " + std::to_string(m.mean_path_length) + "\n";
+            text += "  Min Path:      " + std::to_string(m.min_path_length) + "\n";
+            text += "  Max Path:      " + std::to_string(m.max_path_length) + "\n";
+
+            sep();
+            text += "Joint Search\n";
+            text += "  Joint Exp'd:   " + std::to_string(m.joint_states_expanded) + "\n";
+            text += "  Joint Expl'd:  " + std::to_string(m.joint_states_explored) + "\n";
+            text += "  Solution Depth:" + std::to_string(m.solution_depth) + "\n";
+            text += "  Max Timestep:  " + std::to_string(m.max_timestep_reached) + "\n";
+
+            if (m.num_replan_iterations > 0)
+            {
+                sep();
+                text += "Replanning\n";
+                text += "  Iterations:    " + std::to_string(m.num_replan_iterations) + "\n";
+                text += "  Conflicts:     " + std::to_string(m.conflicts_detected) + "\n";
+                text += "  Joint Src:     " + std::to_string(m.num_joint_searches) + "\n";
+                text += "  Src Failures:  " + std::to_string(m.num_joint_search_failures) + "\n";
+                text += "  Final Set:     " + std::to_string(m.final_joint_set_size) + "\n";
+            }
         }
 
         return text;

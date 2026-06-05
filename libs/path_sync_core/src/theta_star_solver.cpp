@@ -121,7 +121,7 @@ std::map<Coordinate, Coordinate> Theta_Star_Solver::solve(const path_sync::MapDa
     {
         ps_coord current = open.top();
         open.pop();
-        if (performance_met.cancel_flag && *performance_met.cancel_flag) break;
+        if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out()) break;
         performance_met.num_of_nodes_expanded++;
 
         if (current == goal)

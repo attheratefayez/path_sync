@@ -161,7 +161,7 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
     {
         while (!U.empty())
         {
-            if (performance_met.cancel_flag && *performance_met.cancel_flag)
+            if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out())
                 break;
 
             Key k_old = top_key();
@@ -220,7 +220,7 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
 
     compute_shortest_path();
 
-    if (performance_met.cancel_flag && *performance_met.cancel_flag)
+    if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out())
     {
         auto end_time = std::chrono::high_resolution_clock::now();
         performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
@@ -242,7 +242,7 @@ std::map<Coordinate, Coordinate> DStar_Lite_Solver::solve(const path_sync::MapDa
 
     while (current != goal)
     {
-        if (performance_met.cancel_flag && *performance_met.cancel_flag)
+        if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out())
         {
             came_from.clear();
             break;

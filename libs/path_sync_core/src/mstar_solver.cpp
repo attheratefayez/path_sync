@@ -369,7 +369,10 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::joint_search(
         JointState current = open.top();
         open.pop();
 
-        if (performance_met.cancel_flag && *performance_met.cancel_flag) break;
+        if (performance_met.mapf_metrics)
+            performance_met.mapf_metrics->joint_states_expanded++;
+
+        if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out()) break;
 
         if (all_at_goal(current))
         {
@@ -429,6 +432,9 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::joint_search(
                 for (int j = 0; j < na; j++)
                     next_state.positions.push_back(action_lists[j][indices[j]]);
 
+                if (performance_met.mapf_metrics)
+                    performance_met.mapf_metrics->joint_states_explored++;
+
                 // Check validity
                 if (!joint_has_conflict(next_state) && !conflicts_with_fixed(next_state))
                 {
@@ -466,6 +472,9 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::joint_search(
                     next_state.positions.push_back(action_lists[j][idx]);
                 }
 
+                if (performance_met.mapf_metrics)
+                    performance_met.mapf_metrics->joint_states_explored++;
+
                 if (!joint_has_conflict(next_state) && !conflicts_with_fixed(next_state))
                 {
                     int tent_g = g_score[current] + 1;
@@ -484,6 +493,12 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::joint_search(
 
     if (!found)
         return std::nullopt;
+
+    if (performance_met.mapf_metrics)
+    {
+        performance_met.mapf_metrics->solution_depth = goal_state.timestep - from_timestep;
+        performance_met.mapf_metrics->max_timestep_reached = max_timestep;
+    }
 
     // Reconstruct joint paths
     std::vector<std::vector<ps_coord>> joint_paths(na);
@@ -555,7 +570,10 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::solve(
 
     while (true)
     {
-        if (performance_met.cancel_flag && *performance_met.cancel_flag)
+        if (performance_met.mapf_metrics)
+            performance_met.mapf_metrics->num_replan_iterations++;
+
+        if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out())
         {
             auto end_time = std::chrono::high_resolution_clock::now();
             performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
@@ -563,12 +581,17 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::solve(
         }
 
         auto conflict = find_first_conflict(paths);
+        if (performance_met.mapf_metrics && conflict.has_value())
+            performance_met.mapf_metrics->conflicts_detected++;
+
         if (!conflict.has_value())
         {
             // No conflicts found
             performance_met.success = true;
             performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::high_resolution_clock::now() - start_time);
+            if (performance_met.mapf_metrics)
+                performance_met.mapf_metrics->final_joint_set_size = joint_set.size();
             return paths;
         }
 
@@ -579,23 +602,36 @@ std::optional<std::vector<std::vector<Coordinate>>> MStar_Solver::solve(
         for (int ai : conflicted)
             joint_set.insert(ai);
 
-        // Run joint search for the joint set
         std::vector<int> joint_agents(joint_set.begin(), joint_set.end());
+
+        if (performance_met.mapf_metrics)
+            performance_met.mapf_metrics->num_joint_searches++;
+
         auto result = joint_search(map_data, joint_agents, starts, goals, paths, conflict_time, performance_met);
 
         if (!result.has_value())
         {
-            // Joint search failed - try with all agents
+            if (performance_met.mapf_metrics)
+                performance_met.mapf_metrics->num_joint_search_failures++;
+
             std::vector<int> all_agents(n);
             for (int i = 0; i < n; i++) all_agents[i] = i;
+
+            if (performance_met.mapf_metrics)
+                performance_met.mapf_metrics->num_joint_searches++;
+
             auto result2 = joint_search(map_data, all_agents, starts, goals, paths, 0, performance_met);
             performance_met.success = result2.has_value();
             performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::high_resolution_clock::now() - start_time);
+            if (performance_met.mapf_metrics)
+                performance_met.mapf_metrics->final_joint_set_size = joint_set.size();
             return result2;
         }
 
         paths = result.value();
+        if (performance_met.mapf_metrics)
+            performance_met.mapf_metrics->conflicts_resolved++;
         // Re-pad to same length
         int max_len = 0;
         for (const auto &p : paths)

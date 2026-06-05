@@ -2,6 +2,7 @@
 #define __PATH_SYNC_PATH_FINDER_HPP__
 
 #include <atomic>
+#include <optional>
 #include <variant>
 
 #include "path_sync_core/performance_mat.hpp"
@@ -28,6 +29,9 @@ public:
     void reset_cancel() { cancel_flag_.store(false); }
     bool is_cancelled() const { return cancel_flag_.load(); }
 
+    void set_timeout_ms(int ms) { timeout_ms_ = ms; }
+    int get_timeout_ms() const { return timeout_ms_; }
+
     [[nodiscard]] std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> find_path(
         const path_sync::MapData &map_data, const std::vector<Coordinate> &start_points,
         const std::vector<Coordinate> &end_points);
@@ -51,6 +55,11 @@ public:
         return performance_met_;
     }
 
+    const std::optional<MAPFMetrics>& get_last_ma_metrics() const
+    {
+        return last_ma_metrics_;
+    }
+
     void set_scene_id(int id)
     {
         performance_met_.scene_id = id;
@@ -71,6 +80,8 @@ public:
 private:
     std::atomic<bool> cancel_flag_{false};
     PerformanceMetrics performance_met_;
+    std::optional<MAPFMetrics> last_ma_metrics_;
+    int timeout_ms_ = 30000;
 
     ISolver *current_sa_solver_;
     IMASolver *current_ma_solver_;

@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 
@@ -158,6 +159,18 @@ std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> Path
     performance_met_.map_name = map_data.get_map_info().map_name;
     performance_met_.num_agents = static_cast<int>(start_points.size());
     performance_met_.timestamp = std::time(nullptr);
+    last_ma_metrics_.reset();
+
+    if (timeout_ms_ > 0)
+    {
+        performance_met_.deadline = std::chrono::steady_clock::now()
+                                  + std::chrono::milliseconds(timeout_ms_);
+        performance_met_.has_timeout = true;
+    }
+    else
+    {
+        performance_met_.has_timeout = false;
+    }
 
     if (start_points.size() != end_points.size())
     {
@@ -207,7 +220,13 @@ std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> Path
     }
 
     performance_met_.solver_name = current_ma_solver_->get_solver_name();
+
+    MAPFMetrics mapf_met;
+    performance_met_.mapf_metrics = &mapf_met;
+
     auto paths = current_ma_solver_->solve(map_data, start_points, end_points, performance_met_);
+
+    performance_met_.mapf_metrics = nullptr;
 
     if (!paths.has_value())
     {
@@ -221,14 +240,22 @@ std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> Path
 
     std::size_t soc = 0;
     std::size_t makespan = 0;
+    std::vector<std::size_t> path_lengths;
+    path_lengths.reserve(result.size());
     for (const auto &agent_path : result)
     {
-        soc += agent_path.size() - 1;
-        if (agent_path.size() > makespan)
-            makespan = agent_path.size() - 1;
+        std::size_t len = agent_path.size() - 1;
+        soc += len;
+        path_lengths.push_back(len);
+        if (len > makespan)
+            makespan = len;
     }
     performance_met_.sum_of_costs = soc;
     performance_met_.makespan = makespan;
+
+    mapf_met.individual_path_lengths = std::move(path_lengths);
+    mapf_met.compute_aggregates();
+    last_ma_metrics_ = mapf_met;
 
     return result;
 }

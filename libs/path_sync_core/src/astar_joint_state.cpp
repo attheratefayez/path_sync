@@ -39,18 +39,27 @@ std::optional<std::vector<std::vector<path_sync::Coordinate>>> mapf_astar::solve
 
     std::map<mapf_type::JointState, int> closed_set;
 
+    int max_timestep = 200;
+
     while (!open_set.empty())
     {
         mapf_type::NodePtr current = open_set.top();
         open_set.pop();
-        if (performance_met.cancel_flag && *performance_met.cancel_flag) break;
+        if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out()) break;
         performance_met.num_of_nodes_expanded++;
+        if (performance_met.mapf_metrics)
+            performance_met.mapf_metrics->joint_states_expanded++;
 
         if (current->_state.positions == goals)
         {
             auto end_time = std::chrono::high_resolution_clock::now();
             performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
             performance_met.success = true;
+            if (performance_met.mapf_metrics)
+            {
+                performance_met.mapf_metrics->solution_depth = static_cast<int>(current->_g_score);
+                performance_met.mapf_metrics->max_timestep_reached = max_timestep;
+            }
             return util_funcs::extract_paths(current);
         }
 
@@ -86,6 +95,8 @@ std::optional<std::vector<std::vector<path_sync::Coordinate>>> mapf_astar::solve
             if (open_set.size() > performance_met.peak_open_size)
                 performance_met.peak_open_size = open_set.size();
             performance_met.num_of_nodes_explored++;
+            if (performance_met.mapf_metrics)
+                performance_met.mapf_metrics->joint_states_explored++;
         }
     }
 

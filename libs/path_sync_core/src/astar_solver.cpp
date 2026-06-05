@@ -78,7 +78,7 @@ std::map<Coordinate, Coordinate> Astar_Solver::solve(const path_sync::MapData &m
     {
         std::pair<Coordinate, Coordinate> visiting = priority_queue.top();
         priority_queue.pop();
-        if (performance_met.cancel_flag && *performance_met.cancel_flag) break;
+        if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out()) break;
         performance_met.num_of_nodes_expanded++;
 
         std::vector<Coordinate> neighbors = find_neighbors(map_data, visiting.first);

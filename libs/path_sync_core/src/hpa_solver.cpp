@@ -58,7 +58,7 @@ std::vector<ps_coord> local_a_star(const path_sync::MapData &map, ps_coord start
         ps_coord current = open.top();
         open.pop();
 
-        if (performance_met.cancel_flag && *performance_met.cancel_flag)
+        if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out())
             return {};
 
         if (current == goal)
@@ -234,7 +234,7 @@ std::vector<std::vector<int>> HPA_Solver::build_abstract_graph(
 
     for (auto &[cid, ids] : cluster_nodes)
     {
-        if (performance_met.cancel_flag && *performance_met.cancel_flag)
+        if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out())
             break;
 
         for (size_t i = 0; i < ids.size(); i++)
@@ -269,7 +269,7 @@ std::vector<Coordinate> HPA_Solver::refine_path(
     std::set<ps_coord> blocked;
     for (size_t i = 0; i + 1 < abstract_path.size(); i++)
     {
-        if (performance_met.cancel_flag && *performance_met.cancel_flag)
+        if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out())
             return {};
 
         int from_id = abstract_path[i];
@@ -353,7 +353,7 @@ std::map<Coordinate, Coordinate> HPA_Solver::solve(const path_sync::MapData &map
 
     for (int i = 0; i < static_cast<int>(abstract_nodes.size()) - 2; i++)
     {
-        if (performance_met.cancel_flag && *performance_met.cancel_flag)
+        if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out())
             break;
 
         if (abstract_nodes[i].cluster_id == sc)
@@ -403,7 +403,7 @@ std::map<Coordinate, Coordinate> HPA_Solver::solve(const path_sync::MapData &map
 
     while (!abstract_open.empty() && !found)
     {
-        if (performance_met.cancel_flag && *performance_met.cancel_flag) break;
+        if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out()) break;
 
         auto [fg, cur] = abstract_open.top();
         abstract_open.pop();
