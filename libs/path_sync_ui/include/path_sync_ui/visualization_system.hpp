@@ -53,6 +53,7 @@ private:
     QLabel *status_label_;
     QLabel *solve_status_label_;
     QTimer *scene_timer_;
+    double scene_timer_interval_ = 350.0;
     bool scene_dir_forward_ = true;
     bool solving_ = false;
     std::stringstream help_stream_;

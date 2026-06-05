@@ -378,16 +378,21 @@ void VisualizationSystem::setup_ui()
     connect(reset_btn, &QPushButton::clicked, this, &VisualizationSystem::on_reset_clicked);
     connect(prev_btn,  &QPushButton::pressed, this, [this]() {
         scene_dir_forward_ = false;
+        scene_timer_interval_ = 350.0;
+        scene_timer_->setInterval(static_cast<int>(scene_timer_interval_));
         if (on_prev_scene()) scene_timer_->start();
     });
     connect(next_btn,  &QPushButton::pressed, this, [this]() {
         scene_dir_forward_ = true;
+        scene_timer_interval_ = 350.0;
+        scene_timer_->setInterval(static_cast<int>(scene_timer_interval_));
         if (on_next_scene()) scene_timer_->start();
     });
     connect(prev_btn,  &QPushButton::released, this, [this]() { scene_timer_->stop(); });
     connect(next_btn,  &QPushButton::released, this, [this]() { scene_timer_->stop(); });
-    scene_timer_->setInterval(180);
     connect(scene_timer_, &QTimer::timeout, this, [this]() {
+        scene_timer_interval_ = std::max(scene_timer_interval_ * 0.85, 70.0);
+        scene_timer_->setInterval(static_cast<int>(scene_timer_interval_));
         bool ok = scene_dir_forward_ ? on_next_scene() : on_prev_scene();
         if (!ok) scene_timer_->stop();
     });
