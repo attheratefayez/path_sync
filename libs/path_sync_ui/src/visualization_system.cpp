@@ -1,7 +1,5 @@
 #include "path_sync_ui/visualization_system.hpp"
 
-#include <QDialog>
-#include <QDialogButtonBox>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QPlainTextEdit>
@@ -312,6 +310,8 @@ VisualizationSystem::VisualizationSystem(PathSyncApp& app, QWidget *parent)
     , solver_combo_(nullptr)
     , status_label_(nullptr)
     , solve_status_label_(nullptr)
+    , sidebar_(nullptr)
+    , perf_text_(nullptr)
     , scene_timer_(new QTimer(this))
 {
     setWindowTitle("Path Sync");
@@ -413,6 +413,14 @@ void VisualizationSystem::setup_ui()
     tb_lay->addSpacing(12);
     tb_lay->addWidget(new QLabel("Solver:"));
     tb_lay->addWidget(solver_combo_);
+    perf_btn_ = new QPushButton("Perf ▸");
+    perf_btn_->setCheckable(true);
+    perf_btn_->setChecked(false);
+    connect(perf_btn_, &QPushButton::toggled, this, [this](bool visible) {
+        sidebar_->setVisible(visible);
+        perf_btn_->setText(visible ? "Perf ▾" : "Perf ▸");
+    });
+    tb_lay->addWidget(perf_btn_);
     tb_lay->addStretch();
 
     root->addWidget(tb);
@@ -423,12 +431,38 @@ void VisualizationSystem::setup_ui()
     vp_container->setStyleSheet("QFrame { background: #303030; }");
     auto *vp_lay = new QHBoxLayout(vp_container);
     vp_lay->setContentsMargins(0, 0, 0, 0);
-    vp_lay->setAlignment(Qt::AlignCenter);
 
     grid_widget_ = new GridWidget(app_, this);
     grid_widget_->setFixedSize(1600, 800);
     grid_widget_->set_solve_callback([this]() { solve_async(); });
-    vp_lay->addWidget(grid_widget_);
+
+    auto *vp_center = new QHBoxLayout;
+    vp_center->addStretch();
+    vp_center->addWidget(grid_widget_);
+    vp_center->addStretch();
+    vp_lay->addLayout(vp_center);
+
+    // ── collapsible performance sidebar ──────────────────────────────────
+    sidebar_ = new QWidget;
+    sidebar_->setVisible(false);
+    sidebar_->setFixedWidth(320);
+    sidebar_->setStyleSheet("QWidget { background: #252525; }");
+    auto *sb_side_lay = new QVBoxLayout(sidebar_);
+    sb_side_lay->setContentsMargins(6, 6, 6, 6);
+
+    auto *perf_title = new QLabel("Performance");
+    perf_title->setStyleSheet("QLabel { color: #0a0; font-weight: bold;"
+                              "  font-size: 13px; padding-bottom: 4px; }");
+    sb_side_lay->addWidget(perf_title);
+
+    perf_text_ = new QPlainTextEdit;
+    perf_text_->setReadOnly(true);
+    perf_text_->setStyleSheet("QPlainTextEdit { background: #1e1e1e; color: #ccc;"
+                              "  border: 1px solid #444; padding: 6px;"
+                              "  font-family: monospace; font-size: 12px; }");
+    sb_side_lay->addWidget(perf_text_, 1);
+
+    vp_lay->addWidget(sidebar_);
 
     root->addWidget(vp_container, 1);
 
@@ -546,7 +580,10 @@ void VisualizationSystem::solve_async()
             app_.set_map_data(std::move(result));
             grid_widget_->sync_and_update();
             solve_status_label_->setText("Solved");
-            show_performance_dialog();
+            update_perf_sidebar();
+            sidebar_->setVisible(true);
+            perf_btn_->setChecked(true);
+            perf_btn_->setText("Perf ▾");
         } else {
             solve_status_label_->setText("No path found");
         }
@@ -610,35 +647,40 @@ void VisualizationSystem::focus_grid()
     grid_widget_->setFocus();
 }
 
-void VisualizationSystem::show_performance_dialog()
+void VisualizationSystem::update_perf_sidebar()
 {
-    auto *dialog = new QDialog(this);
-    dialog->setWindowTitle("Performance Metrics");
-    dialog->setAttribute(Qt::WA_DeleteOnClose);
-    dialog->setStyleSheet("QDialog { background: #2b2b2b; }");
+    auto pm = app_.get_performance_metrics();
 
-    auto *lay = new QVBoxLayout(dialog);
-    lay->setContentsMargins(12, 12, 12, 8);
+    std::string text;
+    text += "Solver:  " + pm.solver_name + "\n";
+    text += "Map:     " + pm.map_name + "\n";
+    text += "Status:  " + std::string(pm.success ? "OK" : "FAIL") + "\n";
+    text += "Runtime: " + std::to_string(pm.runtime.count()) + " us\n";
 
-    auto *text = new QPlainTextEdit(dialog);
-    text->setReadOnly(true);
-    text->setStyleSheet("QPlainTextEdit { background: #1e1e1e; color: #0f0;"
-                        "  border: 1px solid #444; padding: 8px;"
-                        "  font-family: monospace; font-size: 12px; }");
-    text->setPlainText(QString::fromStdString(app_.get_performance_data().str()));
-    text->setFixedSize(520, 200);
-    lay->addWidget(text);
+    auto sep = [&]() { text += "──────────────────────────\n"; };
 
-    auto *bbox = new QDialogButtonBox(QDialogButtonBox::Close, dialog);
-    bbox->setStyleSheet("QPushButton { color: #eee; background: #3c3c3c;"
-                        "  border: 1px solid #555; padding: 4px 16px;"
-                        "  border-radius: 3px; }"
-                        "QPushButton:hover { background: #4a4a4a; }");
-    connect(bbox, &QDialogButtonBox::rejected, dialog, &QDialog::close);
-    lay->addWidget(bbox);
+    sep();
+    text += "Search Effort\n";
+    text += "  Explored:  " + std::to_string(pm.num_of_nodes_explored) + "\n";
+    text += "  Expanded:  " + std::to_string(pm.num_of_nodes_expanded) + "\n";
+    text += "  Reopened:  " + std::to_string(pm.num_of_nodes_reopened) + "\n";
+    text += "  Peak Open: " + std::to_string(pm.peak_open_size) + "\n";
 
-    dialog->adjustSize();
-    dialog->show();
+    sep();
+    text += "Path Quality\n";
+    text += "  Length:    " + std::to_string(pm.path_length) + "\n";
+    if (pm.optimal_path_length > 0)
+        text += "  Optimal:   " + std::to_string(pm.optimal_path_length) + "\n";
+
+    if (pm.sum_of_costs > 0)
+    {
+        sep();
+        text += "Multi-Agent\n";
+        text += "  Sum of Costs: " + std::to_string(pm.sum_of_costs) + "\n";
+        text += "  Makespan:     " + std::to_string(pm.makespan) + "\n";
+    }
+
+    perf_text_->setPlainText(QString::fromStdString(text));
 }
 
 #include "visualization_system.moc"
