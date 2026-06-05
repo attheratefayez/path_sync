@@ -70,6 +70,18 @@ public:
         performance_met_.scene_id = id;
     }
 
+    bool is_sa_solver_optimal(std::size_t index) const
+    {
+        if (index >= sa_solvers_.size()) return false;
+        return sa_solvers_[index]->is_optimal();
+    }
+
+    bool is_ma_solver_optimal(std::size_t index) const
+    {
+        if (index >= ma_solvers_.size()) return false;
+        return ma_solvers_[index]->is_optimal();
+    }
+
 private:
     std::atomic<bool> cancel_flag_{false};
     PerformanceMetrics performance_met_;

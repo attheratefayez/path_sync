@@ -24,6 +24,7 @@ class Astar_Joint_State_Solver : public IMASolver
 
   public:
     std::string_view get_solver_name() const override;
+    bool is_optimal() const override { return true; }
 
     std::optional<std::vector<std::vector<Coordinate>>> solve(const path_sync::MapData &map_data, std::vector<Coordinate> starts,
                                            std::vector<Coordinate> goals,

@@ -50,6 +50,7 @@ class MStar_Solver : public IMASolver
 
   public:
     std::string_view get_solver_name() const override;
+    bool is_optimal() const override { return false; }
 
     std::optional<std::vector<std::vector<Coordinate>>> solve(
         const MapData &map_data,

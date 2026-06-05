@@ -24,6 +24,7 @@ class Astar_Solver : public ISolver
 
   public:
     std::string_view get_solver_name() const override;
+    bool is_optimal() const override { return true; }
 
     std::map<Coordinate, Coordinate> solve(const path_sync::MapData &map_data, Coordinate start, Coordinate goal,
                                            PerformanceMetrics &performance_met) override;

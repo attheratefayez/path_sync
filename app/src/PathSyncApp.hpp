@@ -54,6 +54,7 @@ class PathSyncApp
     void reset_grid();
 
     std::string_view get_current_solver_name() const;
+    bool is_solver_optimal(std::size_t index, bool multi_agent) const;
     int get_scene_index() const;
     int get_total_scenes() const;
     std::string get_current_map_name() const;

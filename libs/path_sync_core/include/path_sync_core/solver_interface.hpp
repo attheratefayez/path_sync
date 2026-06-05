@@ -17,6 +17,7 @@ class ISolver
 {
   public:
     virtual std::string_view get_solver_name() const = 0;
+    virtual bool is_optimal() const = 0;
 
     virtual std::map<path_sync::Coordinate, path_sync::Coordinate> solve(
         const path_sync::MapData &map_data, path_sync::Coordinate start, path_sync::Coordinate goal,
@@ -32,6 +33,7 @@ class IMASolver
 {
   public:
     virtual std::string_view get_solver_name() const = 0;
+    virtual bool is_optimal() const = 0;
 
     // TODO: chage signature for solve later
     virtual std::optional<std::vector<std::vector<path_sync::Coordinate>>> solve(

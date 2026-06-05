@@ -243,6 +243,13 @@ std::string_view PathSyncApp::get_current_solver_name() const
     return path_finder_.get_current_solver_name();
 }
 
+bool PathSyncApp::is_solver_optimal(std::size_t index, bool multi_agent) const
+{
+    if (multi_agent)
+        return path_finder_.is_ma_solver_optimal(index);
+    return path_finder_.is_sa_solver_optimal(index);
+}
+
 int PathSyncApp::get_scene_index() const
 {
     return map_manager_.get_current_scene_index();
