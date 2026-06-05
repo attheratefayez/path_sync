@@ -150,4 +150,4 @@ The [`plugins/demo_solver/`](plugins/demo_solver/) directory contains a complete
 
 ## License
 
-MIT
+GNU General Public License v3.0
