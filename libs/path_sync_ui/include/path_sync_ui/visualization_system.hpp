@@ -61,6 +61,7 @@ private:
 
     void setup_ui();
     void populate_solver_combo();
+    void show_performance_dialog();
 };
 
 } // namespace path_sync

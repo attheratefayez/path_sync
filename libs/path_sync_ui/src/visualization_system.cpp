@@ -1,7 +1,10 @@
 #include "path_sync_ui/visualization_system.hpp"
 
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QPlainTextEdit>
 #include <QVBoxLayout>
 #include <QPainter>
 #include <QFont>
@@ -525,6 +528,7 @@ void VisualizationSystem::solve_async()
             app_.set_map_data(std::move(result));
             grid_widget_->sync_and_update();
             status_label_->setText("Solved");
+            show_performance_dialog();
         } else {
             status_label_->setText("No path found");
         }
@@ -585,6 +589,37 @@ void VisualizationSystem::update_status()
 void VisualizationSystem::focus_grid()
 {
     grid_widget_->setFocus();
+}
+
+void VisualizationSystem::show_performance_dialog()
+{
+    auto *dialog = new QDialog(this);
+    dialog->setWindowTitle("Performance Metrics");
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->setStyleSheet("QDialog { background: #2b2b2b; }");
+
+    auto *lay = new QVBoxLayout(dialog);
+    lay->setContentsMargins(12, 12, 12, 8);
+
+    auto *text = new QPlainTextEdit(dialog);
+    text->setReadOnly(true);
+    text->setStyleSheet("QPlainTextEdit { background: #1e1e1e; color: #0f0;"
+                        "  border: 1px solid #444; padding: 8px;"
+                        "  font-family: monospace; font-size: 12px; }");
+    text->setPlainText(QString::fromStdString(app_.get_performance_data().str()));
+    text->setFixedSize(520, 200);
+    lay->addWidget(text);
+
+    auto *bbox = new QDialogButtonBox(QDialogButtonBox::Close, dialog);
+    bbox->setStyleSheet("QPushButton { color: #eee; background: #3c3c3c;"
+                        "  border: 1px solid #555; padding: 4px 16px;"
+                        "  border-radius: 3px; }"
+                        "QPushButton:hover { background: #4a4a4a; }");
+    connect(bbox, &QDialogButtonBox::rejected, dialog, &QDialog::close);
+    lay->addWidget(bbox);
+
+    dialog->adjustSize();
+    dialog->show();
 }
 
 #include "visualization_system.moc"
