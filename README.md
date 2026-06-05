@@ -43,6 +43,43 @@ Run tests:
 ./build/path_sync_test
 ```
 
+## Architecture
+
+The application is split into three layers:
+
+```
+┌──────────────────────────────────────────────┐
+│  app/   (PathSyncApp, main)                   │
+│  Orchestrates core + UI, connects signals     │
+├──────────────────────────────────────────────┤
+│  libs/path_sync_ui/   (Qt6 visualization)     │
+│  Grid widget, toolbar, sidebar, scene mgmt    │
+├──────────────────────────────────────────────┤
+│  libs/path_sync_core/   (algorithms, data)    │
+│  Solvers, MapManager, PathFinder,             │
+│  PluginLoader, PerformanceMetrics             │
+└──────────────────────────────────────────────┘
+```
+
+### Data flow
+
+1. **Map loading** — `MapManager` parses `.map` + `.map.scen` files into `MapData` (grid of `CellType`) and scenes.
+2. **Solving** — User clicks **Solve** → `PathFinder::find_path()` → selects the current solver (built-in or plugin) → runs the algorithm → returns a path or paths.
+3. **Plugin discovery** — On construction, `PathFinder` calls `PluginLoader::load_plugins("plugins/")` which `dlopen`s each `.so`, queries its `extern "C"` symbols, and adds it to the solver list. All solvers (built-in and external) appear in the same UI dropdown.
+
+```
+Map files → MapData  →  Grid (visual)
+                  ↘
+     PathFinder ──→ Solver (ISolver / IMASolver)
+       │                 built-in or plugin .so
+       │                 │
+       ▼                 ▼
+  PerformanceMetrics   Path result → Grid overlay
+       │
+       ▼
+    Sidebar (last 5 runs)
+```
+
 ## Project Structure
 
 ```
