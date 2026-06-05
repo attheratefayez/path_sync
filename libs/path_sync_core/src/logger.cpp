@@ -1,4 +1,3 @@
-#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -47,7 +46,6 @@ void Logger::error(const char *msg, std::shared_ptr<std::ofstream> log_file)
     if(log_file)
         *log_file << ss.str();
 
-    exit(0);
 }
 
 } // namespace psync

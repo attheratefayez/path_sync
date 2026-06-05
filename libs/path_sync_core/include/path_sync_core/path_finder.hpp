@@ -1,7 +1,6 @@
 #ifndef __PATH_SYNC_PATH_FINDER_HPP__
 #define __PATH_SYNC_PATH_FINDER_HPP__
 
-#include <unistd.h>
 #include <variant>
 
 #include "path_sync_core/performance_mat.hpp"
