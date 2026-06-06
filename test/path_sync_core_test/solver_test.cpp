@@ -524,17 +524,28 @@ TEST_F(SolverTest, PathFinderSelectSolverCombined)
     ps::PathFinder finder;
     auto sa_names = finder.get_sa_solver_names();
     auto ma_names = finder.get_ma_solver_names();
+    auto mo_names = finder.get_mo_solver_names();
     auto all = finder.get_all_solver_names();
 
-    EXPECT_EQ(all.size(), sa_names.size() + ma_names.size());
+    EXPECT_EQ(all.size(), sa_names.size() + ma_names.size() + mo_names.size());
 
     // Select first SA solver via combined index
     finder.select_solver_by_index(0);
     EXPECT_EQ(finder.get_current_solver_name(), sa_names[0]);
 
     // Select first MA solver via combined index
-    finder.select_solver_by_index(sa_names.size());
-    EXPECT_EQ(finder.get_current_solver_name(), ma_names[0]);
+    if (!ma_names.empty())
+    {
+        finder.select_solver_by_index(sa_names.size());
+        EXPECT_EQ(finder.get_current_solver_name(), ma_names[0]);
+    }
+
+    // Select first MO solver via combined index
+    if (!mo_names.empty())
+    {
+        finder.select_solver_by_index(sa_names.size() + ma_names.size());
+        EXPECT_EQ(finder.get_current_solver_name(), mo_names[0]);
+    }
 }
 
 TEST_F(SolverTest, PathFinderPerformanceMetricsPopulated)
