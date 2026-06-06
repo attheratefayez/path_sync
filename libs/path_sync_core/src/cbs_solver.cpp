@@ -186,6 +186,170 @@ std::optional<std::vector<Coordinate>> CBS_Solver::low_level_search(
     return std::nullopt;
 }
 
+// ── Low-level EPEA* with vertex/edge constraints ────────────────────────
+
+std::optional<std::vector<Coordinate>> CBS_Solver::low_level_search_epea(
+    const MapData &map, Coordinate start, Coordinate goal,
+    const std::vector<CBSConstraint> &constraints, int agent_id) const
+{
+    std::unordered_map<int, std::vector<std::pair<int, int>>> vert_con;
+    std::unordered_map<int, std::vector<std::tuple<int, int, int, int>>> edge_con;
+
+    for (const auto &c : constraints)
+    {
+        if (c.agent != agent_id && c.agent != -1)
+            continue;
+        if (c.is_vertex)
+            vert_con[c.timestep].emplace_back(c.x, c.y);
+        else
+            edge_con[c.timestep].emplace_back(c.x, c.y, c.x2, c.y2);
+    }
+
+    auto has_vertex = [&](int x, int y, int t) -> bool {
+        auto it = vert_con.find(t);
+        if (it == vert_con.end()) return false;
+        for (auto &p : it->second)
+            if (p.first == x && p.second == y) return true;
+        return false;
+    };
+
+    auto has_edge = [&](int x1, int y1, int x2, int y2, int t) -> bool {
+        auto it = edge_con.find(t);
+        if (it == edge_con.end()) return false;
+        for (auto &[ex1, ey1, ex2, ey2] : it->second)
+            if (ex1 == x1 && ey1 == y1 && ex2 == x2 && ey2 == y2) return true;
+        return false;
+    };
+
+    if (has_vertex(start.first, start.second, 0))
+        return std::nullopt;
+
+    static const int dx[] = {0, 1, 0, -1};
+    static const int dy[] = {-1, 0, 1, 0};
+    const int NUM_OP = 5;
+
+    struct EPEAEntry
+    {
+        int x, y, t, f, op_idx;
+    };
+
+    auto cmp = [](const EPEAEntry &a, const EPEAEntry &b) {
+        if (a.f != b.f) return a.f > b.f;
+        if (a.op_idx != b.op_idx) return a.op_idx > b.op_idx;
+        if (a.t != b.t) return a.t > b.t;
+        if (a.x != b.x) return a.x > b.x;
+        return a.y > b.y;
+    };
+
+    std::priority_queue<EPEAEntry, std::vector<EPEAEntry>, decltype(cmp)> open(cmp);
+    std::unordered_map<uint64_t, int> g_score;
+    std::unordered_map<uint64_t, std::pair<int, int>> came_from;
+    std::unordered_map<uint64_t, int> op_index;
+
+    uint64_t start_key = state_key(start.first, start.second, 0);
+    g_score[start_key] = 0;
+    op_index[start_key] = 0;
+    open.push({start.first, start.second, 0, manhattan(start, goal), 0});
+
+    while (!open.empty())
+    {
+        EPEAEntry cur = open.top();
+        open.pop();
+
+        uint64_t cur_key = state_key(cur.x, cur.y, cur.t);
+        auto git = g_score.find(cur_key);
+        if (git == g_score.end() || cur.t > git->second)
+            continue;
+
+        if (cur.t > 0 && has_vertex(cur.x, cur.y, cur.t)
+            && !(cur.x == goal.first && cur.y == goal.second))
+            continue;
+
+        if (cur.x == goal.first && cur.y == goal.second)
+        {
+            std::vector<Coordinate> path;
+            int cx = cur.x, cy = cur.y, ct = cur.t;
+            while (ct >= 0)
+            {
+                path.emplace_back(cx, cy);
+                uint64_t ck = state_key(cx, cy, ct);
+                auto it = came_from.find(ck);
+                if (it == came_from.end()) break;
+                cx = it->second.first;
+                cy = it->second.second;
+                ct--;
+            }
+            std::reverse(path.begin(), path.end());
+            return path;
+        }
+
+        if (cur.t >= MAX_TIMESTEP)
+            continue;
+
+        int &cur_op_idx = op_index[cur_key];
+        if (cur.op_idx > 0)
+            cur_op_idx = cur.op_idx;
+
+        if (cur_op_idx < NUM_OP)
+        {
+            bool is_wait = (cur_op_idx == 4);
+            int nx = cur.x, ny = cur.y;
+
+            if (!is_wait)
+            {
+                nx = cur.x + dx[cur_op_idx];
+                ny = cur.y + dy[cur_op_idx];
+            }
+
+            int nt = cur.t + 1;
+            bool valid = false;
+
+            if (is_wait)
+            {
+                valid = (nx >= 0 && nx < map.get_width()
+                      && ny >= 0 && ny < map.get_height());
+                if (valid)
+                    valid = !has_vertex(nx, ny, nt)
+                         || (nx == goal.first && ny == goal.second);
+            }
+            else
+            {
+                valid = (nx >= 0 && nx < map.get_width()
+                      && ny >= 0 && ny < map.get_height()
+                      && map.get_cell_type({nx, ny}) != CellType::WALL);
+                if (valid)
+                    valid = !has_vertex(nx, ny, nt);
+                if (valid)
+                    valid = !has_edge(cur.x, cur.y, nx, ny, nt);
+            }
+
+            if (valid)
+            {
+                uint64_t nk = state_key(nx, ny, nt);
+                auto it = g_score.find(nk);
+                if (it == g_score.end() || nt < it->second)
+                {
+                    g_score[nk] = nt;
+                    came_from[nk] = {cur.x, cur.y};
+                    if (op_index.find(nk) == op_index.end())
+                        op_index[nk] = 0;
+                    open.push({nx, ny, nt, nt + manhattan({nx, ny}, goal), 0});
+                }
+            }
+
+            cur_op_idx++;
+
+            if (cur_op_idx < NUM_OP)
+            {
+                int f_val = cur.t + manhattan({cur.x, cur.y}, goal);
+                open.push({cur.x, cur.y, cur.t, f_val, cur_op_idx});
+            }
+        }
+    }
+
+    return std::nullopt;
+}
+
 // ── Conflict detection ──────────────────────────────────────────────────
 
 std::optional<CBSConflict> CBS_Solver::find_first_conflict(
@@ -285,7 +449,9 @@ std::optional<std::vector<std::vector<Coordinate>>> CBS_Solver::solve(
     std::vector<std::vector<Coordinate>> initial_paths(n_agents);
     for (int i = 0; i < n_agents; i++)
     {
-        auto path = low_level_search(map_data, starts[i], goals[i], {}, i);
+        auto path = use_epea_
+            ? low_level_search_epea(map_data, starts[i], goals[i], {}, i)
+            : low_level_search(map_data, starts[i], goals[i], {}, i);
         if (!path)
         {
             performance_met.success = false;
@@ -410,8 +576,11 @@ std::optional<std::vector<std::vector<Coordinate>>> CBS_Solver::solve(
             child->constraints.push_back(con);
 
             child->paths = N->paths;
-            auto new_path = low_level_search(map_data, starts[agent], goals[agent],
-                                              child->constraints, agent);
+            auto new_path = use_epea_
+                ? low_level_search_epea(map_data, starts[agent], goals[agent],
+                                        child->constraints, agent)
+                : low_level_search(map_data, starts[agent], goals[agent],
+                                   child->constraints, agent);
             if (!new_path) return std::shared_ptr<CBSNode>(nullptr);
             child->paths[agent] = std::move(*new_path);
             child->cost = compute_soc(child->paths);
@@ -427,9 +596,13 @@ std::optional<std::vector<std::vector<Coordinate>>> CBS_Solver::solve(
             test.agent = conflict->agent_a;
             test.x = conflict->x; test.y = conflict->y;
             test.timestep = conflict->timestep;
-            auto test_path = low_level_search(map_data, starts[conflict->agent_a],
-                                               goals[conflict->agent_a], {test},
-                                               conflict->agent_a);
+            auto test_path = use_epea_
+                ? low_level_search_epea(map_data, starts[conflict->agent_a],
+                                        goals[conflict->agent_a], {test},
+                                        conflict->agent_a)
+                : low_level_search(map_data, starts[conflict->agent_a],
+                                   goals[conflict->agent_a], {test},
+                                   conflict->agent_a);
             int orig = static_cast<int>(N->paths[conflict->agent_a].size()) - 1;
             bool a_affected = !test_path.has_value()
                               || (static_cast<int>(test_path->size()) - 1 > orig);

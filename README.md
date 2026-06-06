@@ -20,6 +20,8 @@ A C++20 pathfinding visualization tool for single-agent and multi-agent pathfind
 - **ICBS** (optimal) — Improved CBS with conflict classification (cardinal/semi/non-cardinal) and bypass
 - **CBSH** (optimal) — CBS with Conflict Graph heuristic (minimum vertex cover via brute force)
 
+Low-level search for CBS-family solvers is **space-time A\*** by default, with **EPEA\*** (Enhanced Partial Expansion A\*) as an alternative — trades slightly higher per-node cost for a smaller open list. Select with `solver.set_use_epea(true)`.
+
 ## Dependencies
 
 | Dependency | Version | Install |

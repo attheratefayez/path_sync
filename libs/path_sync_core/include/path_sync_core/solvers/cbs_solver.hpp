@@ -68,6 +68,7 @@ public:
 
     void set_use_icbs(bool v) { use_icbs_ = v; }
     void set_use_cbsh(bool v) { use_cbsh_ = v; }
+    void set_use_epea(bool v) { use_epea_ = v; }
     void set_solver_name(const std::string &name) { solver_name_ = name; }
 
     std::optional<std::vector<std::vector<Coordinate>>> solve(
@@ -82,6 +83,12 @@ private:
 
     // Core CBS
     std::optional<std::vector<Coordinate>> low_level_search(
+        const MapData &map,
+        Coordinate start, Coordinate goal,
+        const std::vector<CBSConstraint> &constraints,
+        int agent_id) const;
+
+    std::optional<std::vector<Coordinate>> low_level_search_epea(
         const MapData &map,
         Coordinate start, Coordinate goal,
         const std::vector<CBSConstraint> &constraints,
@@ -120,6 +127,7 @@ private:
 
     bool use_icbs_ = false;
     bool use_cbsh_ = false;
+    bool use_epea_ = false;
     std::string solver_name_ = "CBS_Solver";
     static constexpr int MAX_TIMESTEP = 500;
 };
