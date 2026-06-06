@@ -14,7 +14,7 @@ float Utils::manhattan_distance(path_sync::Coordinate pos1, path_sync::Coordinat
     return std::abs(pos1.first - pos2.first) + std::abs(pos1.second - pos2.second);
 }
 
-float Utils::heuristic(std::vector<path_sync::Coordinate> starts, std::vector<path_sync::Coordinate> goals)
+float Utils::heuristic(const std::vector<path_sync::Coordinate> &starts, const std::vector<path_sync::Coordinate> &goals)
 {
     float h_score = 0;
 
@@ -27,7 +27,7 @@ float Utils::heuristic(std::vector<path_sync::Coordinate> starts, std::vector<pa
 }
 
 std::optional<std::vector<std::vector<path_sync::Coordinate>>> Utils::cartesian_product(
-    std::vector<std::vector<path_sync::Coordinate>> input_vec)
+    const std::vector<std::vector<path_sync::Coordinate>> &input_vec)
 {
     if (input_vec.size() < 2)
     {
@@ -47,7 +47,7 @@ std::optional<std::vector<std::vector<path_sync::Coordinate>>> Utils::cartesian_
         res.emplace_back(1, n);
     }
 
-    for (int idx = 1; idx < input_vec.size(); ++idx)
+    for (int idx = 1; idx < static_cast<int>(input_vec.size()); ++idx)
     {
         Utils::cartesian_product_underlying(res, input_vec[idx]);
     }

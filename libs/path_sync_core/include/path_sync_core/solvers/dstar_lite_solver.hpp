@@ -17,13 +17,13 @@ struct DStarKey
     float k0;
     float k1;
 
-    bool operator<(const DStarKey &other) const
+    bool operator<(const DStarKey &other) const noexcept
     {
         if (k0 != other.k0) return k0 < other.k0;
         return k1 < other.k1;
     }
 
-    bool operator==(const DStarKey &other) const
+    bool operator==(const DStarKey &other) const noexcept
     {
         return k0 == other.k0 && k1 == other.k1;
     }

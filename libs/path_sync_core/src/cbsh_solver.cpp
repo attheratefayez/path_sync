@@ -1,6 +1,7 @@
 #include "path_sync_core/solvers/cbs_solver.hpp"
 
 #include <algorithm>
+#include <bit>
 #include <vector>
 
 namespace path_sync::solvers::mapf
@@ -73,7 +74,7 @@ int CBS_Solver::min_vertex_cover_size(
     int total = 1 << n;
     for (int mask = 0; mask < total; mask++)
     {
-        int cnt = __builtin_popcount(mask);
+        int cnt = std::popcount(static_cast<unsigned>(mask));
         if (cnt >= best) continue;
         if (is_cover(mask))
             best = cnt;

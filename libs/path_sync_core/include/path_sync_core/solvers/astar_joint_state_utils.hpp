@@ -14,12 +14,12 @@ namespace astar_joint_state
 struct Utils
 {
     // HEURISTIC FUNCTION
-    static float heuristic(std::vector<path_sync::Coordinate> starts, std::vector<path_sync::Coordinate> goals);
+    static float heuristic(const std::vector<path_sync::Coordinate> &starts, const std::vector<path_sync::Coordinate> &goals);
     static float manhattan_distance(path_sync::Coordinate pos1, path_sync::Coordinate pos2);
 
     // CARTESION PRODUCT FUNCTION
     static std::optional<std::vector<std::vector<path_sync::Coordinate>>> cartesian_product(
-        std::vector<std::vector<path_sync::Coordinate>> input_vec);
+        const std::vector<std::vector<path_sync::Coordinate>> &input_vec);
 
     static void cartesian_product_underlying(std::vector<std::vector<path_sync::Coordinate>> &res,
                                              const std::vector<path_sync::Coordinate> &in1);

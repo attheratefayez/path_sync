@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <limits>
 #include <map>
 #include <queue>
 #include <vector>
@@ -94,21 +95,22 @@ std::map<Coordinate, Coordinate> Theta_Star_Solver::solve(const path_sync::MapDa
         return result;
     }
 
-    std::map<Coordinate, float> g_score;
-    std::map<Coordinate, Coordinate> came_from;
-    std::map<Coordinate, bool> closed;
+    const Coordinate UNVISITED{-2, -2};
+    std::vector<std::vector<float>> g_score(h, std::vector<float>(w, std::numeric_limits<float>::infinity()));
+    std::vector<std::vector<Coordinate>> came_from(h, std::vector<Coordinate>(w, UNVISITED));
+    std::vector<std::vector<bool>> closed(h, std::vector<bool>(w, false));
 
     auto cmp = [&](ps_coord a, ps_coord b)
     {
-        float fa = g_score[a] + euclidean_distance(a, goal);
-        float fb = g_score[b] + euclidean_distance(b, goal);
+        float fa = g_score[a.second][a.first] + euclidean_distance(a, goal);
+        float fb = g_score[b.second][b.first] + euclidean_distance(b, goal);
         if (fa != fb) return fa > fb;
         return a < b;
     };
     std::priority_queue<ps_coord, std::vector<ps_coord>, decltype(cmp)> open(cmp);
 
-    g_score[start] = 0;
-    came_from[start] = start;
+    g_score[start.second][start.first] = 0;
+    came_from[start.second][start.first] = start;
     open.push(start);
     performance_met.peak_open_size = open.size();
 
@@ -130,7 +132,7 @@ std::map<Coordinate, Coordinate> Theta_Star_Solver::solve(const path_sync::MapDa
             break;
         }
 
-        closed[current] = true;
+        closed[current.second][current.first] = true;
 
         for (int d = 0; d < 8; d++)
         {
@@ -145,18 +147,19 @@ std::map<Coordinate, Coordinate> Theta_Star_Solver::solve(const path_sync::MapDa
             ps_coord neighbor = {nx, ny};
             performance_met.num_of_nodes_explored++;
 
-            if (closed[neighbor])
+            if (closed[neighbor.second][neighbor.first])
                 continue;
 
-            if (line_of_sight(came_from[current], neighbor, map_data))
-            {
-                ps_coord grandparent = came_from[current];
-                float tent_g = g_score[grandparent] + euclidean_distance(grandparent, neighbor);
+            ps_coord parent = came_from[current.second][current.first];
 
-                if (!g_score.count(neighbor) || tent_g < g_score[neighbor])
+            if (line_of_sight(parent, neighbor, map_data))
+            {
+                float tent_g = g_score[parent.second][parent.first] + euclidean_distance(parent, neighbor);
+
+                if (tent_g < g_score[neighbor.second][neighbor.first])
                 {
-                    g_score[neighbor] = tent_g;
-                    came_from[neighbor] = grandparent;
+                    g_score[neighbor.second][neighbor.first] = tent_g;
+                    came_from[neighbor.second][neighbor.first] = parent;
                     open.push(neighbor);
                     if (open.size() > performance_met.peak_open_size)
                         performance_met.peak_open_size = open.size();
@@ -164,12 +167,12 @@ std::map<Coordinate, Coordinate> Theta_Star_Solver::solve(const path_sync::MapDa
             }
             else
             {
-                float tent_g = g_score[current] + euclidean_distance(current, neighbor);
+                float tent_g = g_score[current.second][current.first] + euclidean_distance(current, neighbor);
 
-                if (!g_score.count(neighbor) || tent_g < g_score[neighbor])
+                if (tent_g < g_score[neighbor.second][neighbor.first])
                 {
-                    g_score[neighbor] = tent_g;
-                    came_from[neighbor] = current;
+                    g_score[neighbor.second][neighbor.first] = tent_g;
+                    came_from[neighbor.second][neighbor.first] = current;
                     open.push(neighbor);
                     if (open.size() > performance_met.peak_open_size)
                         performance_met.peak_open_size = open.size();
@@ -178,14 +181,21 @@ std::map<Coordinate, Coordinate> Theta_Star_Solver::solve(const path_sync::MapDa
         }
     }
 
-    if (!found)
-        came_from.clear();
+    // Convert 2D vector came_from back to map (interface requirement)
+    std::map<Coordinate, Coordinate> result;
+    if (found)
+    {
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                if (came_from[y][x] != UNVISITED)
+                    result[{x, y}] = came_from[y][x];
+    }
 
     performance_met.success = found;
     auto end_time = std::chrono::high_resolution_clock::now();
     performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 
-    return came_from;
+    return result;
 }
 
 } // namespace sapf

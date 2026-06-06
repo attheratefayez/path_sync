@@ -63,10 +63,11 @@ std::map<Coordinate, Coordinate> EPEA_Star_Solver::solve(const path_sync::MapDat
     const int ndy[] = {-1, 0, 1, 0};
     const int NUM_OP = 4;
 
-    std::map<Coordinate, int> g_score;
-    std::map<Coordinate, Coordinate> came_from;
+    const Coordinate UNVISITED{-2, -2};
+    std::vector<std::vector<int>> g_score(h, std::vector<int>(w, -1));
+    std::vector<std::vector<Coordinate>> came_from(h, std::vector<Coordinate>(w, UNVISITED));
     // Track how many operators have been applied for each node
-    std::map<Coordinate, int> op_index;
+    std::vector<std::vector<int>> op_index(h, std::vector<int>(w, -1));
 
     struct PQEntry
     {
@@ -83,9 +84,9 @@ std::map<Coordinate, Coordinate> EPEA_Star_Solver::solve(const path_sync::MapDat
     };
     std::priority_queue<PQEntry, std::vector<PQEntry>, decltype(cmp)> open(cmp);
 
-    g_score[start] = 0;
-    came_from[start] = {-1, -1};
-    op_index[start] = 0;
+    g_score[start.second][start.first] = 0;
+    came_from[start.second][start.first] = {-1, -1};
+    op_index[start.second][start.first] = 0;
     open.push({start, manhattan_distance(start, goal), 0});
     performance_met.peak_open_size = open.size();
 
@@ -108,7 +109,7 @@ std::map<Coordinate, Coordinate> EPEA_Star_Solver::solve(const path_sync::MapDat
         performance_met.num_of_nodes_expanded++;
 
         // Get the next operator to apply
-        int &cur_op_idx = op_index[current];
+        int &cur_op_idx = op_index[current.second][current.first];
 
         // If this is a re-expansion, we need to use the stored op_idx from the queue entry
         if (entry.op_idx > 0)
@@ -128,16 +129,17 @@ std::map<Coordinate, Coordinate> EPEA_Star_Solver::solve(const path_sync::MapDat
             if (valid)
             {
                 ps_coord neighbor = {nx, ny};
-                int tent_g = g_score[current] + 1;
+                int &neighbor_g = g_score[neighbor.second][neighbor.first];
+                int tent_g = g_score[current.second][current.first] + 1;
                 performance_met.num_of_nodes_explored++;
 
-                if (!g_score.count(neighbor) || tent_g < g_score[neighbor])
+                if (neighbor_g < 0 || tent_g < neighbor_g)
                 {
-                    g_score[neighbor] = tent_g;
-                    came_from[neighbor] = current;
+                    neighbor_g = tent_g;
+                    came_from[neighbor.second][neighbor.first] = current;
 
-                    if (op_index.find(neighbor) == op_index.end())
-                        op_index[neighbor] = 0;
+                    if (op_index[neighbor.second][neighbor.first] < 0)
+                        op_index[neighbor.second][neighbor.first] = 0;
 
                     open.push({neighbor, tent_g + manhattan_distance(neighbor, goal), 0});
                     if (open.size() > performance_met.peak_open_size)
@@ -151,7 +153,7 @@ std::map<Coordinate, Coordinate> EPEA_Star_Solver::solve(const path_sync::MapDat
             // If more operators remain, re-insert current node
             if (cur_op_idx < NUM_OP)
             {
-                int f_val = g_score[current] + manhattan_distance(current, goal);
+                int f_val = g_score[current.second][current.first] + manhattan_distance(current, goal);
                 open.push({current, f_val, cur_op_idx});
                 performance_met.num_of_nodes_reopened++;
                 if (open.size() > performance_met.peak_open_size)
@@ -160,14 +162,21 @@ std::map<Coordinate, Coordinate> EPEA_Star_Solver::solve(const path_sync::MapDat
         }
     }
 
-    if (!found)
-        came_from.clear();
+    // Convert 2D vector came_from back to map (interface requirement)
+    std::map<Coordinate, Coordinate> result;
+    if (found)
+    {
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                if (came_from[y][x] != UNVISITED)
+                    result[{x, y}] = came_from[y][x];
+    }
 
     performance_met.success = found;
     auto end_time = std::chrono::high_resolution_clock::now();
     performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
 
-    return came_from;
+    return result;
 }
 
 } // namespace sapf

@@ -7,6 +7,9 @@
 #include "path_sync_core/map_loader/map_data.hpp"
 #include "path_sync_core/path_sync_types.hpp"
 
+namespace
+{
+
 std::vector<path_sync::Coordinate> find_neighbors(const path_sync::MapData& map_data,
                                                   path_sync::Coordinate candidate) {
     const int x_moves[] = {0, 1, 0, -1};
@@ -23,6 +26,8 @@ std::vector<path_sync::Coordinate> find_neighbors(const path_sync::MapData& map_
     }
     return neighbors;
 }
+
+} // anonymous namespace
 
 namespace path_sync {
 namespace solvers {

@@ -92,7 +92,7 @@ private:
 
     PluginLoader plugin_loader_;
 
-    std::vector<Coordinate> __construct_path(std::map<Coordinate, Coordinate> &node_map, const Coordinate &start,
+    std::vector<Coordinate> __construct_path(const std::map<Coordinate, Coordinate> &node_map, const Coordinate &start,
                                              const Coordinate &end);
 };
 

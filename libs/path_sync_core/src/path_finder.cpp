@@ -232,22 +232,22 @@ std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> Path
     return result;
 }
 
-std::vector<Coordinate> PathFinder::__construct_path(std::map<Coordinate, Coordinate> &node_map,
+std::vector<Coordinate> PathFinder::__construct_path(const std::map<Coordinate, Coordinate> &node_map,
                                                      const Coordinate &start, const Coordinate &end)
 {
     std::vector<Coordinate> the_path;
     the_path.push_back(end);
 
-    Coordinate current = node_map[end];
+    Coordinate current = node_map.at(end);
     while (current != start)
     {
         the_path.push_back(current);
-        current = node_map[current];
+        current = node_map.at(current);
     }
     the_path.push_back(start);
 
     std::reverse(the_path.begin(), the_path.end());
-    return std::vector<Coordinate>(the_path.begin(), the_path.end());
+    return the_path;
 }
 
 } // namespace path_sync

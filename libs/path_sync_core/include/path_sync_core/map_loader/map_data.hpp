@@ -24,11 +24,11 @@ class MapData
 
     MapData(MapInfo const &map_info);
 
-    int get_width() const
+    int get_width() const noexcept
     {
         return map_info_.width;
     }
-    int get_height() const
+    int get_height() const noexcept
     {
         return map_info_.height;
     }

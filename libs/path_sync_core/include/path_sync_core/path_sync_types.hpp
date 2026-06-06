@@ -66,7 +66,7 @@ struct JointState
     std::vector<Coordinate> positions;
     std::size_t time;
 
-    bool operator<(const JointState &right) const
+    bool operator<(const JointState &right) const noexcept
     {
         if (time != right.time)
             return time < right.time;
@@ -84,7 +84,7 @@ struct Node
     {
     }
 
-    bool operator>(const Node &other) const
+    bool operator>(const Node &other) const noexcept
     {
         return (_g_score + _h_score) > (other._g_score + other._h_score);
     }

@@ -47,7 +47,7 @@ struct PerformanceMetrics
     std::chrono::steady_clock::time_point deadline;
     bool has_timeout = false;
 
-    bool timed_out() const
+    bool timed_out() const noexcept
     {
         return has_timeout && std::chrono::steady_clock::now() >= deadline;
     }
@@ -59,7 +59,7 @@ struct PerformanceMetrics
     // Extended MAPF metrics (populated by multi-agent solvers)
     struct MAPFMetrics *mapf_metrics = nullptr;
 
-    float suboptimality_ratio() const
+    float suboptimality_ratio() const noexcept
     {
         if (optimal_path_length == 0) return 1.0f;
         return static_cast<float>(path_length) / static_cast<float>(optimal_path_length);

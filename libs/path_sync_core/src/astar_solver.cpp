@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <limits>
 #include <map>
 #include <queue>
 #include <vector>
@@ -52,16 +53,17 @@ std::map<Coordinate, Coordinate> Astar_Solver::solve(const path_sync::MapData &m
                                                      Coordinate goal, PerformanceMetrics &performance_met)
 {
     auto start_time = std::chrono::high_resolution_clock::now();
-    const int INF = 99999;
+    static constexpr int INF = std::numeric_limits<int>::max() / 2;
     const int width = map_data.get_width();
     const int height = map_data.get_height();
 
-    std::vector<std::vector<Coordinate>> cost_mat(height, std::vector<Coordinate>(width, {INF, INF}));
+    struct CellCost { int g; int h; };
+    std::vector<std::vector<CellCost>> cost_mat(height, std::vector<CellCost>(width, {INF, INF}));
 
-    auto lambdafn = [](const std::pair<Coordinate, Coordinate> &left, const std::pair<Coordinate, Coordinate> &right) {
-        return (left.second.first + left.second.second) > (right.second.first + right.second.second);
+    auto lambdafn = [](const std::pair<Coordinate, CellCost> &left, const std::pair<Coordinate, CellCost> &right) {
+        return (left.second.g + left.second.h) > (right.second.g + right.second.h);
     };
-    std::priority_queue<std::pair<Coordinate, Coordinate>, std::vector<std::pair<Coordinate, Coordinate>>,
+    std::priority_queue<std::pair<Coordinate, CellCost>, std::vector<std::pair<Coordinate, CellCost>>,
                         decltype(lambdafn)>
         priority_queue(lambdafn);
 
@@ -76,7 +78,7 @@ std::map<Coordinate, Coordinate> Astar_Solver::solve(const path_sync::MapData &m
 
     while (!priority_queue.empty() && !reachedEnd)
     {
-        std::pair<Coordinate, Coordinate> visiting = priority_queue.top();
+        auto visiting = priority_queue.top();
         priority_queue.pop();
         if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out()) break;
         performance_met.num_of_nodes_expanded++;
@@ -85,10 +87,10 @@ std::map<Coordinate, Coordinate> Astar_Solver::solve(const path_sync::MapData &m
         for (Coordinate &n : neighbors)
         {
             performance_met.num_of_nodes_explored++;
-            int new_dist = cost_mat[visiting.first.second][visiting.first.first].first + 1;
+            int new_dist = cost_mat[visiting.first.second][visiting.first.first].g + 1;
             int new_manhattan_dist = getManhattanDistance(n, goal);
 
-            if (new_dist < cost_mat[n.second][n.first].first)
+            if (new_dist < cost_mat[n.second][n.first].g)
             {
                 cost_mat[n.second][n.first] = {new_dist, new_manhattan_dist};
                 priority_queue.push({n, {new_dist, new_manhattan_dist}});
