@@ -311,7 +311,7 @@ std::optional<std::vector<std::vector<Coordinate>>> CBS_Solver::solve(
     auto root = std::make_shared<CBSNode>();
     root->paths = initial_paths;
     root->cost = compute_soc(initial_paths);
-    root->h = compute_cg_heuristic(initial_paths);
+    root->h = use_cbsh_ ? compute_cg_heuristic(initial_paths) : 0;
     root->depth = 0;
     open.push(root);
     ct_nodes_created++;
@@ -362,11 +362,13 @@ std::optional<std::vector<std::vector<Coordinate>>> CBS_Solver::solve(
 
         conflicts_found++;
 
-        // ICBS: classify
-        CBSConflictClass cc = classify_conflict(*conflict, N->paths, map_data, starts, goals);
+        // ICBS: classify conflict
+        CBSConflictClass cc = CBSConflictClass::NON_CARDINAL;
+        if (use_icbs_)
+            cc = classify_conflict(*conflict, N->paths, map_data, starts, goals);
 
         // ICBS: bypass attempt for non-cardinal
-        if (cc == CBSConflictClass::NON_CARDINAL)
+        if (use_icbs_ && cc == CBSConflictClass::NON_CARDINAL)
         {
             auto bypass = try_bypass(map_data, starts, goals, *N, *conflict);
             if (bypass.has_value())
@@ -413,19 +415,13 @@ std::optional<std::vector<std::vector<Coordinate>>> CBS_Solver::solve(
             if (!new_path) return std::shared_ptr<CBSNode>(nullptr);
             child->paths[agent] = std::move(*new_path);
             child->cost = compute_soc(child->paths);
-            child->h = compute_cg_heuristic(child->paths);
+            child->h = use_cbsh_ ? compute_cg_heuristic(child->paths) : 0;
             return child;
         };
 
         // ICBS: cardinal → split both; semi → split affected; non → split both
-        if (cc == CBSConflictClass::CARDINAL || cc == CBSConflictClass::NON_CARDINAL)
-        {
-            auto ca = make_child(conflict->agent_a);
-            if (ca) { open.push(ca); ct_nodes_created++; }
-            auto cb = make_child(conflict->agent_b);
-            if (cb) { open.push(cb); ct_nodes_created++; }
-        }
-        else
+        // Plain CBS (no ICBS): always split both
+        if (use_icbs_ && cc == CBSConflictClass::SEMI_CARDINAL)
         {
             CBSConstraint test;
             test.agent = conflict->agent_a;
@@ -442,6 +438,13 @@ std::optional<std::vector<std::vector<Coordinate>>> CBS_Solver::solve(
             auto ch = make_child(split_agent);
             if (ch) { open.push(ch); ct_nodes_created++; }
         }
+        else
+        {
+            auto ca = make_child(conflict->agent_a);
+            if (ca) { open.push(ca); ct_nodes_created++; }
+            auto cb = make_child(conflict->agent_b);
+            if (cb) { open.push(cb); ct_nodes_created++; }
+        }
     }
 
     performance_met.success = false;
@@ -451,17 +454,4 @@ std::optional<std::vector<std::vector<Coordinate>>> CBS_Solver::solve(
 }
 
 } // namespace path_sync::solvers::mapf
-
-#ifdef PATH_SYNC_BUILD_AS_PLUGIN
-extern "C"
-{
-
-const char *plugin_name() { return "CBS_Solver"; }
-bool plugin_is_optimal() { return true; }
-bool plugin_is_multi_agent() { return true; }
-void *plugin_create() { return new path_sync::solvers::mapf::CBS_Solver(); }
-void plugin_destroy(void *p) { delete static_cast<path_sync::solvers::mapf::CBS_Solver *>(p); }
-
-}
-#endif
 

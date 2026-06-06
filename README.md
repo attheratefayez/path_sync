@@ -120,7 +120,9 @@ Map files → MapData  →  Grid (visual)
 │   ├── libepea_solver.so
 │   ├── libastar_joint_state.so
 │   ├── libmstar_solver.so
-│   └── libcbs_solver.so          # CBS + ICBS + CBSH
+│   ├── libcbs_solver.so           # plain CBS
+│   ├── libicbs_solver.so          # ICBS (conflict classification + bypass)
+│   └── libcbsh_solver.so          # CBS + ICBS + CBSH (CG heuristic)
 └── test/                         # GoogleTest unit tests
 ```
 

@@ -49,10 +49,14 @@ add_solver_plugin(mstar_solver
     ../libs/path_sync_core/src/mstar_solver.cpp
 )
 
-# ── CBS family (single solver, three source files) ────────────────────
+# ── CBS family: three separate plugins, one implementation ────────────
 
-add_solver_plugin(cbs_solver
+set(CBS_SOURCES
     ../libs/path_sync_core/src/cbs_solver.cpp
     ../libs/path_sync_core/src/icbs_solver.cpp
     ../libs/path_sync_core/src/cbsh_solver.cpp
 )
+
+add_solver_plugin(cbs_solver  ${CBS_SOURCES} cbs_plugin.cpp)
+add_solver_plugin(icbs_solver ${CBS_SOURCES} icbs_plugin.cpp)
+add_solver_plugin(cbsh_solver ${CBS_SOURCES} cbsh_plugin.cpp)

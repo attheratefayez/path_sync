@@ -66,6 +66,10 @@ public:
     std::string_view get_solver_name() const override { return solver_name_; }
     bool is_optimal() const override { return true; }
 
+    void set_use_icbs(bool v) { use_icbs_ = v; }
+    void set_use_cbsh(bool v) { use_cbsh_ = v; }
+    void set_solver_name(const std::string &name) { solver_name_ = name; }
+
     std::optional<std::vector<std::vector<Coordinate>>> solve(
         const MapData &map_data,
         std::vector<Coordinate> starts,
@@ -114,6 +118,8 @@ private:
 
     int compute_soc(const std::vector<std::vector<Coordinate>> &paths) const;
 
+    bool use_icbs_ = false;
+    bool use_cbsh_ = false;
     std::string solver_name_ = "CBS_Solver";
     static constexpr int MAX_TIMESTEP = 500;
 };
