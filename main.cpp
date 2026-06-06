@@ -6,8 +6,8 @@
 
 // TODO: 
 //     - update readme with images in docs/images
-//     - add more sophisticated ma-solvers
 //     - add sa-mo solvers
+//     - rewrite the script to make more sophisticated costmap layers
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);

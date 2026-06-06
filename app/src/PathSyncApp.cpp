@@ -423,6 +423,18 @@ bool PathSyncApp::load_cost_map_for_current_map()
     return false;
 }
 
+std::shared_ptr<CostMap> PathSyncApp::load_cost_map()
+{
+    std::string map_name = current_map_data_->get_map_info().map_name;
+    std::string cost_path = std::string(PROJECT_ROOT) + "/maps/mo_costmaps/"
+                          + map_name.substr(0, map_name.find_last_of('.'))
+                          + ".cost";
+    auto cm = std::make_shared<CostMap>();
+    if (!cm->load(cost_path))
+        return nullptr;
+    return cm;
+}
+
 std::shared_ptr<path_sync::MapData> PathSyncApp::get_current_map_data() const
 {
     return current_map_data_;

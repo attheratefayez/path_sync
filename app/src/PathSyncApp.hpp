@@ -72,6 +72,7 @@ class PathSyncApp
     void select_mo_solution(int index);
     void set_mo_weights(const std::vector<float>& w);
     bool load_cost_map_for_current_map();
+    std::shared_ptr<CostMap> load_cost_map();
 
     std::shared_ptr<path_sync::MapData> get_current_map_data() const;
 
