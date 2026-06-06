@@ -45,6 +45,8 @@ class PathSyncApp
     void change_solver();
     void select_solver_by_index(std::size_t index);
     void select_solver_by_index(std::size_t index, bool multi_agent);
+    void select_sa_solver_by_index(std::size_t index) { path_finder_.select_sa_solver_by_index(index); }
+    void select_ma_solver_by_index(std::size_t index) { path_finder_.select_ma_solver_by_index(index); }
     std::vector<std::string> get_solver_names() const;
     std::vector<std::string> get_solver_names(bool multi_agent) const;
     bool get_is_multi_agent() const;
@@ -83,6 +85,8 @@ class PathSyncApp
 
     std::string_view get_current_solver_name() const;
     bool is_solver_optimal(std::size_t index, bool multi_agent) const;
+    bool is_sa_solver_optimal(std::size_t index) const { return path_finder_.is_sa_solver_optimal(index); }
+    bool is_ma_solver_optimal(std::size_t index) const { return path_finder_.is_ma_solver_optimal(index); }
     int get_scene_index() const;
     int get_total_scenes() const;
     int get_map_index() const;

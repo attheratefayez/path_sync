@@ -10,7 +10,9 @@
 #include <QMouseEvent>
 #include <QMouseEvent>
 #include <QWheelEvent>
+#include <QStackedWidget>
 #include <algorithm>
+#include <optional>
 #include <filesystem>
 #include <fstream>
 
@@ -269,7 +271,9 @@ VisualizationSystem::VisualizationSystem(PathSyncApp& app, QWidget *parent)
     , status_label_(nullptr)
     , solve_status_label_(nullptr)
     , sidebar_(nullptr)
+    , sidebar_stack_(nullptr)
     , perf_text_(nullptr)
+    , pareto_panel_(nullptr)
 {
     setWindowTitle("Path Sync");
     resize(1200, 900);
@@ -301,17 +305,25 @@ void VisualizationSystem::setup_ui()
     vp_center->addStretch();
     vp_lay->addLayout(vp_center);
 
-    // ── performance sidebar ────────────────────────────────────────────
+    // ── sidebar with stacked widget (perf / pareto) ──────────────────
     sidebar_ = new QWidget;
     sidebar_->setFixedWidth(320);
     sidebar_->setStyleSheet("QWidget { background: #252525; }");
     auto *sb_side_lay = new QVBoxLayout(sidebar_);
     sb_side_lay->setContentsMargins(6, 6, 6, 6);
 
+    sidebar_stack_ = new QStackedWidget;
+    sb_side_lay->addWidget(sidebar_stack_);
+
+    // page 0: performance
+    auto *perf_page = new QWidget;
+    auto *perf_lay = new QVBoxLayout(perf_page);
+    perf_lay->setContentsMargins(0, 0, 0, 0);
+
     auto *perf_title = new QLabel("Performance data");
     perf_title->setStyleSheet("QLabel { color: #0a0; font-weight: bold;"
                               "  font-size: 13px; padding-bottom: 4px; }");
-    sb_side_lay->addWidget(perf_title);
+    perf_lay->addWidget(perf_title);
 
     perf_text_ = new QPlainTextEdit;
     perf_text_->setReadOnly(true);
@@ -319,7 +331,22 @@ void VisualizationSystem::setup_ui()
     perf_text_->setStyleSheet("QPlainTextEdit { background: #1e1e1e; color: #ccc;"
                               "  border: 1px solid #444; padding: 6px;"
                               "  font-family: monospace; font-size: 12px; }");
-    sb_side_lay->addWidget(perf_text_, 1);
+    perf_lay->addWidget(perf_text_, 1);
+
+    sidebar_stack_->addWidget(perf_page);
+
+    // page 1: Pareto front (MO)
+    pareto_panel_ = new ParetoFrontPanel;
+    pareto_panel_->setStyleSheet("ParetoFrontPanel { background: #252525; }"
+                                 "QLabel { color: #ccc; }");
+    sidebar_stack_->addWidget(pareto_panel_);
+
+    sidebar_stack_->setCurrentIndex(0);
+
+    connect(pareto_panel_, &ParetoFrontPanel::solve_requested,
+            this, &VisualizationSystem::on_mo_solve_requested);
+    connect(pareto_panel_, &ParetoFrontPanel::solution_selected,
+            this, &VisualizationSystem::on_mo_solution_selected);
 
     vp_lay->addWidget(sidebar_);
 
@@ -533,24 +560,84 @@ void VisualizationSystem::populate_solver_combo()
 {
     solver_combo_->blockSignals(true);
     solver_combo_->clear();
-    bool multi = app_.get_is_multi_agent();
-    const auto &names = app_.get_solver_names(multi);
-    for (std::size_t i = 0; i < names.size(); i++)
-    {
-        QString display = QString::fromStdString(names[i])
-            + (app_.is_solver_optimal(i, multi) ? "  [optimal]" : "  [suboptimal]");
-        solver_combo_->addItem(display, QString::fromStdString(names[i]));
-    }
+    combo_sections_.clear();
+
+    auto add_section = [&](SolverCategory cat, const std::vector<std::string> &names,
+                           auto is_optimal_fn) {
+        if (names.empty()) return;
+        int first = solver_combo_->count();
+        for (std::size_t i = 0; i < names.size(); i++)
+        {
+            QString display = QString::fromStdString(names[i])
+                + (is_optimal_fn(i) ? "  [optimal]" : "  [suboptimal]");
+            solver_combo_->addItem(display, QString::fromStdString(names[i]));
+        }
+        combo_sections_.push_back({first, static_cast<int>(names.size()), cat});
+    };
+
+    // SA solvers
+    add_section(SolverCategory::SA, app_.get_solver_names(false),
+                [this](std::size_t i) { return app_.is_sa_solver_optimal(i); });
+
+    // separator
+    solver_combo_->insertSeparator(solver_combo_->count());
+
+    // MA solvers
+    add_section(SolverCategory::MA, app_.get_solver_names(true),
+                [this](std::size_t i) { return app_.is_ma_solver_optimal(i); });
+
+    // separator
+    solver_combo_->insertSeparator(solver_combo_->count());
+
+    // MO solvers
+    add_section(SolverCategory::MO, app_.get_mo_solver_names(),
+                [this](std::size_t i) { return app_.is_mo_solver_optimal(i); });
+
     solver_combo_->blockSignals(false);
     if (solver_combo_->count() > 0)
         solver_combo_->setCurrentIndex(0);
+}
+
+std::optional<std::size_t> VisualizationSystem::combo_to_solver_index(
+    int combo_index, SolverCategory &cat) const
+{
+    for (const auto &sec : combo_sections_)
+    {
+        if (combo_index >= sec.first_index && combo_index < sec.first_index + sec.count)
+        {
+            cat = sec.category;
+            return static_cast<std::size_t>(combo_index - sec.first_index);
+        }
+    }
+    return std::nullopt;
 }
 
 void VisualizationSystem::on_solver_combo_changed(int index)
 {
     if (index < 0)
         return;
-    app_.select_solver_by_index(static_cast<std::size_t>(index), app_.get_is_multi_agent());
+
+    SolverCategory cat;
+    auto opt_idx = combo_to_solver_index(index, cat);
+    if (!opt_idx.has_value())
+        return;
+
+    switch (cat)
+    {
+    case SolverCategory::SA:
+        app_.select_sa_solver_by_index(*opt_idx);
+        exit_mo_mode();
+        break;
+    case SolverCategory::MA:
+        app_.select_ma_solver_by_index(*opt_idx);
+        exit_mo_mode();
+        break;
+    case SolverCategory::MO:
+        app_.select_mo_solver_by_index(*opt_idx);
+        enter_mo_mode();
+        break;
+    }
+
     grid_widget_->update();
     update_status();
 }
@@ -587,6 +674,113 @@ void write_csv_log(const PerformanceMetrics &pm, const std::optional<MAPFMetrics
 }
 
 } // anonymous namespace
+
+void VisualizationSystem::enter_mo_mode()
+{
+    if (mo_mode_) return;
+    mo_mode_ = true;
+    sidebar_stack_->setCurrentIndex(1);
+}
+
+void VisualizationSystem::exit_mo_mode()
+{
+    if (!mo_mode_) return;
+    mo_mode_ = false;
+    sidebar_stack_->setCurrentIndex(0);
+}
+
+void VisualizationSystem::solve_mo_async(int num_objectives)
+{
+    if (solving_) return;
+
+    app_.reset_cancel();
+    solving_ = true;
+    solve_btn_->setEnabled(false);
+    cancel_btn_->setEnabled(true);
+    cancel_btn_->setText("Cancel");
+    solve_btn_->setText("MO Solving...");
+    solve_status_label_->setText("MO Solving...");
+
+    auto starts = app_.get_current_scene().first;
+    auto ends   = app_.get_current_scene().second;
+    if (starts.empty() || ends.empty())
+    {
+        solve_status_label_->setText("No start/goal set");
+        solving_ = false;
+        solve_btn_->setEnabled(true);
+        solve_btn_->setText("Solve");
+        cancel_btn_->setEnabled(false);
+        return;
+    }
+
+    app_.set_timeout_ms(timeout_spin_->value() * 1000);
+    solve_deadline_ = std::chrono::steady_clock::now()
+                    + std::chrono::milliseconds(timeout_spin_->value() * 1000);
+    timeout_remaining_label_->setText(
+        QString("Timeout: %1s").arg(timeout_spin_->value()));
+    timeout_remaining_label_->show();
+    timeout_timer_->start();
+
+    auto *watcher = new QFutureWatcher<std::shared_ptr<MapData>>(this);
+    connect(watcher, &QFutureWatcher<std::shared_ptr<MapData>>::finished, this,
+            [this, watcher, num_objectives]() {
+        auto result = watcher->result();
+        if (result) {
+            app_.set_map_data(std::move(result));
+            grid_widget_->sync_and_update();
+            solve_status_label_->setText("MO Solved");
+
+            // Show Pareto front in panel
+            const auto &front = app_.get_current_mo_front();
+            std::vector<std::vector<float>> costs;
+            std::vector<float> path_lengths;
+            const char *default_names[] = {"Dist", "Risk", "Energy", "Vis", "Terrain"};
+            std::vector<std::string> obj_names;
+            for (int i = 0; i < num_objectives && i < 5; i++)
+                obj_names.push_back(default_names[i]);
+
+            for (const auto &sol : front)
+            {
+                costs.push_back(sol.costs);
+                path_lengths.push_back(static_cast<float>(sol.path.size()));
+            }
+
+            pareto_panel_->show_front(num_objectives, obj_names, costs, path_lengths);
+            if (!front.empty())
+                app_.select_mo_solution(0);
+        } else {
+            solve_status_label_->setText("MO: No path found");
+        }
+
+        solving_ = false;
+        timeout_timer_->stop();
+        timeout_remaining_label_->hide();
+        solve_btn_->setEnabled(true);
+        solve_btn_->setText("Solve");
+        cancel_btn_->setEnabled(false);
+        cancel_btn_->setText("Cancel");
+        watcher->deleteLater();
+    });
+
+    Coordinate start = starts[0];
+    Coordinate goal  = ends[0];
+
+    watcher->setFuture(QtConcurrent::run([this, start, goal, num_objectives]() {
+        return app_.solve_mo_async_on_copy(start, goal, num_objectives);
+    }));
+}
+
+void VisualizationSystem::on_mo_solve_requested(int num_objectives)
+{
+    mo_num_objectives_ = num_objectives;
+    solve_mo_async(num_objectives);
+}
+
+void VisualizationSystem::on_mo_solution_selected(int index)
+{
+    app_.select_mo_solution(index);
+    grid_widget_->sync_and_update();
+}
 
 void VisualizationSystem::solve_async()
 {
@@ -650,7 +844,13 @@ void VisualizationSystem::solve_async()
     }));
 }
 
-void VisualizationSystem::on_solve_clicked()      { solve_async();                           }
+void VisualizationSystem::on_solve_clicked()
+{
+    if (mo_mode_)
+        solve_mo_async(mo_num_objectives_);
+    else
+        solve_async();
+}
 void VisualizationSystem::on_clear_clicked()      { app_.clear_paths();                      }
 void VisualizationSystem::on_reset_clicked()      { app_.reset_grid();                       }
 bool VisualizationSystem::on_prev_scene()

@@ -16,6 +16,7 @@
 #include "path_sync_core/performance_mat.hpp"
 #include "path_sync_ui/grid.hpp"
 #include "path_sync_ui/visualization_system_config.hpp"
+#include "path_sync_ui/pareto_front_panel.hpp"
 
 namespace path_sync
 {
@@ -41,8 +42,12 @@ private slots:
     void on_next_map();
     void update_status();
     void solve_async();
+    void on_mo_solve_requested(int num_objectives);
+    void on_mo_solution_selected(int index);
 
 private:
+    enum class SolverCategory { SA, MA, MO };
+
     PathSyncApp& app_;
     GridWidget *grid_widget_;
     QPushButton *solve_btn_;
@@ -58,14 +63,26 @@ private:
     QTimer *timeout_timer_;
     std::chrono::steady_clock::time_point solve_deadline_;
     QWidget *sidebar_;
+    QStackedWidget *sidebar_stack_;
     QPlainTextEdit *perf_text_;
+    ParetoFrontPanel *pareto_panel_;
     bool solving_ = false;
+    bool mo_mode_ = false;
+    int mo_num_objectives_ = 5;
     struct PerfEntry
     {
         PerformanceMetrics pm;
         std::optional<MAPFMetrics> ma_met;
     };
     std::deque<PerfEntry> perf_buffer_;
+
+    struct ComboSection
+    {
+        int first_index;
+        int count;
+        SolverCategory category;
+    };
+    std::vector<ComboSection> combo_sections_;
 
     VisualizationSystem(VisualizationSystem const &) = delete;
     VisualizationSystem &operator=(VisualizationSystem const &) = delete;
@@ -74,6 +91,10 @@ private:
     void populate_solver_combo();
     void update_perf_sidebar();
     void reset_perf_buffer();
+    void solve_mo_async(int num_objectives);
+    void enter_mo_mode();
+    void exit_mo_mode();
+    std::optional<std::size_t> combo_to_solver_index(int combo_index, SolverCategory &cat) const;
 };
 
 } // namespace path_sync
