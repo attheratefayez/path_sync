@@ -630,14 +630,17 @@ std::optional<std::vector<std::vector<Coordinate>>> CBS_Solver::solve(
 
             int split_agent = a_affected ? conflict->agent_a : conflict->agent_b;
             auto ch = make_child(split_agent);
-            if (ch) { open.push(ch); ct_nodes_created++; }
+            if (ch) { open.push(ch); ct_nodes_created++;
+                if (performance_met.mapf_metrics) performance_met.mapf_metrics->conflicts_resolved++; }
         }
         else
         {
             auto ca = make_child(conflict->agent_a);
-            if (ca) { open.push(ca); ct_nodes_created++; }
+            if (ca) { open.push(ca); ct_nodes_created++;
+                if (performance_met.mapf_metrics) performance_met.mapf_metrics->conflicts_resolved++; }
             auto cb = make_child(conflict->agent_b);
-            if (cb) { open.push(cb); ct_nodes_created++; }
+            if (cb) { open.push(cb); ct_nodes_created++;
+                if (performance_met.mapf_metrics) performance_met.mapf_metrics->conflicts_resolved++; }
         }
     }
 
