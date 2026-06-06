@@ -5,9 +5,11 @@
 #include <optional>
 #include <variant>
 
+#include "path_sync_core/mo_types.hpp"
 #include "path_sync_core/performance_mat.hpp"
 #include "path_sync_core/plugin_loader.hpp"
 #include "path_sync_core/solver_interface.hpp"
+#include "path_sync_core/solvers/imo_solver.hpp"
 
 namespace path_sync
 {
@@ -24,6 +26,21 @@ public:
     std::vector<std::string> get_ma_solver_names() const;
     void select_sa_solver_by_index(std::size_t index);
     void select_ma_solver_by_index(std::size_t index);
+
+    // MO solver support
+    bool has_mo_solver() const { return !mo_solvers_.empty(); }
+    bool is_current_solver_mo() const { return current_mo_solver_ != nullptr; }
+    std::vector<std::string> get_mo_solver_names() const;
+    void select_mo_solver_by_index(std::size_t index);
+    std::size_t get_mo_solver_count() const { return mo_solvers_.size(); }
+    bool is_mo_solver_optimal(std::size_t index) const;
+    std::optional<std::vector<MOSolution>> find_mo_path(
+        const MapData &map_data,
+        const CostMap *cost_map,
+        Coordinate start, Coordinate goal,
+        int num_objectives,
+        PerformanceMetrics &performance_met,
+        MOMetrics &mo_met);
 
     void cancel() { cancel_flag_.store(true); }
     void reset_cancel() { cancel_flag_.store(false); }
@@ -42,6 +59,8 @@ public:
             return current_sa_solver_->get_solver_name();
         if (current_ma_solver_)
             return current_ma_solver_->get_solver_name();
+        if (current_mo_solver_)
+            return current_mo_solver_->get_solver_name();
         return "No Solver Selected";
     }
 
@@ -85,10 +104,12 @@ private:
 
     ISolver *current_sa_solver_;
     IMASolver *current_ma_solver_;
+    IMOSolver *current_mo_solver_;
     std::size_t current_solver_index_;
 
     std::vector<ISolver *> sa_solvers_;
     std::vector<IMASolver *> ma_solvers_;
+    std::vector<IMOSolver *> mo_solvers_;
 
     PluginLoader plugin_loader_;
 

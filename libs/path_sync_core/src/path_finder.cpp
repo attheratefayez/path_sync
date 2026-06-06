@@ -17,6 +17,7 @@ PathFinder::PathFinder()
     , performance_met_{}
     , current_sa_solver_(nullptr)
     , current_ma_solver_(nullptr)
+    , current_mo_solver_(nullptr)
     , current_solver_index_(0)
 {
     performance_met_.cancel_flag = &cancel_flag_;
@@ -25,6 +26,7 @@ PathFinder::PathFinder()
 
     sa_solvers_ = plugin_loader_.get_sa_solvers();
     ma_solvers_ = plugin_loader_.get_ma_solvers();
+    mo_solvers_ = plugin_loader_.get_mo_solvers();
 
     if (!sa_solvers_.empty())
         current_sa_solver_ = sa_solvers_[0];
@@ -45,6 +47,7 @@ void PathFinder::change_solver(bool multi_agent)
             : 0;
         current_ma_solver_ = ma_solvers_[idx];
         current_sa_solver_ = nullptr;
+        current_mo_solver_ = nullptr;
     }
     else
     {
@@ -59,24 +62,37 @@ void PathFinder::change_solver(bool multi_agent)
             : 0;
         current_sa_solver_ = sa_solvers_[idx];
         current_ma_solver_ = nullptr;
+        current_mo_solver_ = nullptr;
     }
 }
 
 void PathFinder::select_solver_by_index(std::size_t index)
 {
-    std::size_t total = sa_solvers_.size() + ma_solvers_.size();
+    std::size_t total = sa_solvers_.size() + ma_solvers_.size() + mo_solvers_.size();
     if (total == 0 || index >= total)
         return;
     current_solver_index_ = index;
-    if (current_solver_index_ < sa_solvers_.size())
+
+    std::size_t sa_count = sa_solvers_.size();
+    std::size_t ma_count = ma_solvers_.size();
+
+    if (index < sa_count)
     {
-        current_sa_solver_ = sa_solvers_[current_solver_index_];
+        current_sa_solver_ = sa_solvers_[index];
         current_ma_solver_ = nullptr;
+        current_mo_solver_ = nullptr;
+    }
+    else if (index < sa_count + ma_count)
+    {
+        current_ma_solver_ = ma_solvers_[index - sa_count];
+        current_sa_solver_ = nullptr;
+        current_mo_solver_ = nullptr;
     }
     else
     {
-        current_ma_solver_ = ma_solvers_[current_solver_index_ - sa_solvers_.size()];
+        current_mo_solver_ = mo_solvers_[index - sa_count - ma_count];
         current_sa_solver_ = nullptr;
+        current_ma_solver_ = nullptr;
     }
 }
 
@@ -86,6 +102,7 @@ void PathFinder::select_sa_solver_by_index(std::size_t index)
         return;
     current_sa_solver_ = sa_solvers_[index];
     current_ma_solver_ = nullptr;
+    current_mo_solver_ = nullptr;
 }
 
 void PathFinder::select_ma_solver_by_index(std::size_t index)
@@ -94,6 +111,16 @@ void PathFinder::select_ma_solver_by_index(std::size_t index)
         return;
     current_ma_solver_ = ma_solvers_[index];
     current_sa_solver_ = nullptr;
+    current_mo_solver_ = nullptr;
+}
+
+void PathFinder::select_mo_solver_by_index(std::size_t index)
+{
+    if (index >= mo_solvers_.size())
+        return;
+    current_mo_solver_ = mo_solvers_[index];
+    current_sa_solver_ = nullptr;
+    current_ma_solver_ = nullptr;
 }
 
 std::vector<std::string> PathFinder::get_sa_solver_names() const
@@ -112,6 +139,14 @@ std::vector<std::string> PathFinder::get_ma_solver_names() const
     return names;
 }
 
+std::vector<std::string> PathFinder::get_mo_solver_names() const
+{
+    std::vector<std::string> names;
+    for (auto *s : mo_solvers_)
+        names.push_back(std::string(s->get_solver_name()));
+    return names;
+}
+
 std::vector<std::string> PathFinder::get_all_solver_names() const
 {
     std::vector<std::string> names;
@@ -119,7 +154,50 @@ std::vector<std::string> PathFinder::get_all_solver_names() const
         names.push_back(std::string(s->get_solver_name()));
     for (auto *s : ma_solvers_)
         names.push_back(std::string(s->get_solver_name()));
+    for (auto *s : mo_solvers_)
+        names.push_back(std::string(s->get_solver_name()));
     return names;
+}
+
+bool PathFinder::is_mo_solver_optimal(std::size_t index) const
+{
+    if (index >= mo_solvers_.size()) return false;
+    return mo_solvers_[index]->is_optimal();
+}
+
+std::optional<std::vector<MOSolution>> PathFinder::find_mo_path(
+    const MapData &map_data,
+    const CostMap *cost_map,
+    Coordinate start, Coordinate goal,
+    int num_objectives,
+    PerformanceMetrics &perf,
+    MOMetrics &mo_met)
+{
+    if (!current_mo_solver_)
+    {
+        if (mo_solvers_.empty())
+            return std::nullopt;
+        current_mo_solver_ = mo_solvers_[0];
+    }
+
+    perf.solver_name = current_mo_solver_->get_solver_name();
+    perf.map_name = map_data.get_map_info().map_name;
+    perf.num_agents = 1;
+    perf.timestamp = std::time(nullptr);
+
+    if (timeout_ms_ > 0)
+    {
+        perf.deadline = std::chrono::steady_clock::now()
+                      + std::chrono::milliseconds(timeout_ms_);
+        perf.has_timeout = true;
+    }
+    else
+    {
+        perf.has_timeout = false;
+    }
+
+    return current_mo_solver_->solve(map_data, cost_map, start, goal,
+                                     num_objectives, perf, mo_met);
 }
 
 std::variant<std::vector<Coordinate>, std::vector<std::vector<Coordinate>>> PathFinder::find_path(

@@ -100,6 +100,20 @@ void PluginLoader::register_ma_solver(std::string name, bool optimal,
     handles_.push_back(std::move(handle));
 }
 
+void PluginLoader::register_mo_solver(std::string name, bool optimal,
+                                      std::unique_ptr<IMOSolver> (*factory)())
+{
+    auto *instance = factory().release();
+    auto handle = std::make_unique<PluginHandle>();
+    handle->name = std::move(name);
+    handle->optimal = optimal;
+    handle->is_mo = true;
+    handle->instance = instance;
+    handle->destroy_fn = [](void *p) { delete static_cast<IMOSolver *>(p); };
+    mo_solvers_.push_back(static_cast<IMOSolver *>(instance));
+    handles_.push_back(std::move(handle));
+}
+
 bool PluginLoader::load_plugins(const std::string &directory)
 {
     if (!fs::is_directory(directory))
@@ -139,6 +153,7 @@ bool PluginLoader::load_single(const std::string &so_path)
     auto *name = sym_or<name_fn_t>(handle, "plugin_name", nullptr);
     auto is_optimal = sym_or<bool_fn_t>(handle, "plugin_is_optimal", nullptr);
     auto is_ma = sym_or<bool_fn_t>(handle, "plugin_is_multi_agent", nullptr);
+    auto is_mo = sym_or<bool_fn_t>(handle, "plugin_is_mo", nullptr);
     auto create = sym_or<create_fn_t>(handle, "plugin_create", nullptr);
     auto destroy = sym_or<destroy_fn_t>(handle, "plugin_destroy", nullptr);
 
@@ -159,6 +174,7 @@ bool PluginLoader::load_single(const std::string &so_path)
     ph->name = name();
     ph->optimal = is_optimal ? is_optimal() : false;
     ph->is_ma = is_ma ? is_ma() : false;
+    ph->is_mo = is_mo ? is_mo() : false;
     ph->destroy_fn = destroy;
 
     try
@@ -181,7 +197,9 @@ bool PluginLoader::load_single(const std::string &so_path)
         return false;
     }
 
-    if (ph->is_ma)
+    if (ph->is_mo)
+        mo_solvers_.push_back(static_cast<IMOSolver *>(ph->instance));
+    else if (ph->is_ma)
         ma_solvers_.push_back(static_cast<IMASolver *>(ph->instance));
     else
         sa_solvers_.push_back(static_cast<ISolver *>(ph->instance));
