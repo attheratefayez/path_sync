@@ -562,40 +562,68 @@ void VisualizationSystem::populate_solver_combo()
     solver_combo_->clear();
     combo_sections_.clear();
 
-    auto add_section = [&](SolverCategory cat, const std::vector<std::string> &names,
-                           auto is_optimal_fn) {
-        if (names.empty()) return;
-        int first = solver_combo_->count();
-        for (std::size_t i = 0; i < names.size(); i++)
-        {
-            QString display = QString::fromStdString(names[i])
-                + (is_optimal_fn(i) ? "  [optimal]" : "  [suboptimal]");
-            solver_combo_->addItem(display, QString::fromStdString(names[i]));
-        }
-        combo_sections_.push_back({first, static_cast<int>(names.size()), cat});
+    auto add_header = [&](const QString &text) {
+        solver_combo_->addItem(text);
+        int idx = solver_combo_->count() - 1;
+        solver_combo_->setItemData(idx, QColor(140, 200, 140), Qt::ForegroundRole);
+        solver_combo_->setItemData(idx, QFont("sans", 10, QFont::Bold), Qt::FontRole);
+        // Disable so it cannot be selected
+        auto *model = qobject_cast<QStandardItemModel *>(solver_combo_->model());
+        if (model)
+            model->item(idx)->setEnabled(false);
     };
 
-    // SA solvers
-    add_section(SolverCategory::SA, app_.get_solver_names(false),
-                [this](std::size_t i) { return app_.is_sa_solver_optimal(i); });
+    // ── Single-Agent ──
+    const auto &sa_names = app_.get_solver_names(false);
+    if (!sa_names.empty())
+    {
+        add_header("── Single-Agent ──");
+        int first = solver_combo_->count();
+        for (std::size_t i = 0; i < sa_names.size(); i++)
+        {
+            QString display = QString::fromStdString(sa_names[i])
+                + (app_.is_sa_solver_optimal(i) ? "  [optimal]" : "  [suboptimal]");
+            solver_combo_->addItem(display, QString::fromStdString(sa_names[i]));
+        }
+        combo_sections_.push_back({first, static_cast<int>(sa_names.size()), SolverCategory::SA});
+        solver_combo_->insertSeparator(solver_combo_->count());
+    }
 
-    // separator
-    solver_combo_->insertSeparator(solver_combo_->count());
+    // ── Multi-Agent ──
+    const auto &ma_names = app_.get_solver_names(true);
+    if (!ma_names.empty())
+    {
+        add_header("── Multi-Agent ──");
+        int first = solver_combo_->count();
+        for (std::size_t i = 0; i < ma_names.size(); i++)
+        {
+            QString display = QString::fromStdString(ma_names[i])
+                + (app_.is_ma_solver_optimal(i) ? "  [optimal]" : "  [suboptimal]");
+            solver_combo_->addItem(display, QString::fromStdString(ma_names[i]));
+        }
+        combo_sections_.push_back({first, static_cast<int>(ma_names.size()), SolverCategory::MA});
+        solver_combo_->insertSeparator(solver_combo_->count());
+    }
 
-    // MA solvers
-    add_section(SolverCategory::MA, app_.get_solver_names(true),
-                [this](std::size_t i) { return app_.is_ma_solver_optimal(i); });
-
-    // separator
-    solver_combo_->insertSeparator(solver_combo_->count());
-
-    // MO solvers
-    add_section(SolverCategory::MO, app_.get_mo_solver_names(),
-                [this](std::size_t i) { return app_.is_mo_solver_optimal(i); });
+    // ── Multi-Objective ──
+    const auto &mo_names = app_.get_mo_solver_names();
+    if (!mo_names.empty())
+    {
+        add_header("── Multi-Objective ──");
+        int first = solver_combo_->count();
+        for (std::size_t i = 0; i < mo_names.size(); i++)
+        {
+            QString display = QString::fromStdString(mo_names[i])
+                + (app_.is_mo_solver_optimal(i) ? "  [optimal]" : "  [suboptimal]");
+            solver_combo_->addItem(display, QString::fromStdString(mo_names[i]));
+        }
+        combo_sections_.push_back({first, static_cast<int>(mo_names.size()), SolverCategory::MO});
+        solver_combo_->insertSeparator(solver_combo_->count());
+    }
 
     solver_combo_->blockSignals(false);
-    if (solver_combo_->count() > 0)
-        solver_combo_->setCurrentIndex(0);
+    if (!combo_sections_.empty())
+        solver_combo_->setCurrentIndex(combo_sections_[0].first_index);
 }
 
 std::optional<std::size_t> VisualizationSystem::combo_to_solver_index(

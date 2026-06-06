@@ -3,10 +3,11 @@
 
 #include <QComboBox>
 #include <QLabel>
-#include <QSpinBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QSpinBox>
 #include <QStackedWidget>
+#include <QStandardItemModel>
 #include <QTimer>
 #include <QWidget>
 
