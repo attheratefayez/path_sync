@@ -43,6 +43,8 @@ ParetoFrontPanel::ParetoFrontPanel(QWidget *parent)
     main_layout->addWidget(radar_);
 
     // ── Pareto front table ──
+    auto *front_title = new QLabel("<b>Pareto Front</b>");
+    main_layout->addWidget(front_title);
     front_count_label_ = new QLabel("Front size: —");
     main_layout->addWidget(front_count_label_);
 

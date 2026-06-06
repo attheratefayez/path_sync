@@ -12,7 +12,6 @@
 #include <QWheelEvent>
 #include <QStackedWidget>
 #include <algorithm>
-#include <optional>
 #include <filesystem>
 #include <fstream>
 
@@ -20,6 +19,7 @@
 #include <QFutureWatcher>
 
 #include "path_sync_core/logger.hpp"
+#include "path_sync_ui/cost_map_viewer.hpp"
 
 namespace path_sync
 {
@@ -518,6 +518,28 @@ void VisualizationSystem::setup_ui()
     tb_lay->addWidget(cancel_btn);
     tb_lay->addWidget(clear_btn);
     tb_lay->addWidget(reset_btn);
+
+    auto *cost_map_btn = new QPushButton("Cost Map");
+    connect(cost_map_btn, &QPushButton::clicked, this, [this]() {
+        if (!app_.load_cost_map_for_current_map())
+        {
+            solve_status_label_->setText("No cost map for this map");
+            QTimer::singleShot(3000, this, [this]() { solve_status_label_->clear(); });
+            return;
+        }
+        auto cm = app_.load_cost_map();
+        if (!cm)
+        {
+            solve_status_label_->setText("Failed to load cost map");
+            QTimer::singleShot(3000, this, [this]() { solve_status_label_->clear(); });
+            return;
+        }
+        int n_obj = mo_mode_ ? mo_num_objectives_ : cm->objectives;
+        CostMapViewer viewer(*cm, n_obj, this);
+        viewer.exec();
+    });
+    tb_lay->addWidget(cost_map_btn);
+
     tb_lay->addWidget(scene_label);
     tb_lay->addWidget(scene_spin_);
     tb_lay->addWidget(map_label);
