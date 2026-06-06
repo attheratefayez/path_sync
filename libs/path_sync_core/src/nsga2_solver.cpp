@@ -85,6 +85,13 @@ void NSGA2Solver::evaluate(Individual &ind, const MapData &map_data,
         }
     }
 
+    bool reaches_goal = false;
+    if (!ind.path.empty())
+    {
+        Coordinate last = ind.path.back();
+        reaches_goal = (last.first == goal.first && last.second == goal.second);
+    }
+
     // Compute costs along path segments
     for (std::size_t i = 0; i + 1 < full.size(); i++)
     {
@@ -107,6 +114,14 @@ void NSGA2Solver::evaluate(Individual &ind, const MapData &map_data,
                 }
             }
         }
+    }
+
+    // Penalize paths that don't reach the goal
+    if (!reaches_goal)
+    {
+        float penalty = 1e6f;
+        for (int o = 0; o < num_obj; o++)
+            ind.costs[o] += penalty;
     }
 }
 
@@ -201,7 +216,7 @@ std::vector<Coordinate> NSGA2Solver::random_path(
 {
     std::vector<Coordinate> path;
     Coordinate cur = start;
-    int max_len = 500;
+    int max_len = 2000;
     int stuck = 0;
 
     while (cur != goal && static_cast<int>(path.size()) < max_len)
@@ -229,15 +244,42 @@ std::vector<Coordinate> NSGA2Solver::random_path(
         }
 
         if (chosen == cur) break;
+
+        // Allow revisiting nodes — prevent getting stuck on small maps
         if (std::find(path.begin(), path.end(), chosen) != path.end())
         {
             stuck++;
-            if (stuck > 50) break;
+            if (stuck > 200) { path.clear(); break; }
             continue;
         }
         stuck = 0;
         path.push_back(chosen);
         cur = chosen;
+    }
+
+    // Retry once if failed
+    if (path.empty() || path.back() != goal)
+    {
+        path.clear();
+        cur = start;
+        stuck = 0;
+        while (cur != goal && static_cast<int>(path.size()) < max_len)
+        {
+            auto nbrs = free_neighbors(map_data, cur);
+            if (nbrs.empty()) break;
+            float r = std::uniform_real_distribution<float>(0, 1)(rng());
+            Coordinate chosen = nbrs[static_cast<int>(r * nbrs.size())];
+            if (chosen == cur) break;
+            if (std::find(path.begin(), path.end(), chosen) != path.end())
+            {
+                stuck++;
+                if (stuck > 200) break;
+                continue;
+            }
+            stuck = 0;
+            path.push_back(chosen);
+            cur = chosen;
+        }
     }
 
     return path;
@@ -305,25 +347,28 @@ std::optional<std::vector<MOSolution>> NSGA2Solver::solve(
 {
     auto start_time = std::chrono::high_resolution_clock::now();
 
+    int ps = pop_size_;
+    int mg = max_gen_;
+
     // Initialize population
-    std::vector<Individual> pop(POP_SIZE);
-    for (int i = 0; i < POP_SIZE; i++)
+    std::vector<Individual> pop(ps);
+    for (int i = 0; i < ps; i++)
     {
         pop[i].path = random_path(map_data, start, goal);
         evaluate(pop[i], map_data, cost_map, start, goal, num_objectives);
     }
 
-    for (int gen = 0; gen < MAX_GEN; gen++)
+    for (int gen = 0; gen < mg; gen++)
     {
         if ((perf.cancel_flag && *perf.cancel_flag) || perf.timed_out())
             break;
 
         // Create offspring
-        std::vector<Individual> offspring(POP_SIZE);
-        for (int i = 0; i < POP_SIZE; i += 2)
+        std::vector<Individual> offspring(ps);
+        for (int i = 0; i < ps; i += 2)
         {
-            int a = std::uniform_int_distribution<int>(0, POP_SIZE - 1)(rng());
-            int b = std::uniform_int_distribution<int>(0, POP_SIZE - 1)(rng());
+            int a = std::uniform_int_distribution<int>(0, ps - 1)(rng());
+            int b = std::uniform_int_distribution<int>(0, ps - 1)(rng());
 
             auto child_path = crossover(pop[a].path, pop[b].path);
             mutate(child_path, map_data);
@@ -331,7 +376,7 @@ std::optional<std::vector<MOSolution>> NSGA2Solver::solve(
             offspring[i].path = child_path;
             evaluate(offspring[i], map_data, cost_map, start, goal, num_objectives);
 
-            if (i + 1 < POP_SIZE)
+            if (i + 1 < ps)
             {
                 child_path = crossover(pop[b].path, pop[a].path);
                 mutate(child_path, map_data);
@@ -358,7 +403,7 @@ std::optional<std::vector<MOSolution>> NSGA2Solver::solve(
         pop.clear();
         for (auto &f : fronts)
         {
-            if (static_cast<int>(pop.size() + f.size()) <= POP_SIZE)
+            if (static_cast<int>(pop.size() + f.size()) <= ps)
             {
                 pop.insert(pop.end(), f.begin(), f.end());
             }
@@ -369,14 +414,14 @@ std::optional<std::vector<MOSolution>> NSGA2Solver::solve(
                           [](const Individual &a, const Individual &b) {
                               return a.crowding > b.crowding;
                           });
-                int need = POP_SIZE - static_cast<int>(pop.size());
+                int need = ps - static_cast<int>(pop.size());
                 pop.insert(pop.end(), f.begin(), f.begin() + need);
                 break;
             }
         }
 
-        perf.num_of_nodes_expanded += POP_SIZE;
-        perf.num_of_nodes_explored += POP_SIZE * 10;
+        perf.num_of_nodes_expanded += ps;
+        perf.num_of_nodes_explored += ps * 10;
     }
 
     // Extract Pareto front from rank-1 individuals
@@ -384,19 +429,20 @@ std::optional<std::vector<MOSolution>> NSGA2Solver::solve(
     std::vector<MOSolution> front;
     for (auto &ind : pop)
     {
-        if (ind.rank == 1)
-        {
-            MOSolution sol;
-            sol.path = ind.path;
-            sol.costs = ind.costs;
-            sol.crowding_distance = ind.crowding;
+        if (ind.rank != 1) continue;
 
-            // Validate path reaches goal
-            bool has_goal = !ind.path.empty() && ind.path.back() == goal;
-            if (!has_goal) continue;
+        // Skip penalized individuals (costs[0] >= 1e5 marks infeasible)
+        if (!ind.costs.empty() && ind.costs[0] >= 1e5f) continue;
 
-            front.push_back(std::move(sol));
-        }
+        MOSolution sol;
+        sol.costs = ind.costs;
+        sol.crowding_distance = ind.crowding;
+
+        // Build full path from start → waypoints
+        sol.path.push_back(start);
+        sol.path.insert(sol.path.end(), ind.path.begin(), ind.path.end());
+
+        front.push_back(std::move(sol));
     }
 
     // Final Pareto sort on front

@@ -22,6 +22,8 @@ public:
     bool is_optimal() const override { return false; }
     int get_num_objectives() const override { return num_objectives_; }
     void set_num_objectives(int n) { num_objectives_ = n; }
+    void set_pop_size(int n) { pop_size_ = n; }
+    void set_max_gen(int n) { max_gen_ = n; }
 
     std::optional<std::vector<MOSolution>> solve(
         const MapData &map_data,
@@ -33,8 +35,8 @@ public:
 
 private:
     int num_objectives_ = 5;
-    static constexpr int POP_SIZE = 100;
-    static constexpr int MAX_GEN = 200;
+    int pop_size_ = 50;
+    int max_gen_ = 50;
 
     struct Individual
     {
