@@ -16,6 +16,9 @@ A C++20 pathfinding visualization tool for single-agent and multi-agent pathfind
 ### Multi-Agent Solvers
 - **Joint-State A\*** (optimal) — Multi-agent pathfinding in joint state space (WIP)
 - **M\*** (suboptimal) — Subdimensional expansion with independent planning + conflict resolution (4-dir)
+- **CBS** (optimal) — Conflict-Based Search with Constraint Tree, vertex/edge constraints (4-dir)
+- **ICBS** (optimal) — Improved CBS with conflict classification (cardinal/semi/non-cardinal) and bypass
+- **CBSH** (optimal) — CBS with Conflict Graph heuristic (minimum vertex cover via brute force)
 
 ## Dependencies
 
@@ -32,6 +35,8 @@ A C++20 pathfinding visualization tool for single-agent and multi-agent pathfind
 cmake -B build -S .
 cmake --build build
 ```
+
+All solver plugins are built automatically alongside the main binary and placed in `plugins/`.
 
 Run:
 ```bash
@@ -65,7 +70,7 @@ The application is split into three layers:
 
 1. **Map loading** — `MapManager` parses `.map` + `.map.scen` files into `MapData` (grid of `CellType`) and scenes.
 2. **Solving** — User clicks **Solve** → `PathFinder::find_path()` → selects the current solver (built-in or plugin) → runs the algorithm → returns a path or paths.
-3. **Plugin discovery** — On construction, `PathFinder` calls `PluginLoader::load_plugins("plugins/")` which `dlopen`s each `.so`, queries its `extern "C"` symbols, and adds it to the solver list. All solvers (built-in and external) appear in the same UI dropdown.
+3. **Plugin discovery** — On construction, `PathFinder` calls `PluginLoader::load_plugins("plugins/")` which `dlopen`s each `.so`, queries its `extern "C"` symbols, and adds it to the solver list. **All solvers** (both built-in and external) are compiled as standalone `.so` plugins in `plugins/` — there is zero static registration. Each solver appears in the same UI dropdown.
 
 ```
 Map files → MapData  →  Grid (visual)
@@ -91,7 +96,7 @@ Map files → MapData  →  Grid (visual)
 │   ├── path_sync_core/           # Core library
 │   │   ├── include/path_sync_core/
 │   │   │   ├── map_loader/       # Map & scene parsing
-│   │   │   ├── solvers/          # A*, BFS, JPS, Theta*, HPA*, D* Lite, EPEA*, Joint-State A*, M*
+│   │   │   ├── solvers/          # A*, BFS, JPS, Theta*, HPA*, D* Lite, EPEA*, Joint-State A*, M*, CBS
 │   │   │   ├── logger.hpp              # Singleton logger
 │   │   │   ├── path_sync_types.hpp
 │   │   │   ├── plugin_loader.hpp       # Dynamic plugin system
@@ -103,8 +108,19 @@ Map files → MapData  →  Grid (visual)
 ├── maps/                         # Grid map files
 ├── config/                       # YAML configuration
 ├── log/                          # Solver performance logs
-├── plugins/                      # External solver .so plugins
-│   └── demo_solver/              # Example plugin template
+├── plugins/                      # Solver .so plugins (built-in + external)
+│   ├── CMakeLists.txt            # Builds all built-in solvers as plugins
+│   ├── demo_solver/              # Example plugin template
+│   ├── libastar_solver.so
+│   ├── libbfs_solver.so
+│   ├── libjps_solver.so
+│   ├── libtheta_star_solver.so
+│   ├── libhpa_solver.so
+│   ├── libdstar_lite_solver.so
+│   ├── libepea_solver.so
+│   ├── libastar_joint_state.so
+│   ├── libmstar_solver.so
+│   └── libcbs_solver.so          # CBS + ICBS + CBSH
 └── test/                         # GoogleTest unit tests
 ```
 
