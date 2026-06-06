@@ -3,15 +3,6 @@
 #include "path_sync_core/path_sync_types.hpp"
 #include "path_sync_core/performance_mat.hpp"
 #include "path_sync_core/solver_interface.hpp"
-#include "path_sync_core/solvers/astar_solver.hpp"
-#include "path_sync_core/solvers/bfs_solver.hpp"
-#include "path_sync_core/solvers/jps_solver.hpp"
-#include "path_sync_core/solvers/theta_star_solver.hpp"
-#include "path_sync_core/solvers/hpa_solver.hpp"
-#include "path_sync_core/solvers/dstar_lite_solver.hpp"
-#include "path_sync_core/solvers/epea_solver.hpp"
-#include "path_sync_core/solvers/astar_joint_state.hpp"
-#include "path_sync_core/solvers/mstar_solver.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -29,25 +20,6 @@ PathFinder::PathFinder()
     , current_solver_index_(0)
 {
     performance_met_.cancel_flag = &cancel_flag_;
-
-    plugin_loader_.register_sa_solver("Astar_Solver", true,
-                                      []() -> std::unique_ptr<ISolver> { return std::make_unique<solvers::sapf::Astar_Solver>(); });
-    plugin_loader_.register_sa_solver("BFS_Solver", true,
-                                      []() -> std::unique_ptr<ISolver> { return std::make_unique<solvers::sapf::BFS_Solver>(); });
-    plugin_loader_.register_sa_solver("JPS_Solver", true,
-                                      []() -> std::unique_ptr<ISolver> { return std::make_unique<solvers::sapf::JPS_Solver>(); });
-    plugin_loader_.register_sa_solver("Theta_Star_Solver", false,
-                                      []() -> std::unique_ptr<ISolver> { return std::make_unique<solvers::sapf::Theta_Star_Solver>(); });
-    plugin_loader_.register_sa_solver("HPA_Solver", false,
-                                      []() -> std::unique_ptr<ISolver> { return std::make_unique<solvers::sapf::HPA_Solver>(); });
-    plugin_loader_.register_sa_solver("DStar_Lite_Solver", true,
-                                      []() -> std::unique_ptr<ISolver> { return std::make_unique<solvers::sapf::DStar_Lite_Solver>(); });
-    plugin_loader_.register_sa_solver("EPEA_Star_Solver", true,
-                                      []() -> std::unique_ptr<ISolver> { return std::make_unique<solvers::sapf::EPEA_Star_Solver>(); });
-    plugin_loader_.register_ma_solver("Astar_Joint_State_Solver", true,
-                                      []() -> std::unique_ptr<IMASolver> { return std::make_unique<solvers::mapf::Astar_Joint_State_Solver>(); });
-    plugin_loader_.register_ma_solver("MStar_Solver", true,
-                                      []() -> std::unique_ptr<IMASolver> { return std::make_unique<solvers::mapf::MStar_Solver>(); });
 
     plugin_loader_.load_plugins("plugins");
 

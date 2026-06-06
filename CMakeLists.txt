@@ -11,6 +11,7 @@ project(path_sync
 )
 
 add_subdirectory(libs/path_sync_core)
+add_subdirectory(plugins)
 add_subdirectory(libs/path_sync_ui)
 add_subdirectory(test)
 
