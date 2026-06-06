@@ -1161,6 +1161,83 @@ TEST_F(CBS_Solver_ICBS_Test, EPEA_SolveConflicting)
     EXPECT_TRUE(perf.success);
 }
 
+// ── Failure reason tests ────────────────────────────────────────────
+
+TEST_F(CBS_Solver_ICBS_Test, FailureReasonPathNotFound)
+{
+    // Goal is a wall cell — no path exists
+    auto info = make_map(3, 3,
+        {"...",
+         ".#.",
+         "..#"});
+    path_sync::MapData map(info);
+    path_sync::PerformanceMetrics perf;
+    path_sync::MAPFMetrics mapf_met;
+    perf.mapf_metrics = &mapf_met;
+
+    solver.set_use_icbs(false);
+    solver.set_use_cbsh(false);
+    std::vector<Coordinate> starts = {{0, 0}};
+    std::vector<Coordinate> goals  = {{2, 2}};
+
+    auto result = solver.solve(map, starts, goals, perf);
+
+    EXPECT_FALSE(result.has_value());
+    EXPECT_FALSE(perf.success);
+    EXPECT_EQ(mapf_met.failure_reason, MAFailureReason::PATH_NOT_FOUND);
+}
+
+TEST_F(CBS_Solver_ICBS_Test, FailureReasonCTExhausted)
+{
+    // Two agents with same start and goal — root conflicts at t=0,
+    // both child constraints block the agent's start → both children
+    // are infeasible → CT exhausts in a single iteration.
+    auto info = make_map(2, 1, {".."});
+    path_sync::MapData map(info);
+    path_sync::PerformanceMetrics perf;
+    path_sync::MAPFMetrics mapf_met;
+    perf.mapf_metrics = &mapf_met;
+
+    solver.set_use_icbs(false);
+    solver.set_use_cbsh(false);
+    std::vector<Coordinate> starts = {{0, 0}, {0, 0}};
+    std::vector<Coordinate> goals  = {{1, 0}, {1, 0}};
+
+    auto result = solver.solve(map, starts, goals, perf);
+
+    EXPECT_FALSE(result.has_value());
+    EXPECT_FALSE(perf.success);
+    EXPECT_EQ(mapf_met.failure_reason, MAFailureReason::CT_EXHAUSTED);
+    // Last conflict should be recorded
+    EXPECT_GE(mapf_met.last_conflict_agent_a, 0);
+    EXPECT_GE(mapf_met.last_conflict_x, 0);
+    EXPECT_GE(mapf_met.last_conflict_timestep, 0);
+}
+
+TEST_F(CBS_Solver_ICBS_Test, FailureReasonCTExhaustedConflictDetails)
+{
+    auto info = make_map(2, 1, {".."});
+    path_sync::MapData map(info);
+    path_sync::PerformanceMetrics perf;
+    path_sync::MAPFMetrics mapf_met;
+    perf.mapf_metrics = &mapf_met;
+
+    solver.set_use_icbs(false);
+    solver.set_use_cbsh(false);
+    std::vector<Coordinate> starts = {{0, 0}, {0, 0}};
+    std::vector<Coordinate> goals  = {{1, 0}, {1, 0}};
+
+    auto result = solver.solve(map, starts, goals, perf);
+
+    EXPECT_FALSE(result.has_value());
+    // The last conflict before CT exhaustion must involve both agents
+    EXPECT_TRUE((mapf_met.last_conflict_agent_a == 0 && mapf_met.last_conflict_agent_b == 1)
+             || (mapf_met.last_conflict_agent_a == 1 && mapf_met.last_conflict_agent_b == 0));
+    EXPECT_TRUE(mapf_met.last_conflict_x >= 0 && mapf_met.last_conflict_x < 2);
+    EXPECT_EQ(mapf_met.last_conflict_y, 0);
+    EXPECT_EQ(mapf_met.last_conflict_timestep, 0);
+}
+
 } // namespace path_sync::solvers::mapf
 
 // ── CBSH Tests (friend fixture, access to internal methods) ────────────

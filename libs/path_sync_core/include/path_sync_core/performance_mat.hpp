@@ -123,6 +123,17 @@ struct PerformanceMetrics
     }
 };
 
+// ── Failure reason for multi-agent solvers ───────────────────────────
+
+enum class MAFailureReason
+{
+    NONE,
+    PATH_NOT_FOUND,
+    CT_EXHAUSTED,
+    CANCELLED,
+    TIMEOUT
+};
+
 // ── Extended metrics for multi-agent solves ──────────────────────────
 
 struct MAPFMetrics
@@ -144,6 +155,16 @@ struct MAPFMetrics
     // Depth
     std::size_t solution_depth = 0;
     std::size_t max_timestep_reached = 0;
+
+    // Failure reason (populated by multi-agent solvers on failure)
+    MAFailureReason failure_reason = MAFailureReason::NONE;
+
+    // Unresolved conflict details (when failure_reason == CT_EXHAUSTED)
+    int last_conflict_agent_a = -1;
+    int last_conflict_agent_b = -1;
+    int last_conflict_x = -1;
+    int last_conflict_y = -1;
+    int last_conflict_timestep = -1;
 
     // Per-agent aggregates (computed from solution paths)
     std::vector<std::size_t> individual_path_lengths;
@@ -170,11 +191,17 @@ struct MAPFMetrics
                "joint_states_expanded,joint_states_explored,"
                "conflicts_detected,conflicts_resolved,"
                "replan_iterations,joint_searches,joint_search_failures,"
-               "final_joint_set_size,solution_depth,max_timestep,timestamp";
+               "final_joint_set_size,solution_depth,max_timestep,"
+               "failure_reason,last_conflict_a,last_conflict_b,"
+               "last_conflict_x,last_conflict_y,last_conflict_t,timestamp";
     }
 
     std::string csv_line(const PerformanceMetrics &base) const
     {
+        static const char *reason_names[] = {"NONE","PATH_NOT_FOUND","CT_EXHAUSTED","CANCELLED","TIMEOUT"};
+        int r_idx = static_cast<int>(failure_reason);
+        if (r_idx < 0 || r_idx > 4) r_idx = 0;
+
         std::stringstream ss;
         ss << base.solver_name << ","
            << base.map_name << ","
@@ -198,6 +225,12 @@ struct MAPFMetrics
            << final_joint_set_size << ","
            << solution_depth << ","
            << max_timestep_reached << ","
+           << reason_names[r_idx] << ","
+           << last_conflict_agent_a << ","
+           << last_conflict_agent_b << ","
+           << last_conflict_x << ","
+           << last_conflict_y << ","
+           << last_conflict_timestep << ","
            << PerformanceMetrics::fmt_timestamp(base.timestamp);
         return ss.str();
     }

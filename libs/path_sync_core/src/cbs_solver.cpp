@@ -445,6 +445,9 @@ std::optional<std::vector<std::vector<Coordinate>>> CBS_Solver::solve(
     int ct_nodes_expanded = 0;
     int conflicts_found = 0;
 
+    // Track last unresolved conflict for failure reporting
+    std::optional<CBSConflict> last_conflict;
+
     // Step 1: initial paths (no constraints)
     std::vector<std::vector<Coordinate>> initial_paths(n_agents);
     for (int i = 0; i < n_agents; i++)
@@ -455,6 +458,8 @@ std::optional<std::vector<std::vector<Coordinate>>> CBS_Solver::solve(
         if (!path)
         {
             performance_met.success = false;
+            if (performance_met.mapf_metrics)
+                performance_met.mapf_metrics->failure_reason = MAFailureReason::PATH_NOT_FOUND;
             performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::high_resolution_clock::now() - start_time);
             return std::nullopt;
@@ -487,6 +492,21 @@ std::optional<std::vector<std::vector<Coordinate>>> CBS_Solver::solve(
         if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out())
         {
             performance_met.success = false;
+            if (performance_met.mapf_metrics)
+            {
+                performance_met.mapf_metrics->failure_reason =
+                    (performance_met.cancel_flag && *performance_met.cancel_flag)
+                    ? MAFailureReason::CANCELLED
+                    : MAFailureReason::TIMEOUT;
+                if (last_conflict.has_value())
+                {
+                    performance_met.mapf_metrics->last_conflict_agent_a = last_conflict->agent_a;
+                    performance_met.mapf_metrics->last_conflict_agent_b = last_conflict->agent_b;
+                    performance_met.mapf_metrics->last_conflict_x = last_conflict->x;
+                    performance_met.mapf_metrics->last_conflict_y = last_conflict->y;
+                    performance_met.mapf_metrics->last_conflict_timestep = last_conflict->timestep;
+                }
+            }
             performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::high_resolution_clock::now() - start_time);
             return std::nullopt;
@@ -527,6 +547,7 @@ std::optional<std::vector<std::vector<Coordinate>>> CBS_Solver::solve(
         }
 
         conflicts_found++;
+        last_conflict = conflict;
 
         // ICBS: classify conflict
         CBSConflictClass cc = CBSConflictClass::NON_CARDINAL;
@@ -621,6 +642,18 @@ std::optional<std::vector<std::vector<Coordinate>>> CBS_Solver::solve(
     }
 
     performance_met.success = false;
+    if (performance_met.mapf_metrics)
+    {
+        performance_met.mapf_metrics->failure_reason = MAFailureReason::CT_EXHAUSTED;
+        if (last_conflict.has_value())
+        {
+            performance_met.mapf_metrics->last_conflict_agent_a = last_conflict->agent_a;
+            performance_met.mapf_metrics->last_conflict_agent_b = last_conflict->agent_b;
+            performance_met.mapf_metrics->last_conflict_x = last_conflict->x;
+            performance_met.mapf_metrics->last_conflict_y = last_conflict->y;
+            performance_met.mapf_metrics->last_conflict_timestep = last_conflict->timestep;
+        }
+    }
     performance_met.runtime = std::chrono::duration_cast<std::chrono::microseconds>(
         std::chrono::high_resolution_clock::now() - start_time);
     return std::nullopt;
