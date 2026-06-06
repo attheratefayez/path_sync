@@ -9,6 +9,7 @@ bool plugin_is_multi_agent() { return true; }
 void *plugin_create()
 {
     auto *solver = new path_sync::solvers::mapf::CBS_Solver();
+    solver->set_solver_name("CBSH_Solver");
     solver->set_use_icbs(true);
     solver->set_use_cbsh(true);
     return solver;
