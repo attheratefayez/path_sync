@@ -6,6 +6,7 @@
 #include <QSpinBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QStackedWidget>
 #include <QTimer>
 #include <QWidget>
 

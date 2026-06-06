@@ -166,15 +166,11 @@ std::shared_ptr<path_sync::MapData> PathSyncApp::solve_mo_async_on_copy(
 
     // Load cost map
     load_cost_map_for_current_map();
-    CostMap *cost_ptr = nullptr;
-    // cost map will be loaded inside find_mo_path — pass nullptr for now
-    // and let the solver load it internally
-
     MOMetrics mo_met;
+    auto perf_met = path_finder_.get_performance_metrics();
     auto result = path_finder_.find_mo_path(*copy, nullptr, start, goal,
                                              num_objectives,
-                                             path_finder_.get_performance_metrics(),
-                                             mo_met);
+                                             perf_met, mo_met);
 
     current_mo_front_.clear();
     current_mo_metrics_ = mo_met;
