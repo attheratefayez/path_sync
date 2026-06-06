@@ -43,6 +43,9 @@ ParetoFrontPanel::ParetoFrontPanel(QWidget *parent)
     main_layout->addWidget(radar_);
 
     // ── Pareto front table ──
+    front_count_label_ = new QLabel("Front size: —");
+    main_layout->addWidget(front_count_label_);
+
     table_ = new QTableWidget();
     table_->setColumnCount(3);
     table_->setHorizontalHeaderLabels({"#", "Costs", "Length"});
@@ -138,8 +141,14 @@ void ParetoFrontPanel::show_front(int num_objectives,
     front_costs_ = costs;
     radar_->set_front(costs);
 
-    table_->setRowCount(static_cast<int>(costs.size()));
-    for (int r = 0; r < static_cast<int>(costs.size()); r++)
+    int total = static_cast<int>(costs.size());
+    int shown = std::min(total, MAX_VISIBLE_ROWS);
+    front_count_label_->setText(
+        QString("Front: %1 solution%2").arg(total).arg(total == 1 ? "" : "s")
+        + (total > shown ? QString(" (showing %1)").arg(shown) : ""));
+
+    table_->setRowCount(shown);
+    for (int r = 0; r < shown; r++)
     {
         auto *num_item = new QTableWidgetItem(QString::number(r));
         num_item->setFlags(num_item->flags() & ~Qt::ItemIsEditable);
@@ -203,7 +212,8 @@ void ParetoFrontPanel::show_front(int num_objectives,
 void ParetoFrontPanel::select_solution(int index)
 {
     if (index < 0 || index >= static_cast<int>(front_costs_.size())) return;
-    table_->selectRow(index);
+    if (index < table_->rowCount())
+        table_->selectRow(index);
     if (index < static_cast<int>(front_costs_.size()))
         radar_->set_selected(front_costs_[index]);
 }

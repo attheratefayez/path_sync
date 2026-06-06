@@ -47,6 +47,8 @@ private:
     QPushButton *solve_btn_;
     QWidget *weights_container_;
     QLabel *hypervolume_label_;
+    QLabel *front_count_label_;
+    static constexpr int MAX_VISIBLE_ROWS = 100;
 
     std::vector<QSlider *> weight_sliders_;
     std::vector<QLabel *> weight_labels_;
