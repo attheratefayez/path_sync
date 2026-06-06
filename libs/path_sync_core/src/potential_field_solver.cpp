@@ -146,8 +146,9 @@ std::map<Coordinate, Coordinate> PotentialFieldSolver::solve(
     }
     else
     {
-        if (current == start)
-            came_from.clear();
+        // Must clear so PathFinder doesn't try to construct a path to the goal
+        // from a partial map that lacks the goal entry.
+        came_from.clear();
         performance_met.success = false;
     }
 
@@ -165,7 +166,7 @@ std::map<Coordinate, Coordinate> PotentialFieldSolver::solve(
 #ifdef PATH_SYNC_BUILD_AS_PLUGIN
 extern "C"
 {
-const char *plugin_name() { return "PotentialField"; }
+const char *plugin_name() { return "PotentialField (MO)"; }
 bool plugin_is_optimal() { return false; }
 bool plugin_is_multi_agent() { return false; }
 void *plugin_create() { return new path_sync::solvers::sapf::PotentialFieldSolver(); }

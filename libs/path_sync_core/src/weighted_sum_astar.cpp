@@ -157,7 +157,7 @@ std::map<Coordinate, Coordinate> WeightedSumAStar::solve(
 #ifdef PATH_SYNC_BUILD_AS_PLUGIN
 extern "C"
 {
-const char *plugin_name() { return "WeightedSumAStar"; }
+const char *plugin_name() { return "WeightedSumAStar (MO)"; }
 bool plugin_is_optimal() { return false; }
 bool plugin_is_multi_agent() { return false; }
 void *plugin_create() { return new path_sync::solvers::sapf::WeightedSumAStar(); }

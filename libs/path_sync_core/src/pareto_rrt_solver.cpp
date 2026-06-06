@@ -272,7 +272,7 @@ std::optional<std::vector<MOSolution>> ParetoRRTSolver::solve(
 #ifdef PATH_SYNC_BUILD_AS_PLUGIN
 extern "C"
 {
-const char *plugin_name() { return "ParetoRRT"; }
+const char *plugin_name() { return "ParetoRRT (MO)"; }
 bool plugin_is_optimal() { return false; }
 bool plugin_is_multi_agent() { return false; }
 bool plugin_is_mo() { return true; }

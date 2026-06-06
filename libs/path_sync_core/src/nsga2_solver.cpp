@@ -496,7 +496,7 @@ std::optional<std::vector<MOSolution>> NSGA2Solver::solve(
 #ifdef PATH_SYNC_BUILD_AS_PLUGIN
 extern "C"
 {
-const char *plugin_name() { return "NSGA2"; }
+const char *plugin_name() { return "NSGA2 (MO)"; }
 bool plugin_is_optimal() { return false; }
 bool plugin_is_multi_agent() { return false; }
 bool plugin_is_mo() { return true; }

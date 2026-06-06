@@ -252,7 +252,7 @@ std::optional<std::vector<MOSolution>> MOAStarSolver::solve(
 #ifdef PATH_SYNC_BUILD_AS_PLUGIN
 extern "C"
 {
-const char *plugin_name() { return "MOAStar"; }
+const char *plugin_name() { return "MOAStar (MO)"; }
 bool plugin_is_optimal() { return true; }
 bool plugin_is_multi_agent() { return false; }
 bool plugin_is_mo() { return true; }
