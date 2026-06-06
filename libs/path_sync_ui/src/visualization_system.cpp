@@ -337,8 +337,30 @@ void VisualizationSystem::setup_ui()
 
     // page 1: Pareto front (MO)
     pareto_panel_ = new ParetoFrontPanel;
-    pareto_panel_->setStyleSheet("ParetoFrontPanel { background: #252525; }"
-                                 "QLabel { color: #ccc; }");
+    pareto_panel_->setStyleSheet(
+        "ParetoFrontPanel { background: #1e1e1e; }"
+        "QLabel       { color: #ddd; }"
+        "QGroupBox    { color: #ddd; border: 1px solid #444; border-radius: 4px;"
+        "               margin-top: 10px; font-weight: bold; }"
+        "QGroupBox::title { subcontrol-origin: margin; left: 8px; padding: 0 4px; }"
+        "QPushButton  { background: #3a5a8c; color: #fff; border: 1px solid #4a7abc;"
+        "               padding: 5px 14px; border-radius: 3px; min-height: 24px; }"
+        "QPushButton:hover { background: #4a7abc; }"
+        "QSpinBox     { background: #2d2d2d; color: #ddd; border: 1px solid #555;"
+        "               padding: 3px; border-radius: 3px; min-height: 22px; }"
+        "QSpinBox::up-button, QSpinBox::down-button {"
+        "  background: #3a3a3a; border: 1px solid #555;"
+        "  border-radius: 2px; margin: 1px; width: 18px; }"
+        "QSlider::groove:horizontal { border: 1px solid #555; height: 6px;"
+        "  background: #2d2d2d; border-radius: 3px; }"
+        "QSlider::handle:horizontal { background: #4a7abc; border: 1px solid #5a8acc;"
+        "  width: 14px; margin: -4px 0; border-radius: 7px; }"
+        "QSlider::sub-page:horizontal { background: #4a7abc; border-radius: 3px; }"
+        "QHeaderView::section { background: #2d2d2d; color: #ddd;"
+        "  border: 1px solid #444; padding: 3px; }"
+        "QTableWidget { background: #1e1e1e; color: #ddd;"
+        "  border: 1px solid #444; gridline-color: #333; }"
+        "QTableWidget::item:selected { background: #3a5a8c; color: #fff; }");
     sidebar_stack_->addWidget(pareto_panel_);
 
     sidebar_stack_->setCurrentIndex(0);
