@@ -81,7 +81,7 @@ private:
     std::atomic<bool> cancel_flag_{false};
     PerformanceMetrics performance_met_;
     std::optional<MAPFMetrics> last_ma_metrics_;
-    int timeout_ms_ = 30000;
+    int timeout_ms_ = 5000;
 
     ISolver *current_sa_solver_;
     IMASolver *current_ma_solver_;

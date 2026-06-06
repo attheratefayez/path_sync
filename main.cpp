@@ -4,6 +4,10 @@
 #include "path_sync_ui/visualization_system.hpp"
 #include "path_sync_ui/visualization_system_config.hpp"
 
+// TODO: 
+//     - update readme with images in docs/images
+//     - add more sophisticated ma-solvers
+//     - add sa-mo solvers
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);

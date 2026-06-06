@@ -54,6 +54,9 @@ private:
     QSpinBox *timeout_spin_;
     QLabel *status_label_;
     QLabel *solve_status_label_;
+    QLabel *timeout_remaining_label_;
+    QTimer *timeout_timer_;
+    std::chrono::steady_clock::time_point solve_deadline_;
     QWidget *sidebar_;
     QPlainTextEdit *perf_text_;
     bool solving_ = false;

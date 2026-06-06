@@ -152,6 +152,8 @@ std::vector<std::vector<int>> HPA_Solver::build_abstract_graph(
     // Vertical borders between clusters
     for (int cx = 1; cx < nc_x; cx++)
     {
+        if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out())
+            return {};
         int bx = cx * cluster_size_;
         for (int y = 0; y < h; y++)
         {
@@ -167,6 +169,8 @@ std::vector<std::vector<int>> HPA_Solver::build_abstract_graph(
     // Horizontal borders between clusters
     for (int cy = 1; cy < nc_y; cy++)
     {
+        if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out())
+            return {};
         int by = cy * cluster_size_;
         for (int x = 0; x < w; x++)
         {
@@ -195,6 +199,8 @@ std::vector<std::vector<int>> HPA_Solver::build_abstract_graph(
     // Connect adjacent entrance pairs across borders
     for (const auto &e : entrances)
     {
+        if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out())
+            return {};
         int id = coord_to_node[e];
         int cx = e.first / cluster_size_;
         int cy = e.second / cluster_size_;
@@ -239,6 +245,8 @@ std::vector<std::vector<int>> HPA_Solver::build_abstract_graph(
 
         for (size_t i = 0; i < ids.size(); i++)
         {
+            if ((performance_met.cancel_flag && *performance_met.cancel_flag) || performance_met.timed_out())
+                break;
             for (size_t j = i + 1; j < ids.size(); j++)
             {
                 auto p1 = nodes[ids[i]].pos;

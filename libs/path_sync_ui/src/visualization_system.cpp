@@ -440,7 +440,7 @@ void VisualizationSystem::setup_ui()
     timeout_spin_ = new QSpinBox;
     timeout_spin_->setMinimum(5);
     timeout_spin_->setMaximum(300);
-    timeout_spin_->setValue(30);
+    timeout_spin_->setValue(5);
     timeout_spin_->setSingleStep(5);
     timeout_spin_->setMaximumWidth(70);
     timeout_spin_->setAlignment(Qt::AlignCenter);
@@ -481,6 +481,27 @@ void VisualizationSystem::setup_ui()
     tb_lay->addWidget(new QLabel("Solver:"));
     tb_lay->addWidget(solver_combo_);
     tb_lay->addStretch();
+    timeout_remaining_label_ = new QLabel;
+    timeout_remaining_label_->setStyleSheet("color: #ffa500; font-weight: bold; padding-right: 8px;");
+    timeout_remaining_label_->hide();
+    tb_lay->addWidget(timeout_remaining_label_);
+
+    timeout_timer_ = new QTimer(this);
+    timeout_timer_->setInterval(200);
+    connect(timeout_timer_, &QTimer::timeout, this, [this]() {
+        if (!solving_) {
+            timeout_timer_->stop();
+            timeout_remaining_label_->hide();
+            return;
+        }
+        auto remaining = std::chrono::duration_cast<std::chrono::milliseconds>(
+            solve_deadline_ - std::chrono::steady_clock::now()).count();
+        if (remaining <= 0)
+            timeout_remaining_label_->setText("Timeout: 0.0s");
+        else
+            timeout_remaining_label_->setText(
+                QString("Timeout: %1s").arg(remaining / 1000.0, 0, 'f', 1));
+    });
 
     root->addWidget(tb);
 
@@ -584,6 +605,12 @@ void VisualizationSystem::solve_async()
     auto ends   = app_.get_current_scene().second;
 
     app_.set_timeout_ms(timeout_spin_->value() * 1000);
+    solve_deadline_ = std::chrono::steady_clock::now()
+                    + std::chrono::milliseconds(timeout_spin_->value() * 1000);
+    timeout_remaining_label_->setText(
+        QString("Timeout: %1s").arg(timeout_spin_->value()));
+    timeout_remaining_label_->show();
+    timeout_timer_->start();
 
     auto *watcher = new QFutureWatcher<std::shared_ptr<MapData>>(this);
     connect(watcher, &QFutureWatcher<std::shared_ptr<MapData>>::finished, this, [this, watcher]() {
@@ -609,6 +636,8 @@ void VisualizationSystem::solve_async()
 
         QTimer::singleShot(3000, this, [this]() { solve_status_label_->clear(); });
         solving_ = false;
+        timeout_timer_->stop();
+        timeout_remaining_label_->hide();
         solve_btn_->setEnabled(true);
         solve_btn_->setText("Solve");
         cancel_btn_->setEnabled(false);
