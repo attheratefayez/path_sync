@@ -5,8 +5,10 @@
 #include <vector>
 #include <memory>
 
+#include "path_sync_core/map_loader/cost_map.hpp"
 #include "path_sync_core/map_loader/map_data.hpp"
 #include "path_sync_core/map_loader/map_manager.hpp"
+#include "path_sync_core/mo_types.hpp"
 #include "path_sync_core/path_finder.hpp"
 #include "path_sync_core/path_sync_types.hpp"
 #include "path_sync_core/performance_mat.hpp"
@@ -27,9 +29,15 @@ class PathSyncApp
     bool request_scene(int scene_index);
     bool solve_current_scene();
     bool solve_current_map();
+
+    // Standard async solve (SA / MA)
     std::shared_ptr<path_sync::MapData> solve_async_on_copy(
         const std::vector<Coordinate>& starts,
         const std::vector<Coordinate>& ends);
+
+    // Multi-objective async solve
+    std::shared_ptr<path_sync::MapData> solve_mo_async_on_copy(
+        Coordinate start, Coordinate goal, int num_objectives);
 
     std::pair<std::vector<Coordinate>, std::vector<Coordinate>> get_current_scene() const;
 
@@ -42,6 +50,26 @@ class PathSyncApp
     bool get_is_multi_agent() const;
     void toggle_agent_mode();
     void set_num_agents(int n);
+
+    // MO solver support
+    bool has_mo_solver() const { return path_finder_.has_mo_solver(); }
+    bool is_current_solver_mo() const { return path_finder_.is_current_solver_mo(); }
+    std::vector<std::string> get_mo_solver_names() const;
+    bool is_mo_solver_optimal(std::size_t index) const;
+    void select_mo_solver_by_index(std::size_t index);
+    std::size_t get_mo_solver_count() const { return path_finder_.get_mo_solver_count(); }
+    int get_num_objectives() const { return num_objectives_; }
+    void set_num_objectives(int n) { num_objectives_ = n; }
+
+    // MO result access
+    const std::vector<MOSolution>& get_current_mo_front() const { return current_mo_front_; }
+    const MOMetrics& get_current_mo_metrics() const { return current_mo_metrics_; }
+    Coordinate get_current_mo_start() const { return current_mo_start_; }
+    Coordinate get_current_mo_goal() const { return current_mo_goal_; }
+    int get_current_mo_selection() const { return current_mo_selection_; }
+    void select_mo_solution(int index);
+    void set_mo_weights(const std::vector<float>& w);
+    bool load_cost_map_for_current_map();
 
     std::shared_ptr<path_sync::MapData> get_current_map_data() const;
 
@@ -70,7 +98,7 @@ class PathSyncApp
     {
         return current_ma_solution_;
     }
-   
+
     std::stringstream get_performance_data() const
     {
         return path_finder_.get_performance_data();
@@ -83,6 +111,15 @@ class PathSyncApp
     std::vector<Coordinate> current_sa_solution_;
     std::vector<std::vector<Coordinate>> current_ma_solution_;
 
+    // MO state
+    std::vector<MOSolution> current_mo_front_;
+    MOMetrics current_mo_metrics_;
+    Coordinate current_mo_start_{0, 0};
+    Coordinate current_mo_goal_{0, 0};
+    int current_mo_selection_ = 0;
+    int num_objectives_ = 5;
+    std::vector<float> mo_weights_ = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+
     path_sync::PathFinder path_finder_;
     mutable std::mutex solve_mutex_;
 
@@ -93,5 +130,4 @@ class PathSyncApp
 };
 
 } // namespace path_sync
-
 #endif // __PATH_SYNC_APP_HPP__

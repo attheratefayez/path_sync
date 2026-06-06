@@ -155,6 +155,52 @@ std::shared_ptr<path_sync::MapData> PathSyncApp::solve_async_on_copy(
     return copy;
 }
 
+std::shared_ptr<path_sync::MapData> PathSyncApp::solve_mo_async_on_copy(
+    Coordinate start, Coordinate goal, int num_objectives)
+{
+    auto copy = std::make_shared<path_sync::MapData>(*current_map_data_);
+    int scene_id = std::max(0, map_manager_.get_current_scene_index() - num_agents_);
+
+    std::lock_guard<std::mutex> lock(solve_mutex_);
+    path_finder_.set_scene_id(scene_id);
+
+    // Load cost map
+    load_cost_map_for_current_map();
+    CostMap *cost_ptr = nullptr;
+    // cost map will be loaded inside find_mo_path — pass nullptr for now
+    // and let the solver load it internally
+
+    MOMetrics mo_met;
+    auto result = path_finder_.find_mo_path(*copy, nullptr, start, goal,
+                                             num_objectives,
+                                             path_finder_.get_performance_metrics(),
+                                             mo_met);
+
+    current_mo_front_.clear();
+    current_mo_metrics_ = mo_met;
+    current_mo_start_ = start;
+    current_mo_goal_ = goal;
+
+    if (!result.has_value() || result->empty())
+        return nullptr;
+
+    current_mo_front_ = std::move(*result);
+    current_mo_selection_ = 0;
+
+    // Overlay first solution's path on map copy
+    if (!current_mo_front_.empty() && !current_mo_front_[0].path.empty())
+    {
+        for (auto &elem : current_mo_front_[0].path)
+        {
+            auto t = copy->get_cell_type(elem);
+            if (t != path_sync::CellType::START && t != path_sync::CellType::END)
+                copy->set_cell_type(elem, path_sync::CellType::PATH);
+        }
+    }
+
+    return copy;
+}
+
 bool PathSyncApp::solve_current_scene()
 {
     auto result = solve_async_on_copy(current_scene_.first, current_scene_.second);
@@ -177,11 +223,6 @@ void PathSyncApp::set_map_data(std::shared_ptr<path_sync::MapData> data)
 
 bool PathSyncApp::solve_current_map()
 {
-    // map_manager_.reset();
-
-    // NOTE:
-    // getting a clear map_data. Because, in initalization, update_map_data_with_current_scene_
-    // sets starts and ends in mapdata
     current_map_data_ = std::make_shared<path_sync::MapData>(map_manager_.get_current_map_data());
     current_scene_ = map_manager_.get_next_scene(1);
 
@@ -207,7 +248,6 @@ bool PathSyncApp::solve_current_map()
         (void)path_finder_.find_path(*current_map_data_, current_scene_.first, current_scene_.second);
         current_scene_ = map_manager_.get_next_scene(1);
 
-        // CSV log
         std::string csv_dir = std::string(PROJECT_ROOT) + "/log";
         std::filesystem::create_directories(csv_dir);
 
@@ -317,6 +357,76 @@ void PathSyncApp::set_num_agents(int n)
     update_map_data_with_current_scene_();
 }
 
+std::vector<std::string> PathSyncApp::get_mo_solver_names() const
+{
+    return path_finder_.get_mo_solver_names();
+}
+
+bool PathSyncApp::is_mo_solver_optimal(std::size_t index) const
+{
+    return path_finder_.is_mo_solver_optimal(index);
+}
+
+void PathSyncApp::select_mo_solver_by_index(std::size_t index)
+{
+    path_finder_.select_mo_solver_by_index(index);
+}
+
+void PathSyncApp::select_mo_solution(int index)
+{
+    if (index < 0 || index >= static_cast<int>(current_mo_front_.size()))
+        return;
+
+    current_mo_selection_ = index;
+
+    // Clear old PATH marks, re-mark from new selection
+    if (current_map_data_)
+    {
+        for (int y = 0; y < current_map_data_->get_height(); y++)
+        {
+            for (int x = 0; x < current_map_data_->get_width(); x++)
+            {
+                auto ct = current_map_data_->get_cell_type({x, y});
+                if (ct == CellType::PATH)
+                    current_map_data_->set_cell_type({x, y}, CellType::DEFAULT);
+            }
+        }
+
+        for (auto &elem : current_scene_.first)
+            current_map_data_->set_cell_type(elem, CellType::START);
+        for (auto &elem : current_scene_.second)
+            current_map_data_->set_cell_type(elem, CellType::END);
+
+        auto &sol = current_mo_front_[index];
+        for (auto &elem : sol.path)
+        {
+            auto t = current_map_data_->get_cell_type(elem);
+            if (t != CellType::START && t != CellType::END)
+                current_map_data_->set_cell_type(elem, CellType::PATH);
+        }
+    }
+}
+
+void PathSyncApp::set_mo_weights(const std::vector<float>& w)
+{
+    mo_weights_ = w;
+}
+
+bool PathSyncApp::load_cost_map_for_current_map()
+{
+    std::string map_name = current_map_data_->get_map_info().map_name;
+    std::string cost_path = std::string(PROJECT_ROOT) + "/maps/mo_costmaps/"
+                          + map_name.substr(0, map_name.find_last_of('.'))
+                          + ".cost";
+    std::error_code ec;
+    if (std::filesystem::exists(cost_path, ec))
+    {
+        // Cost maps are loaded internally by each solver from the path
+        return true;
+    }
+    return false;
+}
+
 std::shared_ptr<path_sync::MapData> PathSyncApp::get_current_map_data() const
 {
     return current_map_data_;
@@ -382,6 +492,7 @@ void PathSyncApp::clear_paths()
 
     current_sa_solution_.clear();
     current_ma_solution_.clear();
+    current_mo_front_.clear();
 
     for (auto &elem : current_scene_.first)
         current_map_data_->set_cell_type(elem, path_sync::CellType::START);
@@ -398,6 +509,7 @@ void PathSyncApp::reset_grid()
     current_scene_.second.clear();
     current_sa_solution_.clear();
     current_ma_solution_.clear();
+    current_mo_front_.clear();
     path_sync::Logger::get().info("Grid reset.");
 }
 

@@ -49,6 +49,24 @@ add_solver_plugin(mstar_solver
     ../libs/path_sync_core/src/mstar_solver.cpp
 )
 
+# ── Multi-objective solvers ─────────────────────────────────────────
+
+add_solver_plugin(weighted_sum_astar
+    ../libs/path_sync_core/src/weighted_sum_astar.cpp
+)
+add_solver_plugin(potential_field
+    ../libs/path_sync_core/src/potential_field_solver.cpp
+)
+add_solver_plugin(mo_astar
+    ../libs/path_sync_core/src/mo_astar_solver.cpp
+)
+add_solver_plugin(nsga2
+    ../libs/path_sync_core/src/nsga2_solver.cpp
+)
+add_solver_plugin(pareto_rrt
+    ../libs/path_sync_core/src/pareto_rrt_solver.cpp
+)
+
 # ── CBS family: three separate plugins, one implementation ────────────
 
 set(CBS_SOURCES
