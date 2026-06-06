@@ -5,3 +5,5 @@ log/**
 docs/*/
 core
 
+!docs/images/
+!docs/images/*
