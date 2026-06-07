@@ -82,6 +82,7 @@ class PathSyncApp
     void set_timeout_ms(int ms) { path_finder_.set_timeout_ms(ms); }
 
     bool create_blank_map(int width, int height);
+    void save_custom_map();
     void set_start_point(Coordinate c);
     void set_goal_point(Coordinate c);
     void clear_paths();
@@ -135,6 +136,7 @@ class PathSyncApp
 
     std::shared_ptr<CostMap> generate_cost_map_from_map_data(const MapData &map_data);
 
+    bool is_custom_map_() const;
     void update_map_data_with_current_scene_();
 
 };

@@ -25,19 +25,29 @@ PathSyncApp::PathSyncApp()
     , current_ma_solution_{}
     , num_agents_{1}
 {
-    current_map_data_ = std::make_shared<path_sync::MapData>(map_manager_.get_next_map_data());
-    current_scene_ = map_manager_.get_next_scene(num_agents_);
+    int custom_idx = map_manager_.find_map_index("custom");
+    if (custom_idx >= 0)
+    {
+        current_map_data_ = std::make_shared<path_sync::MapData>(map_manager_.set_map_index(custom_idx));
+        current_scene_ = {};
+    }
+    else
+    {
+        current_map_data_ = std::make_shared<path_sync::MapData>(map_manager_.get_next_map_data());
+        current_scene_ = map_manager_.get_next_scene(num_agents_);
+    }
 
     update_map_data_with_current_scene_();
 
     std::stringstream ss;
-    ss << "Current map: " << map_manager_.get_current_map_data().get_map_info().map_name << std::endl;
+    ss << "Current map: " << current_map_data_->get_map_info().map_name << std::endl;
 
     path_sync::Logger::get().info(ss.str().c_str());
 }
 
 bool PathSyncApp::request_next_map()
 {
+    save_custom_map();
     auto md = map_manager_.get_next_map_data();
     if (md.get_height() == 0)
         return false;
@@ -49,6 +59,7 @@ bool PathSyncApp::request_next_map()
 
 bool PathSyncApp::request_previous_map()
 {
+    save_custom_map();
     auto md = map_manager_.get_prev_map_data();
     if (md.get_height() == 0)
         return false;
@@ -60,6 +71,7 @@ bool PathSyncApp::request_previous_map()
 
 bool PathSyncApp::request_map(int map_idx)
 {
+    save_custom_map();
     auto md = map_manager_.set_map_index(map_idx);
     if (md.get_height() == 0)
         return false;
@@ -425,6 +437,13 @@ bool PathSyncApp::load_cost_map_for_current_map()
     return false;
 }
 
+bool PathSyncApp::is_custom_map_() const
+{
+    if (!current_map_data_) return false;
+    auto name = current_map_data_->get_map_info().map_name;
+    return name == "custom" || name == "custom.map";
+}
+
 std::shared_ptr<CostMap> PathSyncApp::generate_cost_map_from_map_data(const MapData &map_data)
 {
     int w = map_data.get_width();
@@ -578,7 +597,15 @@ std::string PathSyncApp::get_current_map_name() const
     return current_map_data_->get_map_info().map_name;
 }
 
-int PathSyncApp::get_num_agents() const { return num_agents_; }
+int PathSyncApp::get_num_agents() const
+{
+    if (is_custom_map_())
+    {
+        size_t n = std::min(current_scene_.first.size(), current_scene_.second.size());
+        return n > 0 ? static_cast<int>(n) : 1;
+    }
+    return num_agents_;
+}
 
 PerformanceMetrics PathSyncApp::get_performance_metrics() const
 {
@@ -607,14 +634,48 @@ bool PathSyncApp::create_blank_map(int width, int height)
     return true;
 }
 
+void PathSyncApp::save_custom_map()
+{
+    if (!is_custom_map_()) return;
+
+    auto info = current_map_data_->get_map_info();
+    int w = static_cast<int>(info.width);
+    int h = static_cast<int>(info.height);
+
+    std::string path = std::string(PROJECT_ROOT) + "/maps/custom.map";
+    std::ofstream file(path);
+    if (!file) return;
+
+    file << "type octile\n";
+    file << "height " << h << "\n";
+    file << "width " << w << "\n";
+    file << "map\n";
+    for (int y = 0; y < h; y++)
+    {
+        for (int x = 0; x < w; x++)
+        {
+            CellType t = current_map_data_->get_cell_type({x, y});
+            file << (t == CellType::WALL ? '@' : '.');
+        }
+        file << '\n';
+    }
+}
+
 void PathSyncApp::set_start_point(Coordinate c)
 {
     CellType t = current_map_data_->get_cell_type(c);
     if (t == CellType::WALL) return;
-    for (auto &old : current_scene_.first)
-        if (old != c && current_map_data_->get_cell_type(old) == CellType::START)
-            current_map_data_->set_cell_type(old, CellType::DEFAULT);
-    current_scene_.first.clear();
+
+    if (t == CellType::START)
+    {
+        current_map_data_->set_cell_type(c, CellType::DEFAULT);
+        auto it = std::find(current_scene_.first.begin(), current_scene_.first.end(), c);
+        if (it != current_scene_.first.end())
+            current_scene_.first.erase(it);
+        clear_paths();
+        return;
+    }
+
     current_scene_.first.push_back(c);
     current_map_data_->set_cell_type(c, CellType::START);
     clear_paths();
@@ -624,10 +685,17 @@ void PathSyncApp::set_goal_point(Coordinate c)
 {
     CellType t = current_map_data_->get_cell_type(c);
     if (t == CellType::WALL) return;
-    for (auto &old : current_scene_.second)
-        if (old != c && current_map_data_->get_cell_type(old) == CellType::END)
-            current_map_data_->set_cell_type(old, CellType::DEFAULT);
-    current_scene_.second.clear();
+
+    if (t == CellType::END)
+    {
+        current_map_data_->set_cell_type(c, CellType::DEFAULT);
+        auto it = std::find(current_scene_.second.begin(), current_scene_.second.end(), c);
+        if (it != current_scene_.second.end())
+            current_scene_.second.erase(it);
+        clear_paths();
+        return;
+    }
+
     current_scene_.second.push_back(c);
     current_map_data_->set_cell_type(c, CellType::END);
     clear_paths();
