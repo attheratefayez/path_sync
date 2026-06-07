@@ -172,17 +172,16 @@ std::shared_ptr<path_sync::MapData> PathSyncApp::solve_async_on_copy(
 std::shared_ptr<path_sync::MapData> PathSyncApp::solve_mo_async_on_copy(
     Coordinate start, Coordinate goal, int num_objectives)
 {
+    if (!current_map_data_)
+        return nullptr;
+
     auto copy = std::make_shared<path_sync::MapData>(*current_map_data_);
     int scene_id = std::max(0, map_manager_.get_current_scene_index() - num_agents_);
 
     std::lock_guard<std::mutex> lock(solve_mutex_);
     path_finder_.set_scene_id(scene_id);
 
-    // Load pre-existing cost map, or generate one on-the-fly from map structure
     auto cost_map = load_cost_map();
-    if (!cost_map)
-        cost_map = generate_cost_map_from_map_data(*copy);
-
     MOMetrics mo_met;
     auto perf_met = path_finder_.get_performance_metrics();
     auto result = path_finder_.find_mo_path(*copy, cost_map.get(), start, goal,

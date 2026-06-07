@@ -675,7 +675,11 @@ void VisualizationSystem::populate_solver_combo()
         int first = solver_combo_->count();
         for (std::size_t i = 0; i < sa_names.size(); i++)
         {
-            QString display = QString::fromStdString(sa_names[i])
+            QString name = QString::fromStdString(sa_names[i]);
+            QString tag;
+            if (name == "WeightedSumAStar" || name == "PotentialField")
+                tag = " (MO)";
+            QString display = name + tag
                 + (app_.is_sa_solver_optimal(i) ? "  [optimal]" : "  [suboptimal]");
             solver_combo_->addItem(display, QString::fromStdString(sa_names[i]));
         }
@@ -835,6 +839,20 @@ void VisualizationSystem::solve_mo_async(int num_objectives)
         return;
     }
 
+    if (!app_.get_current_map_data())
+    {
+        solve_status_label_->setText("No map data available");
+        solving_ = false;
+        solve_btn_->setEnabled(true);
+        solve_btn_->setText("Solve");
+        cancel_btn_->setEnabled(false);
+        return;
+    }
+
+    std::string solver_name(app_.get_current_solver_name());
+    solve_status_label_->setText(
+        QString("Solving (%1)...").arg(QString::fromStdString(solver_name)));
+
     app_.set_timeout_ms(timeout_spin_->value() * 1000);
     solve_deadline_ = std::chrono::steady_clock::now()
                     + std::chrono::milliseconds(timeout_spin_->value() * 1000);
@@ -915,7 +933,9 @@ void VisualizationSystem::solve_async()
     cancel_btn_->setEnabled(true);
     cancel_btn_->setText("Cancel");
     solve_btn_->setText("Solving...");
-    solve_status_label_->setText("Solving...");
+    solve_status_label_->setText(
+        QString("Solving (%1)...").arg(
+            QString::fromStdString(std::string(app_.get_current_solver_name()))));
 
     auto starts = app_.get_current_scene().first;
     auto ends   = app_.get_current_scene().second;
