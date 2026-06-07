@@ -31,6 +31,9 @@ class GridWidget : public QWidget
 {
     Q_OBJECT
 
+signals:
+    void points_changed();
+
 public:
     GridWidget(PathSyncApp &app, QWidget *parent = nullptr)
         : QWidget(parent), app_(app), grid_()
@@ -188,6 +191,7 @@ protected:
                 app_.set_goal_point(c);
             else
                 app_.set_start_point(c);
+            emit points_changed();
             update();
         }
     }
@@ -278,6 +282,12 @@ private:
 
 VisualizationSystem::~VisualizationSystem() = default;
 
+void VisualizationSystem::closeEvent(QCloseEvent *event)
+{
+    app_.save_custom_map();
+    QWidget::closeEvent(event);
+}
+
 VisualizationSystem::VisualizationSystem(PathSyncApp& app, QWidget *parent)
     : QWidget(parent)
     , app_(app)
@@ -313,6 +323,8 @@ void VisualizationSystem::setup_ui()
 
     grid_widget_ = new GridWidget(app_, this);
     grid_widget_->setFixedSize(1400, 720);
+    connect(grid_widget_, &GridWidget::points_changed,
+            this, &VisualizationSystem::update_status);
 
     auto *vp_center = new QHBoxLayout;
     vp_center->addStretch();

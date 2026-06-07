@@ -32,6 +32,7 @@ class VisualizationSystem : public QWidget
 public:
     explicit VisualizationSystem(PathSyncApp& app, QWidget *parent = nullptr);
     ~VisualizationSystem() override;
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
     void on_solver_combo_changed(int index);
