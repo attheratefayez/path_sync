@@ -210,6 +210,16 @@ protected:
             set_cell_at(event->pos(), CellType::WALL);
     }
 
+    void mouseDoubleClickEvent(QMouseEvent *event) override
+    {
+        if (event->button() != Qt::RightButton) return;
+        if (!inside_grid(event->pos())) return;
+
+        app_.remove_point(cell_at(event->pos()));
+        emit points_changed();
+        update();
+    }
+
     void mouseReleaseEvent(QMouseEvent *event) override
     {
         if (event->button() == Qt::MiddleButton)
@@ -909,6 +919,21 @@ void VisualizationSystem::solve_async()
 
     auto starts = app_.get_current_scene().first;
     auto ends   = app_.get_current_scene().second;
+
+    if (starts.size() != ends.size() || starts.empty())
+    {
+        solve_status_label_->setText(
+            starts.empty() ? "No start points placed"
+                           : "Mismatch: " + QString::number(starts.size())
+                             + " starts vs " + QString::number(ends.size()) + " goals");
+        QTimer::singleShot(4000, this, [this]() { solve_status_label_->clear(); });
+        solving_ = false;
+        solve_btn_->setEnabled(true);
+        solve_btn_->setText("Solve");
+        cancel_btn_->setEnabled(false);
+        cancel_btn_->setText("Cancel");
+        return;
+    }
 
     app_.set_timeout_ms(timeout_spin_->value() * 1000);
     solve_deadline_ = std::chrono::steady_clock::now()

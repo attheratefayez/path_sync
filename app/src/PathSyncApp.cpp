@@ -664,17 +664,7 @@ void PathSyncApp::save_custom_map()
 void PathSyncApp::set_start_point(Coordinate c)
 {
     CellType t = current_map_data_->get_cell_type(c);
-    if (t == CellType::WALL) return;
-
-    if (t == CellType::START)
-    {
-        current_map_data_->set_cell_type(c, CellType::DEFAULT);
-        auto it = std::find(current_scene_.first.begin(), current_scene_.first.end(), c);
-        if (it != current_scene_.first.end())
-            current_scene_.first.erase(it);
-        clear_paths();
-        return;
-    }
+    if (t == CellType::WALL || t == CellType::START) return;
 
     current_scene_.first.push_back(c);
     current_map_data_->set_cell_type(c, CellType::START);
@@ -684,20 +674,32 @@ void PathSyncApp::set_start_point(Coordinate c)
 void PathSyncApp::set_goal_point(Coordinate c)
 {
     CellType t = current_map_data_->get_cell_type(c);
-    if (t == CellType::WALL) return;
+    if (t == CellType::WALL || t == CellType::END) return;
 
-    if (t == CellType::END)
+    current_scene_.second.push_back(c);
+    current_map_data_->set_cell_type(c, CellType::END);
+    clear_paths();
+}
+
+void PathSyncApp::remove_point(Coordinate c)
+{
+    CellType t = current_map_data_->get_cell_type(c);
+    if (t == CellType::START)
+    {
+        current_map_data_->set_cell_type(c, CellType::DEFAULT);
+        auto it = std::find(current_scene_.first.begin(), current_scene_.first.end(), c);
+        if (it != current_scene_.first.end())
+            current_scene_.first.erase(it);
+    }
+    else if (t == CellType::END)
     {
         current_map_data_->set_cell_type(c, CellType::DEFAULT);
         auto it = std::find(current_scene_.second.begin(), current_scene_.second.end(), c);
         if (it != current_scene_.second.end())
             current_scene_.second.erase(it);
-        clear_paths();
-        return;
     }
-
-    current_scene_.second.push_back(c);
-    current_map_data_->set_cell_type(c, CellType::END);
+    else
+        return;
     clear_paths();
 }
 

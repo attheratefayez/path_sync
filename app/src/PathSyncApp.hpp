@@ -85,6 +85,7 @@ class PathSyncApp
     void save_custom_map();
     void set_start_point(Coordinate c);
     void set_goal_point(Coordinate c);
+    void remove_point(Coordinate c);
     void clear_paths();
     void reset_grid();
 
