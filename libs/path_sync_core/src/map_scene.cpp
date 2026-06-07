@@ -82,10 +82,12 @@ void Scene::read_scene_(std::filesystem::path scene_file_path)
         path_sync::Logger::get().info(ss.str().c_str());
     }
 
+
     else
     {
-        throw std::filesystem::filesystem_error("Scene file does not exist or is not a regular file", scene_file_path,
-                                                std::make_error_code(std::errc::no_such_file_or_directory));
+        std::stringstream ss;
+        ss << "No scene file found for map: " << scene_file_path.stem() << " (empty scenes)" << std::endl;
+        path_sync::Logger::get().warn(ss.str().c_str());
     }
 }
 

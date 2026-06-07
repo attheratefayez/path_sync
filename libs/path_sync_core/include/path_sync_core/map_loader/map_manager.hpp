@@ -39,6 +39,7 @@ public:
     int get_total_maps() const;
     std::pair<std::vector<Coordinate>, std::vector<Coordinate>> set_scene_index(int idx, int n_agent);
     MapData set_map_index(int idx);
+    int find_map_index(const std::string &name) const;
 
 private:
     std::vector<std::string> available_maps_;

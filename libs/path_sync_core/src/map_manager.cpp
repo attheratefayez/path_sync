@@ -21,12 +21,6 @@ MapManager::MapManager()
 
 [[nodiscard]] path_sync::MapData MapManager::get_current_map_data()
 {
-    if (current_map_.get_map_scenes().get_scene_data().empty())
-    {
-        throw std::runtime_error(
-            "No map-data available. Map is not initialied. Call get_next_map_data() to load a map.");
-    }
-
     return current_map_data_;
 }
 
@@ -76,11 +70,6 @@ MapManager::MapManager()
 
 std::pair<std::vector<Coordinate>, std::vector<Coordinate>> MapManager::get_current_scene() const
 {
-    if (current_scene_.first.empty())
-    {
-        throw std::runtime_error("No scene available. Map is not initialied. Call get_next_map_data() to load a map.");
-    }
-
     return current_scene_;
 }
 
@@ -93,9 +82,7 @@ std::pair<std::vector<Coordinate>, std::vector<Coordinate>> MapManager::get_curr
     // Because, PathFinder will expect a vector of starts and a vector of ends.
 
     if (current_map_.get_map_scenes().get_scene_data().empty())
-    {
-        throw std::runtime_error("No scene available. Map is not initialied. Call get_next_map_data() to load a map.");
-    }
+        return {};
 
     if (current_scene_idx_ + n_agent <= total_scenes_)
     {
@@ -129,9 +116,7 @@ std::pair<std::vector<Coordinate>, std::vector<Coordinate>> MapManager::get_curr
 [[nodiscard]] std::pair<std::vector<Coordinate>, std::vector<Coordinate>> MapManager::get_prev_scene(int n_agent)
 {
     if (current_map_.get_map_scenes().get_scene_data().empty())
-    {
-        throw std::runtime_error("No scene available. Map is not initialied. Call get_next_map_data() to load a map.");
-    }
+        return {};
 
     if (current_scene_idx_ - 2 * n_agent < 0)
         return std::pair<std::vector<Coordinate>, std::vector<Coordinate>>();
@@ -177,9 +162,7 @@ void MapManager::reset_scene_index()
 [[nodiscard]] std::pair<std::vector<Coordinate>, std::vector<Coordinate>> MapManager::set_scene_index(int idx, int n_agent)
 {
     if (current_map_.get_map_scenes().get_scene_data().empty())
-    {
-        throw std::runtime_error("No scene available. Map is not initialied. Call get_next_map_data() to load a map.");
-    }
+        return {};
 
     if (idx < 0 || idx + n_agent > total_scenes_)
         return std::pair<std::vector<Coordinate>, std::vector<Coordinate>>();
@@ -248,6 +231,14 @@ int MapManager::get_total_maps() const
     total_scenes_ = current_map_.get_map_scenes().get_scene_data().size();
 
     return current_map_data_;
+}
+
+int MapManager::find_map_index(const std::string &name) const
+{
+    for (int i = 0; i < static_cast<int>(available_maps_.size()); i++)
+        if (available_maps_[i] == name)
+            return i;
+    return -1;
 }
 
 void MapManager::_get_available_maps()

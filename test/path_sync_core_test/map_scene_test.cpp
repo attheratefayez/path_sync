@@ -19,7 +19,8 @@ TEST_F(SceneTest, DefaultConstructorCreatesEmptyScene)
 
 TEST_F(SceneTest, NoSuchFile)
 {
-    EXPECT_THROW(path_sync::Scene("no_file"), std::filesystem::filesystem_error);
+    path_sync::Scene s("no_file");
+    EXPECT_TRUE(s.get_scene_data().empty());
 }
 
 TEST_F(SceneTest, CheckFileRead)
