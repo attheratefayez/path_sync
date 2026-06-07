@@ -74,15 +74,15 @@ The application is split into three layers:
 
 ```
 ┌──────────────────────────────────────────────┐
-│  app/   (PathSyncApp, main)                   │
-│  Orchestrates core + UI, connects signals     │
+│  app/   (PathSyncApp, main)                  │
+│  Orchestrates core + UI, connects signals    │
 ├──────────────────────────────────────────────┤
-│  libs/path_sync_ui/   (Qt6 visualization)     │
-│  Grid widget, toolbar, sidebar, Pareto panel  │
+│  libs/path_sync_ui/   (Qt6 visualization)    │
+│  Grid widget, toolbar, sidebar, Pareto panel │
 ├──────────────────────────────────────────────┤
-│  libs/path_sync_core/   (algorithms, data)    │
-│  Solvers, MapManager, PathFinder,             │
-│  PluginLoader, PerformanceMetrics, CostMap    │
+│  libs/path_sync_core/   (algorithms, data)   │
+│  Solvers, MapManager, PathFinder,            │
+│  PluginLoader, PerformanceMetrics, CostMap   │
 └──────────────────────────────────────────────┘
 ```
 
@@ -111,37 +111,37 @@ Map files → MapData  →  Grid (visual)
 ## Project Structure
 
 ```
-├── app/                          # Application layer
+├── app/                                   # Application layer
 │   └── src/
-│       ├── PathSyncApp.hpp/.cpp  # Core app logic
-│       └── main.cpp              # Standalone CLI entry
+│       ├── PathSyncApp.hpp/.cpp           # Core app logic
+│       └── main.cpp                       # Standalone CLI entry
 ├── libs/
-│   ├── path_sync_core/           # Core library
+│   ├── path_sync_core/                    # Core library
 │   │   ├── include/path_sync_core/
-│   │   │   ├── map_loader/       # Map & scene parsing, CostMap loader
-│   │   │   ├── solvers/          # SA, MA, and MO solver headers
-│   │   │   ├── mo_types.hpp           # MOSolution, MOMetrics
-│   │   │   ├── solver_interface.hpp   # ISolver, IMASolver, IMOSolver
+│   │   │   ├── map_loader/                # Map & scene parsing, CostMap loader
+│   │   │   ├── solvers/                   # SA, MA, and MO solver headers
+│   │   │   ├── mo_types.hpp               # MOSolution, MOMetrics
+│   │   │   ├── solver_interface.hpp       # ISolver, IMASolver, IMOSolver
 │   │   │   └── ...
 │   │   └── src/
-│   └── path_sync_ui/             # Qt6 visualization
+│   └── path_sync_ui/                      # Qt6 visualization
 │       ├── include/path_sync_ui/
 │       │   ├── visualization_system.hpp
 │       │   ├── radar_chart_widget.hpp     # N-axis QPainter radar chart
 │       │   ├── pareto_front_panel.hpp     # Weight sliders + front table
 │       │   └── cost_map_viewer.hpp        # Objective heatmap dialog
 │       └── src/
-├── maps/                         # Grid map files (.map, optional .map.scen)
-│   └── mo_costmaps/              # Multi-objective cost map variants (.cost)
-├── scripts/                      # Utility scripts
-│   └── generate_cost_map_layers.py   # Cost map generator (obstacle proximity, bottlenecks, terrain)
-├── config/                       # YAML configuration
-├── log/                          # Solver performance logs
-├── plugins/                      # Solver .so plugins (built-in + external)
+├── maps/                                  # Grid map files (.map, optional .map.scen)
+│   └── mo_costmaps/                       # Multi-objective cost map variants (.cost)
+├── scripts/                               # Utility scripts
+│   └── generate_cost_map_layers.py        # Cost map generator (obstacle proximity, bottlenecks, terrain)
+├── config/                                # YAML configuration
+├── log/                                   # Solver performance logs
+├── plugins/                               # Solver .so plugins (built-in + external)
 │   ├── CMakeLists.txt
 │   ├── demo_solver/
 │   └── lib*.so
-└── test/                         # GoogleTest unit tests
+└── test/                                  # GoogleTest unit tests
 ```
 
 ## Usage
