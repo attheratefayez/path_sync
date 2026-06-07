@@ -88,7 +88,7 @@ The application is split into three layers:
 
 ### Data flow
 
-1. **Map loading** — `MapManager` parses `.map` + `.map.scen` files into `MapData` (grid of `CellType`) and scenes.
+1. **Map loading** — `MapManager` parses `.map` files into `MapData` (grid of `CellType`) and optionally loads `.map.scen` scene files. Maps without scene files (e.g. user-created custom maps) are handled gracefully.
 2. **Solving** — User clicks **Solve** → `PathFinder::find_path()` (SA/MA) or `find_mo_path()` (MO) → selected solver → returns a path or Pareto front.
 3. **Plugin discovery** — `PluginLoader::load_plugins("plugins/")` `dlopen`s each `.so`, queries `extern "C"` symbols, and adds it to the solver list. **All solvers** are compiled as standalone `.so` plugins — there is zero static registration.
 4. **Cost maps** — Binary `.cost` files in `maps/mo_costmaps/` provide per-objective cost layers loaded at solve time.
@@ -131,7 +131,7 @@ Map files → MapData  →  Grid (visual)
 │       │   ├── pareto_front_panel.hpp     # Weight sliders + front table
 │       │   └── cost_map_viewer.hpp        # Objective heatmap dialog
 │       └── src/
-├── maps/                         # Grid map files (.map + .map.scen)
+├── maps/                         # Grid map files (.map, optional .map.scen)
 │   └── mo_costmaps/              # Multi-objective cost map variants (.cost)
 ├── scripts/                      # Utility scripts
 │   └── generate_cost_map_layers.py   # Cost map generator (obstacle proximity, bottlenecks, terrain)
@@ -155,7 +155,7 @@ Map files → MapData  →  Grid (visual)
 | `Cancel` | Cancel a running solver |
 | `Clear` | Clear path overlay |
 | `Reset` | Reset grid to original map |
-| `New Map` | Create a blank custom map (specify dimensions) |
+| `New Map` | Create a blank custom map (specify dimensions). Persisted to `maps/custom.map` automatically |
 | `Cost Map` | View cost map heatmap layers for the current map |
 | `Current Scene` spin box | Jump to / step through scenes |
 | `Map` spin box | Jump to / cycle maps |
@@ -167,8 +167,8 @@ Map files → MapData  →  Grid (visual)
 |---|---|
 | Toggle wall cell | Left-click |
 | Draw walls | Left-click drag |
-| Place start point | Right-click |
-| Place goal point | Shift+right-click |
+| Place / remove start point | Right-click (multiple starts: click different cells) |
+| Place / remove goal point | Shift+right-click (multiple goals: click different cells) |
 
 ### Performance Sidebar
 A permanent sidebar (320 px, right of the viewport) displays the last 5 solver runs with timing, search effort, and path quality metrics.
@@ -184,11 +184,15 @@ When a multi-objective solver is selected, the sidebar switches to the **Pareto 
 
 ## Map Format
 
-Maps use the standard [Moving AI](https://movingai.com/benchmarks/) grid format (`.map` + `.map.scen`).
+Maps use the standard [Moving AI](https://movingai.com/benchmarks/) grid format (`.map` files with optional `.map.scen` scene files).
 
 ### Custom Maps
 
 Click **New Map** in the toolbar to create a blank grid. Specify dimensions as `WxH` (e.g. `200x200`). Draw obstacles with left-click, place start/goal with right-click, and solve with any solver.
+
+**Multi-agent support:** Right-click multiple cells to place multiple starts; Shift+right-click multiple cells for multiple goals. Right-click an existing start/goal to remove it. The agent count is auto-detected from placed points.
+
+**Persistence:** Custom maps are automatically saved to `maps/custom.map` on close and when navigating away. On restart, the custom map loads automatically and appears in the map list for navigation via the **Map** spin box.
 
 ### Multi-Objective Cost Maps
 
