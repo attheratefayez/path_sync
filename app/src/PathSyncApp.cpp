@@ -3,12 +3,14 @@
 #include "path_sync_core/path_sync_types.hpp"
 
 #include <algorithm>
+#include <climits>
 #include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <memory>
+#include <queue>
 #include <sstream>
 #include <vector>
 
@@ -164,11 +166,14 @@ std::shared_ptr<path_sync::MapData> PathSyncApp::solve_mo_async_on_copy(
     std::lock_guard<std::mutex> lock(solve_mutex_);
     path_finder_.set_scene_id(scene_id);
 
-    // Load cost map
-    load_cost_map_for_current_map();
+    // Load pre-existing cost map, or generate one on-the-fly from map structure
+    auto cost_map = load_cost_map();
+    if (!cost_map)
+        cost_map = generate_cost_map_from_map_data(*copy);
+
     MOMetrics mo_met;
     auto perf_met = path_finder_.get_performance_metrics();
-    auto result = path_finder_.find_mo_path(*copy, nullptr, start, goal,
+    auto result = path_finder_.find_mo_path(*copy, cost_map.get(), start, goal,
                                              num_objectives,
                                              perf_met, mo_met);
 
@@ -416,11 +421,106 @@ bool PathSyncApp::load_cost_map_for_current_map()
                           + ".cost";
     std::error_code ec;
     if (std::filesystem::exists(cost_path, ec))
-    {
-        // Cost maps are loaded internally by each solver from the path
         return true;
-    }
     return false;
+}
+
+std::shared_ptr<CostMap> PathSyncApp::generate_cost_map_from_map_data(const MapData &map_data)
+{
+    int w = map_data.get_width();
+    int h = map_data.get_height();
+    const int objectives = 5;
+
+    auto cm = std::make_shared<CostMap>();
+    cm->width = w;
+    cm->height = h;
+    cm->objectives = objectives;
+    cm->costs.resize(static_cast<size_t>(h) * w * objectives, 0.0f);
+
+    std::string map_str = map_data.get_map_info().map.str();
+    int stride = w + 1;
+
+    std::vector<std::vector<int>> dist(h, std::vector<int>(w, INT_MAX / 2));
+    std::queue<std::pair<int,int>> q;
+
+    for (int y = 0; y < h; y++)
+    {
+        for (int x = 0; x < w; x++)
+        {
+            if (map_data.get_cell_type({x, y}) == CellType::WALL)
+            {
+                dist[y][x] = 0;
+                q.push({x, y});
+            }
+        }
+    }
+
+    const int dx8[] = {-1, 0, 1,-1, 1,-1, 0, 1};
+    const int dy8[] = {-1,-1,-1, 0, 0, 1, 1, 1};
+    const int dx4[] = {-1, 0, 1, 0};
+    const int dy4[] = { 0,-1, 0, 1};
+
+    while (!q.empty())
+    {
+        auto [x, y] = q.front(); q.pop();
+        for (int i = 0; i < 8; i++)
+        {
+            int nx = x + dx8[i];
+            int ny = y + dy8[i];
+            if (nx >= 0 && nx < w && ny >= 0 && ny < h && dist[ny][nx] > dist[y][x] + 1)
+            {
+                dist[ny][nx] = dist[y][x] + 1;
+                q.push({nx, ny});
+            }
+        }
+    }
+
+    for (int y = 0; y < h; y++)
+    {
+        for (int x = 0; x < w; x++)
+        {
+            size_t base = static_cast<size_t>(y) * w + x;
+
+            if (map_data.get_cell_type({x, y}) == CellType::WALL)
+            {
+                for (int o = 0; o < objectives; o++)
+                    cm->costs[static_cast<size_t>(o) * h * w + base] = -1.0f;
+                continue;
+            }
+
+            float d = static_cast<float>(dist[y][x]);
+            char tile = (x < static_cast<int>(map_str.size()))
+                        ? map_str[static_cast<size_t>(y) * stride + x] : '.';
+            bool is_terrain = (tile == 'T');
+
+            cm->costs[static_cast<size_t>(0) * h * w + base] = is_terrain ? 1.5f : 1.0f;
+
+            float risk = 1.0f + 9.0f / (1.0f + d);
+            int free_nbrs = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                int nx = x + dx4[i], ny = y + dy4[i];
+                if (nx >= 0 && nx < w && ny >= 0 && ny < h
+                    && map_data.get_cell_type({nx, ny}) != CellType::WALL)
+                    free_nbrs++;
+            }
+            if (free_nbrs <= 2) risk *= 1.5f;
+            if (free_nbrs <= 1) risk *= 1.5f;
+            cm->costs[static_cast<size_t>(1) * h * w + base] = risk;
+
+            float energy = is_terrain ? 3.0f : 1.0f;
+            energy += 9.0f / (1.0f + d);
+            cm->costs[static_cast<size_t>(2) * h * w + base] = energy;
+
+            cm->costs[static_cast<size_t>(3) * h * w + base] = std::max(1.0f, 10.0f - d);
+
+            float terrain = is_terrain ? 5.0f : 1.0f;
+            if (d < 3.0f) terrain += (3.0f - d) * 0.5f;
+            cm->costs[static_cast<size_t>(4) * h * w + base] = terrain;
+        }
+    }
+
+    return cm;
 }
 
 std::shared_ptr<CostMap> PathSyncApp::load_cost_map()
@@ -430,9 +530,10 @@ std::shared_ptr<CostMap> PathSyncApp::load_cost_map()
                           + map_name.substr(0, map_name.find_last_of('.'))
                           + ".cost";
     auto cm = std::make_shared<CostMap>();
-    if (!cm->load(cost_path))
-        return nullptr;
-    return cm;
+    if (cm->load(cost_path))
+        return cm;
+
+    return generate_cost_map_from_map_data(*current_map_data_);
 }
 
 std::shared_ptr<path_sync::MapData> PathSyncApp::get_current_map_data() const
@@ -482,6 +583,54 @@ int PathSyncApp::get_num_agents() const { return num_agents_; }
 PerformanceMetrics PathSyncApp::get_performance_metrics() const
 {
     return path_finder_.get_performance_metrics();
+}
+
+bool PathSyncApp::create_blank_map(int width, int height)
+{
+    MapInfo info;
+    info.map_name = "custom";
+    info.width = static_cast<std::size_t>(width);
+    info.height = static_cast<std::size_t>(height);
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+            info.map << '.';
+        info.map << '\n';
+    }
+
+    current_map_data_ = std::make_shared<MapData>(info);
+    current_scene_.first.clear();
+    current_scene_.second.clear();
+    current_sa_solution_.clear();
+    current_ma_solution_.clear();
+    current_mo_front_.clear();
+    return true;
+}
+
+void PathSyncApp::set_start_point(Coordinate c)
+{
+    CellType t = current_map_data_->get_cell_type(c);
+    if (t == CellType::WALL) return;
+    for (auto &old : current_scene_.first)
+        if (old != c && current_map_data_->get_cell_type(old) == CellType::START)
+            current_map_data_->set_cell_type(old, CellType::DEFAULT);
+    current_scene_.first.clear();
+    current_scene_.first.push_back(c);
+    current_map_data_->set_cell_type(c, CellType::START);
+    clear_paths();
+}
+
+void PathSyncApp::set_goal_point(Coordinate c)
+{
+    CellType t = current_map_data_->get_cell_type(c);
+    if (t == CellType::WALL) return;
+    for (auto &old : current_scene_.second)
+        if (old != c && current_map_data_->get_cell_type(old) == CellType::END)
+            current_map_data_->set_cell_type(old, CellType::DEFAULT);
+    current_scene_.second.clear();
+    current_scene_.second.push_back(c);
+    current_map_data_->set_cell_type(c, CellType::END);
+    clear_paths();
 }
 
 void PathSyncApp::clear_paths()

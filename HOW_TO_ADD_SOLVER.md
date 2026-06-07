@@ -10,8 +10,10 @@ PathSync loads solvers dynamically via a plugin system. You can add your own alg
 |---|---|---|
 | `ISolver` | Single-agent | `solve(MapData, start, goal, PerformanceMetrics) -> map<Coordinate,Coordinate>` |
 | `IMASolver` | Multi-agent | `solve(MapData, starts, goals, PerformanceMetrics) -> optional<vector<vector<Coordinate>>>` |
+| `IMOSolver` | Multi-objective | `solve(MapData, CostMap*, start, goal, n_obj, PerformanceMetrics, MOMetrics) -> optional<vector<MOSolution>>` |
 
-Both inherit from abstract base classes in [`solver_interface.hpp`](libs/path_sync_core/include/path_sync_core/solver_interface.hpp).
+SA and MA interfaces are defined in [`solver_interface.hpp`](libs/path_sync_core/include/path_sync_core/solver_interface.hpp).
+The MO interface is defined in [`imo_solver.hpp`](libs/path_sync_core/include/path_sync_core/solvers/imo_solver.hpp).
 
 ### 2. Create your solver class
 
@@ -166,15 +168,16 @@ Start PathSync. Your solver should appear in the **Solver** dropdown menu under 
 
 ## Plugin ABI Contract
 
-Your `.so` must export exactly these 5 symbols:
+Your `.so` must export these symbols:
 
-| Symbol | Type | Purpose |
-|---|---|---|
-| `plugin_name` | `const char* ()` | Display name in UI |
-| `plugin_is_optimal` | `bool ()` | Optimality flag |
-| `plugin_is_multi_agent` | `bool ()` | Multi-agent flag |
-| `plugin_create` | `void* ()` | Factory — returns new solver instance |
-| `plugin_destroy` | `void* (void*)` | Destructor — cast and delete the instance |
+| Symbol | Type | Mandatory | Purpose |
+|---|---|---|---|
+| `plugin_name` | `const char* ()` | yes | Display name in UI |
+| `plugin_is_optimal` | `bool ()` | yes | Optimality flag |
+| `plugin_is_multi_agent` | `bool ()` | yes | Multi-agent flag (false for SA/MO) |
+| `plugin_is_mo` | `bool ()` | for MO | Multi-objective flag — set to `true` for MO solvers |
+| `plugin_create` | `void* ()` | yes | Factory — returns new solver instance |
+| `plugin_destroy` | `void* (void*)` | yes | Destructor — cast and delete the instance |
 
 ## Multi-agent solver
 
@@ -207,6 +210,77 @@ extern "C" {
     void  plugin_destroy(void *p)      { delete static_cast<MyMASolver*>(p); }
 }
 ```
+
+## Multi-objective solver
+
+For MO (multi-objective) pathfinding, inherit from `IMOSolver` (defined in
+[`imo_solver.hpp`](libs/path_sync_core/include/path_sync_core/solvers/imo_solver.hpp))
+and export `plugin_is_mo()` returning `true`:
+
+```cpp
+#include <path_sync_core/solvers/imo_solver.hpp>
+#include <path_sync_core/mo_types.hpp>
+
+class MyMOSolver : public IMOSolver {
+    std::string_view get_solver_name() const override {
+        return "My MO Solver";
+    }
+
+    bool is_optimal() const override { return false; }
+
+    int get_num_objectives() const override { return 5; }
+    bool needs_weights() const override { return false; }
+    void set_weights(const std::vector<float> &) override {}
+
+    std::optional<std::vector<MOSolution>> solve(
+        const path_sync::MapData &map_data,
+        const path_sync::CostMap *cost_map,   // nullable — nullptr = uniform costs
+        path_sync::Coordinate start,
+        path_sync::Coordinate goal,
+        int num_objectives,
+        path_sync::PerformanceMetrics &perf,
+        path_sync::MOMetrics &mo_met) override
+    {
+        // cost_map is null when no .cost file exists; the solver should
+        // fall back to uniform costs (all objectives = 1.0 per step).
+        // For custom maps, PathSyncApp generates a CostMap on-the-fly,
+        // so cost_map is usually non-null in practice.
+        //
+        // Return a vector of non-dominated MOSolution objects (Pareto front).
+        // Populate perf and mo_met (see below).
+    }
+};
+
+extern "C" {
+    const char *plugin_name()        { return "My_MO_Solver"; }
+    bool plugin_is_optimal()         { return false; }
+    bool plugin_is_multi_agent()     { return false; }
+    bool plugin_is_mo()              { return true; }   // ← required!
+    void *plugin_create()            { return new MyMOSolver(); }
+    void  plugin_destroy(void *p)    { delete static_cast<MyMOSolver*>(p); }
+}
+```
+
+### MOMetrics fields to populate
+
+| Field | Type | When to set |
+|---|---|---|
+| `front_size` | `int` | Size of the returned Pareto front |
+| `front` | `std::vector<MOSolution>` | The full Pareto front |
+| `ref_point` | `std::vector<float>` | Reference point for hypervolume (one per objective) |
+| `hypervolume` | `double` | Hypervolume indicator of the front |
+
+See [`mo_types.hpp`](libs/path_sync_core/include/path_sync_core/mo_types.hpp)
+for `MOSolution` (path + cost vector + crowding distance) and
+[`imo_solver.hpp`](libs/path_sync_core/include/path_sync_core/solvers/imo_solver.hpp)
+for the full interface.
+
+### Plugin ABI contract summary
+
+| Symbol | SA | MA | MO |
+|---|---|---|---|
+| `plugin_is_multi_agent` | `false` | **`true`** | `false` |
+| `plugin_is_mo` | _omit_ | _omit_ | **`true`** |
 
 ## Loading errors
 

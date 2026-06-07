@@ -2,6 +2,7 @@
 
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QInputDialog>
 #include <QPlainTextEdit>
 #include <QVBoxLayout>
 #include <QPainter>
@@ -174,7 +175,21 @@ protected:
             return;
         }
         if (event->button() == Qt::LeftButton)
+        {
             toggle_cell_at(event->pos());
+            return;
+        }
+        if (event->button() == Qt::RightButton)
+        {
+            if (!inside_grid(event->pos()))
+                return;
+            Coordinate c = cell_at(event->pos());
+            if (event->modifiers() & Qt::ShiftModifier)
+                app_.set_goal_point(c);
+            else
+                app_.set_start_point(c);
+            update();
+        }
     }
 
     void mouseMoveEvent(QMouseEvent *event) override
@@ -519,14 +534,27 @@ void VisualizationSystem::setup_ui()
     tb_lay->addWidget(clear_btn);
     tb_lay->addWidget(reset_btn);
 
+    auto *new_map_btn = new QPushButton("New Map");
+    connect(new_map_btn, &QPushButton::clicked, this, [this]() {
+        bool ok = false;
+        QString size = QInputDialog::getText(this, "New Map",
+            "Dimensions (WxH, e.g. 200x200):",
+            QLineEdit::Normal, "200x200", &ok);
+        if (!ok || size.isEmpty()) return;
+        auto parts = size.split('x');
+        if (parts.size() != 2) return;
+        int w = parts[0].toInt();
+        int h = parts[1].toInt();
+        if (w < 10 || h < 10 || w > 1000 || h > 1000) return;
+        app_.create_blank_map(w, h);
+        grid_widget_->sync_and_update();
+        populate_solver_combo();
+        update_status();
+    });
+    tb_lay->addWidget(new_map_btn);
+
     auto *cost_map_btn = new QPushButton("Cost Map");
     connect(cost_map_btn, &QPushButton::clicked, this, [this]() {
-        if (!app_.load_cost_map_for_current_map())
-        {
-            solve_status_label_->setText("No cost map for this map");
-            QTimer::singleShot(3000, this, [this]() { solve_status_label_->clear(); });
-            return;
-        }
         auto cm = app_.load_cost_map();
         if (!cm)
         {

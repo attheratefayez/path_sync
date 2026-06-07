@@ -81,6 +81,9 @@ class PathSyncApp
     bool is_solve_cancelled() const { return path_finder_.is_cancelled(); }
     void set_timeout_ms(int ms) { path_finder_.set_timeout_ms(ms); }
 
+    bool create_blank_map(int width, int height);
+    void set_start_point(Coordinate c);
+    void set_goal_point(Coordinate c);
     void clear_paths();
     void reset_grid();
 
@@ -129,6 +132,8 @@ class PathSyncApp
     mutable std::mutex solve_mutex_;
 
     int num_agents_;
+
+    std::shared_ptr<CostMap> generate_cost_map_from_map_data(const MapData &map_data);
 
     void update_map_data_with_current_scene_();
 

@@ -6,7 +6,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter, distance_transform_edt
 
 
-SAFE_DIST_MAX = 14.0
+
 
 
 def load_movingai_map(path):
@@ -39,38 +39,71 @@ def load_movingai_map(path):
 
 
 def obstacle_distance(traversable):
-    dist = distance_transform_edt(traversable)
-    return np.clip(dist, 0, SAFE_DIST_MAX)
+    return distance_transform_edt(traversable)
 
 
-def narrow_passage_penalty(traversable):
-    obs = ~traversable
-    h, w = traversable.shape
-    penalty = np.zeros((h, w), dtype=np.float32)
+def neighbor_obstacle_count(traversable):
+    obs = (~traversable).astype(np.float32)
+    count = np.zeros_like(obs)
     for dy in (-1, 0, 1):
         for dx in (-1, 0, 1):
             if dx == 0 and dy == 0:
                 continue
             shifted = np.roll(obs, shift=(-dy, -dx), axis=(0, 1))
-            penalty += shifted.astype(np.float32)
-    return np.clip(penalty / 8.0, 0, 1)
+            count += shifted
+    return count  # 0-8
+
+
+def cardinal_obstacle_count(traversable):
+    obs = (~traversable).astype(np.float32)
+    count = np.zeros_like(obs)
+    for dy, dx in [(-1,0),(1,0),(0,-1),(0,1)]:
+        shifted = np.roll(obs, shift=(-dy, -dx), axis=(0, 1))
+        count += shifted
+    return count  # 0-4
 
 
 def corner_penalty(traversable):
-    obs = ~traversable
-    h, w = traversable.shape
-    corners = np.zeros((h, w), dtype=np.float32)
+    obs = (~traversable).astype(np.float32)
+    corners = np.zeros_like(obs)
     for dy in (-1, 1):
         for dx in (-1, 1):
             shifted = np.roll(obs, shift=(-dy, -dx), axis=(0, 1))
-            corners += shifted.astype(np.float32)
-    return np.clip(corners / 4.0, 0, 1)
+            corners += shifted
+    return corners / 4.0  # 0-1
+
+
+def corridor_bottleneck(traversable):
+    """Bottleneck score: a cell in a narrow corridor flanked by walls."""
+    card = cardinal_obstacle_count(traversable)
+    narrow = neighbor_obstacle_count(traversable)
+
+    opp_walls = (card >= 2).astype(np.float32)
+
+    ring5 = np.zeros_like(narrow)
+    for dy in (-2, -1, 0, 1, 2):
+        for dx in (-2, -1, 0, 1, 2):
+            d = abs(dx) + abs(dy)
+            if d == 0 or d > 2:
+                continue
+            shifted = np.roll((~traversable).astype(np.float32), shift=(-dy, -dx), axis=(0, 1))
+            ring5 += shifted
+
+    pinch = opp_walls * np.clip(ring5 / 16.0, 0, 1)
+    return pinch  # 0-1
+
+
+def dead_end_penalty(traversable):
+    """Cells that lead to a dead end (3+ obstacles in cardinal dirs)."""
+    card = cardinal_obstacle_count(traversable)
+    return (card >= 3).astype(np.float32)
 
 
 def visibility_cost(traversable):
     obs_dist = obstacle_distance(traversable)
-    inv = SAFE_DIST_MAX - obs_dist
-    return np.clip(inv / SAFE_DIST_MAX, 0, 1)
+    safe = np.percentile(obs_dist[obs_dist > 0.5], 95)
+    inv = safe - np.clip(obs_dist, 0, safe)
+    return np.clip(inv / safe, 0, 1)
 
 
 def terrain_energy_cost(cell_type):
@@ -79,42 +112,21 @@ def terrain_energy_cost(cell_type):
     return energy
 
 
-def corridor_bottleneck(traversable):
-    obs = (~traversable).astype(np.float32)
-    ring_count = np.zeros_like(obs)
-    for dy in (-2, -1, 0, 1, 2):
-        for dx in (-2, -1, 0, 1, 2):
-            if dx == 0 and dy == 0:
-                continue
-            d = abs(dx) + abs(dy)
-            if d > 2:
-                continue
-            shifted = np.roll(obs, shift=(-dy, -dx), axis=(0, 1))
-            ring_count += shifted
-    ring_count = np.clip(ring_count / 12.0, 0, 1)
-    return ring_count
+def risk_cost(obs_dist, neighbor_obs, corner, bottleneck, dead_end):
+    prox = 1.0 + 9.0 / (1.0 + obs_dist)
 
+    wedged = np.where(neighbor_obs >= 5,
+                      6.0 * ((neighbor_obs - 4) / 4.0) ** 2.0,
+                      np.zeros_like(neighbor_obs))
 
-def risk_cost(obs_dist, narrow, corner, bottleneck):
-    closest = np.exp(-obs_dist * 0.25)
+    pinch = bottleneck * 6.0
 
-    immediate = np.exp(-obs_dist * 0.8)
+    trapped = dead_end * 3.0
 
-    cramped = narrow ** 1.5
+    blind = corner * 1.0
 
-    pinch = bottleneck ** 2.0
-
-    blind = corner * 0.4
-
-    cost = (
-        closest * 5.0
-        + immediate * 2.0
-        + cramped * 3.0
-        + pinch * 2.0
-        + blind
-    )
-    cost = np.clip(cost, 0.3, 10.0)
-    return cost
+    cost = prox + wedged + pinch + trapped + blind
+    return np.clip(cost, 1.0, 10.0)
 
 
 def energy_cost(obs_dist, cell_type):
@@ -146,9 +158,10 @@ def generate_cost_layers(traversable, cell_type, objectives=5):
     h, w = traversable.shape
 
     obs_dist = obstacle_distance(traversable)
-    narrow = narrow_passage_penalty(traversable)
+    neighbor_obs = neighbor_obstacle_count(traversable)
     corner = corner_penalty(traversable)
     bottleneck = corridor_bottleneck(traversable)
+    dead_end = dead_end_penalty(traversable)
     vis = visibility_cost(traversable)
 
     layers = []
@@ -157,7 +170,7 @@ def generate_cost_layers(traversable, cell_type, objectives=5):
         layers.append(distance_cost_layer(cell_type).astype(np.float32))
 
     if objectives >= 2:
-        layers.append(risk_cost(obs_dist, narrow, corner, bottleneck).astype(np.float32))
+        layers.append(risk_cost(obs_dist, neighbor_obs, corner, bottleneck, dead_end).astype(np.float32))
 
     if objectives >= 3:
         layers.append(energy_cost(obs_dist, cell_type).astype(np.float32))

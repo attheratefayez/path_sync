@@ -1,12 +1,15 @@
 # PathSync
 
-A C++20 pathfinding visualization tool for single-agent and multi-agent pathfinding algorithms on grid-based maps. Supports multiple solvers with performance metrics and real-time visualization via Qt6.
+A C++20 pathfinding visualization tool for single-agent, multi-agent, and **multi-objective** pathfinding algorithms on grid-based maps. Supports multiple solvers with performance metrics, Pareto front browsing, and real-time visualization via Qt6.
 
 ![Single-Agent Mode](docs/images/single-agent-mode.png)
 *Single-agent pathfinding visualization*
 
 ![Multi-Agent Mode](docs/images/multi-agent-mode.png)
 *Multi-agent pathfinding with CBS solvers*
+
+![Multi-Objective Mode](docs/images/multi-objective%20mode.png)
+*Multi-objective solver with Pareto front visualization*
 
 ## Algorithms
 
@@ -26,7 +29,16 @@ A C++20 pathfinding visualization tool for single-agent and multi-agent pathfind
 - **ICBS** (optimal) — Improved CBS with conflict classification (cardinal/semi/non-cardinal) and bypass
 - **CBSH** (optimal) — CBS with Conflict Graph heuristic (minimum vertex cover via brute force)
 
-Low-level search for CBS-family solvers is **space-time A\*** by default, with **EPEA\*** (Enhanced Partial Expansion A\*) as an alternative — trades slightly higher per-node cost for a smaller open list. Select with `solver.set_use_epea(true)`.
+Low-level search for CBS-family solvers is **space-time A\*** by default, with **EPEA\*** as an alternative.
+
+### Multi-Objective Solvers
+- **MOA\*** (optimal) — Multi-objective A\* returning the full Pareto front
+- **NSGA2** (suboptimal) — Non-dominated Sorting Genetic Algorithm II with configurable population/generations
+- **ParetoRRT** (suboptimal) — Rapidly-exploring Random Tree building a Pareto-optimal set
+- **Weighted Sum A\* (MO)** (suboptimal) — A\* with configurable multi-objective cost weights
+- **Potential Field (MO)** (suboptimal) — Gradient descent on weighted multi-objective potential field
+
+MO solvers appear under `── Multi-Objective ──` in the solver dropdown (WS-A\* and PotentialField use the single-agent dispatch interface and appear under `── Single-Agent ──`).
 
 ## Dependencies
 
@@ -66,24 +78,25 @@ The application is split into three layers:
 │  Orchestrates core + UI, connects signals     │
 ├──────────────────────────────────────────────┤
 │  libs/path_sync_ui/   (Qt6 visualization)     │
-│  Grid widget, toolbar, sidebar, scene mgmt    │
+│  Grid widget, toolbar, sidebar, Pareto panel  │
 ├──────────────────────────────────────────────┤
 │  libs/path_sync_core/   (algorithms, data)    │
 │  Solvers, MapManager, PathFinder,             │
-│  PluginLoader, PerformanceMetrics             │
+│  PluginLoader, PerformanceMetrics, CostMap    │
 └──────────────────────────────────────────────┘
 ```
 
 ### Data flow
 
 1. **Map loading** — `MapManager` parses `.map` + `.map.scen` files into `MapData` (grid of `CellType`) and scenes.
-2. **Solving** — User clicks **Solve** → `PathFinder::find_path()` → selects the current solver (built-in or plugin) → runs the algorithm → returns a path or paths.
-3. **Plugin discovery** — On construction, `PathFinder` calls `PluginLoader::load_plugins("plugins/")` which `dlopen`s each `.so`, queries its `extern "C"` symbols, and adds it to the solver list. **All solvers** (both built-in and external) are compiled as standalone `.so` plugins in `plugins/` — there is zero static registration. Each solver appears in the same UI dropdown.
+2. **Solving** — User clicks **Solve** → `PathFinder::find_path()` (SA/MA) or `find_mo_path()` (MO) → selected solver → returns a path or Pareto front.
+3. **Plugin discovery** — `PluginLoader::load_plugins("plugins/")` `dlopen`s each `.so`, queries `extern "C"` symbols, and adds it to the solver list. **All solvers** are compiled as standalone `.so` plugins — there is zero static registration.
+4. **Cost maps** — Binary `.cost` files in `maps/mo_costmaps/` provide per-objective cost layers loaded at solve time.
 
 ```
 Map files → MapData  →  Grid (visual)
                   ↘
-     PathFinder ──→ Solver (ISolver / IMASolver)
+     PathFinder ──→ Solver (ISolver / IMASolver / IMOSolver)
        │                 built-in or plugin .so
        │                 │
        ▼                 ▼
@@ -91,6 +104,8 @@ Map files → MapData  →  Grid (visual)
        │
        ▼
     Sidebar (last 5 runs)
+
+  CostMap (.cost) ──→ MO Solver → Pareto Front → Radar Chart + Table
 ```
 
 ## Project Structure
@@ -104,37 +119,28 @@ Map files → MapData  →  Grid (visual)
 │   ├── path_sync_core/           # Core library
 │   │   ├── include/path_sync_core/
 │   │   │   ├── map_loader/       # Map & scene parsing, CostMap loader
-│   │   │   ├── solvers/          # A*, BFS, JPS, Theta*, HPA*, D* Lite, EPEA*, Joint-State A*, M*, CBS
-│   │   │   ├── logger.hpp              # Singleton logger
-│   │   │   ├── path_sync_types.hpp
-│   │   │   ├── plugin_loader.hpp       # Dynamic plugin system
-│   │   │   └── performance_mat.hpp     # Performance metrics struct
+│   │   │   ├── solvers/          # SA, MA, and MO solver headers
+│   │   │   ├── mo_types.hpp           # MOSolution, MOMetrics
+│   │   │   ├── solver_interface.hpp   # ISolver, IMASolver, IMOSolver
+│   │   │   └── ...
 │   │   └── src/
 │   └── path_sync_ui/             # Qt6 visualization
 │       ├── include/path_sync_ui/
+│       │   ├── visualization_system.hpp
+│       │   ├── radar_chart_widget.hpp     # N-axis QPainter radar chart
+│       │   ├── pareto_front_panel.hpp     # Weight sliders + front table
+│       │   └── cost_map_viewer.hpp        # Objective heatmap dialog
 │       └── src/
 ├── maps/                         # Grid map files (.map + .map.scen)
 │   └── mo_costmaps/              # Multi-objective cost map variants (.cost)
 ├── scripts/                      # Utility scripts
-│   ├── generate_cost_map_layers.py   # Synthetic multi-cost map generator
-│   └── find_multi_objective_data.py  # Data research assistant
+│   └── generate_cost_map_layers.py   # Cost map generator (obstacle proximity, bottlenecks, terrain)
 ├── config/                       # YAML configuration
 ├── log/                          # Solver performance logs
 ├── plugins/                      # Solver .so plugins (built-in + external)
-│   ├── CMakeLists.txt            # Builds all built-in solvers as plugins
-│   ├── demo_solver/              # Example plugin template
-│   ├── libastar_solver.so
-│   ├── libbfs_solver.so
-│   ├── libjps_solver.so
-│   ├── libtheta_star_solver.so
-│   ├── libhpa_solver.so
-│   ├── libdstar_lite_solver.so
-│   ├── libepea_solver.so
-│   ├── libastar_joint_state.so
-│   ├── libmstar_solver.so
-│   ├── libcbs_solver.so           # plain CBS
-│   ├── libicbs_solver.so          # ICBS (conflict classification + bypass)
-│   └── libcbsh_solver.so          # CBS + ICBS + CBSH (CG heuristic)
+│   ├── CMakeLists.txt
+│   ├── demo_solver/
+│   └── lib*.so
 └── test/                         # GoogleTest unit tests
 ```
 
@@ -149,36 +155,54 @@ Map files → MapData  →  Grid (visual)
 | `Cancel` | Cancel a running solver |
 | `Clear` | Clear path overlay |
 | `Reset` | Reset grid to original map |
+| `New Map` | Create a blank custom map (specify dimensions) |
+| `Cost Map` | View cost map heatmap layers for the current map |
 | `Current Scene` spin box | Jump to / step through scenes |
 | `Map` spin box | Jump to / cycle maps |
 | `Agent` | Cycle agent count (1–10) |
-| `Solver` dropdown | Select solver directly (shows optimal/suboptimal) |
-
-**Keyboard shortcuts:**
-None. All operations are available via the toolbar.
+| `Solver` dropdown | Select solver directly (SA/MA/MO sections) |
 
 **Mouse controls:**
 | Action | Input |
 |---|---|
 | Toggle wall cell | Left-click |
 | Draw walls | Left-click drag |
+| Place start point | Right-click |
+| Place goal point | Shift+right-click |
 
 ### Performance Sidebar
-A permanent sidebar (320 px, right of the viewport) displays the last 5 solver runs with timing, search effort, and path quality metrics. The buffer resets automatically when the map or scene changes.
+A permanent sidebar (320 px, right of the viewport) displays the last 5 solver runs with timing, search effort, and path quality metrics.
+
+### MO Mode Sidebar
+When a multi-objective solver is selected, the sidebar switches to the **Pareto front panel**:
+- **Objective count** selector (2–5)
+- **Weight sliders** per objective (normalized to 1.0)
+- **Radar chart** — QPainter N-axis spider chart showing the selected front
+- **Pareto front table** — up to 100 rows with cost and path length
+- **Hypervolume** metric (Monte Carlo estimate)
+- **Solve MO** button
 
 ## Map Format
 
 Maps use the standard [Moving AI](https://movingai.com/benchmarks/) grid format (`.map` + `.map.scen`).
 
+### Custom Maps
+
+Click **New Map** in the toolbar to create a blank grid. Specify dimensions as `WxH` (e.g. `200x200`). Draw obstacles with left-click, place start/goal with right-click, and solve with any solver.
+
 ### Multi-Objective Cost Maps
 
-Alongside the binary obstacle maps, `maps/mo_costmaps/` provides **multi-cost variants** of every map with 5 synthetic cost objectives (distance, risk, energy, visibility, terrain). Each `.cost` file is a binary float32 tensor generated by `scripts/generate_cost_map_layers.py`.
+`maps/mo_costmaps/` provides **multi-cost variants** of every map with 5 cost objectives generated from map structure:
 
-![Multi-Objective Mode](docs/images/multi-objective%20mode.png)
-*Multi-objective solver with Pareto front visualization*
+| Index | Name | Description |
+|---|---|---|
+| 0 | Distance | Base traversal cost (flat, 1.5x on `T` terrain) |
+| 1 | Risk | Obstacle proximity + narrow passage + dead-end penalty |
+| 2 | Energy | Terrain-based (`T` cells cost 3×) scaled by obstacle proximity |
+| 3 | Visibility | Inverse of obstacle distance (open = cheap) |
+| 4 | Terrain | `T` cells cost 5× with wall-edge bonus |
 
-![Multi-Objective Cost Map](docs/images/multi-objective%20cost-map.png)
-*Cost map layers viewer with heatmap visualization*
+Each `.cost` file is a binary float32 tensor generated by `scripts/generate_cost_map_layers.py`.
 
 **Binary format:** `[height:i32][width:i32][objectives:i32][costs:f32...]` — row-major, per-cell blocked if any objective is -1.0.
 
@@ -193,11 +217,15 @@ if (cm.load("maps/mo_costmaps/arena2.cost"))
 
 See `maps/mo_costmaps/README.md` for full details.
 
+### Cost Map Viewer
+
+Click **Cost Map** in the toolbar to open a dialog showing each objective layer as an individual heatmap, plus a combined RGB composite. The number of objectives shown matches the current MO solver setting.
+
 ## Extending
 
-PathSync loads solver algorithms dynamically via a plugin system. Add your own single-agent or multi-agent solver as a `.so` shared library — no core source changes needed.
+PathSync loads solver algorithms dynamically via a plugin system.
 
-See **[HOW_TO_ADD_SOLVER.md](HOW_TO_ADD_SOLVER.md)** for a step-by-step guide with code examples.
+See **[HOW_TO_ADD_SOLVER.md](HOW_TO_ADD_SOLVER.md)** for a step-by-step guide with code examples. The guide covers all three solver interfaces: `ISolver` (single-agent), `IMASolver` (multi-agent), and `IMOSolver` (multi-objective).
 
 The [`plugins/demo_solver/`](plugins/demo_solver/) directory contains a complete working plugin (Greedy Best-First Search) that you can use as a template.
 

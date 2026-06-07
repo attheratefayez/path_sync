@@ -1,7 +1,11 @@
 # Multi-Objective Cost Maps
 
-Generated from MovingAI `.map` files by `scripts/generate_cost_map_layers.py`.
-Each `.cost` file provides 5 synthetic cost objectives for multi-objective pathfinding.
+Generated from MovingAI `.map` files by `scripts/generate_cost_map_layers.py`
+or computed on-the-fly for custom maps inside `PathSyncApp::generate_cost_map_from_map_data()`.
+
+Each `.cost` file (or generated in-memory `CostMap`) provides 5 synthetic cost objectives
+for multi-objective pathfinding. The C++ on-the-fly generator uses a BFS distance transform
+from wall cells to compute obstacle proximity — no random noise, fully deterministic.
 
 ## Format (binary)
 
@@ -23,13 +27,17 @@ Blocked cells (walls) have **all objectives = -1.0**.
 
 ## Objectives
 
-| Index | Name        | Description                                            |
-|-------|-------------|--------------------------------------------------------|
-| 0     | Distance    | Uniform 1.0 per step (path length)                     |
-| 1     | Risk        | 1.0–10.0, spatially correlated noise (danger zones)    |
-| 2     | Energy      | 1.0–10.0, mix of risk + independent noise              |
-| 3     | Visibility  | 1.0–10.0, anti-correlated with risk (high risk = low vis) |
-| 4     | Terrain     | 1.0–10.0, independent noise layer                      |
+| Index | Name       | Description |
+|-------|------------|-------------|
+| 0     | Distance   | 1.0 base, 1.5× on `T` terrain |
+| 1     | Risk       | Obstacle proximity `1 + 9/(1+dist)`, ×2.25 if ≤2 free neighbors (bottleneck/dead-end penalty) |
+| 2     | Energy     | Terrain-based (`T` = 3×), scaled by obstacle proximity |
+| 3     | Visibility | `max(1, 10 - dist_to_wall)` — open spaces are cheap |
+| 4     | Terrain    | `T` cells cost 5× + wall-edge bonus within 3 cells |
+
+The **Python script** additionally applies corner penalties and narrower bottleneck factors.
+The **C++ generator** (`PathSyncApp::generate_cost_map_from_map_data`) is a
+lighter version used when no `.cost` file exists (e.g. custom maps).
 
 ## Loading in C++
 
@@ -51,10 +59,11 @@ and implemented in `libs/path_sync_core/src/cost_map.cpp`. It is auto-linked via
 From the project root:
 
 ```bash
-python3 scripts/generate_cost_map_layers.py [objectives] [seed]
+python3 scripts/generate_cost_map_layers.py
 ```
 
-- `objectives`: number of cost layers (default 5)
-- `seed`: base random seed (default 12345, incremented per map)
+Requires `numpy`. All objectives are computed from map structure and are fully
+deterministic (no random seed parameter needed).
 
-Requires `numpy` and `scipy`.
+Cost maps are automatically generated at runtime for any map without a `.cost` file
+via `PathSyncApp::load_cost_map()` → `generate_cost_map_from_map_data()`.
